@@ -1,0 +1,387 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  TICKETING_FINANCE
+  ENTRY_VERIFICATION
+  ATTENDEE
+}
+
+enum RegistrationStatus {
+  PENDING_PAYMENT
+  PAYMENT_CONFIRMED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+}
+
+enum PaymentStatus {
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+}
+
+enum CredentialStatus {
+  ACTIVE
+  USED
+  CANCELLED
+}
+
+enum ScanResult {
+  VALID
+  ALREADY_USED
+  CANCELLED
+  INVALID_TOKEN
+  WRONG_EVENT
+  PAYMENT_NOT_CONFIRMED
+}
+
+enum EntryType {
+  QR
+  DIRECT
+  MANUAL
+}
+
+enum VerificationMethod {
+  QR_SCAN
+  CASHIER
+  MANUAL
+}
+
+enum GazeboStatus {
+  AVAILABLE
+  HELD
+  CONFIRMED
+}
+
+enum GazeboInquiryStatus {
+  NEW
+  CONTACTED
+  DISCUSSION
+  HOLD
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  CONFIRMED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  role         Role     @default(ATTENDEE)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  registrationsCreated Registration[]  @relation("CreatedBy")
+  paymentsCollected    Payment[]       @relation("CollectedBy")
+  entriesVerified      Entry[]         @relation("VerifiedBy")
+  scanAttempts         ScanAttempt[]   @relation("ScannedBy")
+  auditLogs            AuditLog[]      @relation("Actor")
+
+  @@index([username])
+  @@index([role])
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  name      String   @default("Safed Sheri")
+  eventDate DateTime // Canonical: 2026-10-09T00:00:00.000Z
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations Registration[]
+  entries       Entry[]
+  scanAttempts  ScanAttempt[]
+
+  @@index([status])
+  @@index([eventDate])
+}
+
+model PricingPhase {
+  id          String   @id @default(uuid())
+  phaseName   String   @unique // EARLY_BIRD, PHASE_1, PHASE_2
+  singlePrice Decimal  @db.Decimal(10, 2)
+  couplePrice Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  registrations Registration[]
+
+  @@index([isActive])
+}
+
+model Attendee {
+  id               String   @id @default(uuid())
+  fullName         String
+  phone            String
+  email            String?
+  aadhaarMasked    String   // MANDATORY NOT NULL: XXXX XXXX 1234
+  aadhaarEncrypted String   // MANDATORY NOT NULL: AES-256-GCM encrypted hex
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  registrations RegistrationAttendee[]
+  credentials   Credential[]
+  entries       Entry[]
+
+  @@index([phone])
+  @@index([fullName])
+}
+
+model Registration {
+  id                 String             @id @default(uuid())
+  registrationNumber String             @unique // SS-2026-XXXXXX
+  eventId            String
+  pricingPhaseId     String
+  status             RegistrationStatus @default(PENDING_PAYMENT)
+  amountDue          Decimal            @db.Decimal(10, 2)
+  createdById        String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  event        Event                  @relation(fields: [eventId], references: [id])
+  pricingPhase PricingPhase           @relation(fields: [pricingPhaseId], references: [id])
+  createdBy    User                   @relation("CreatedBy", fields: [createdById], references: [id])
+  attendees    RegistrationAttendee[]
+  payments     Payment[]
+  credentials  Credential[]
+  entries      Entry[]
+
+  @@index([registrationNumber])
+  @@index([status])
+  @@index([eventId])
+  @@index([pricingPhaseId])
+}
+
+model RegistrationAttendee {
+  registrationId String
+  attendeeId     String
+  isPrimary      Boolean @default(false)
+
+  registration Registration @relation(fields: [registrationId], references: [id])
+  attendee     Attendee     @relation(fields: [attendeeId], references: [id])
+
+  @@id([registrationId, attendeeId])
+}
+
+model PaymentLocation {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+
+  @@index([isActive])
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  registrationId    String
+  paymentLocationId String
+  collectedById     String
+  amount            Decimal       @db.Decimal(10, 2)
+  method            PaymentMethod @default(CASH)
+  status            PaymentStatus @default(CONFIRMED)
+  receiptNumber     String        @unique // RCP-2026-XXXXXX
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  registration    Registration    @relation(fields: [registrationId], references: [id])
+  paymentLocation PaymentLocation @relation(fields: [paymentLocationId], references: [id])
+  collectedBy     User            @relation("CollectedBy", fields: [collectedById], references: [id])
+
+  @@index([receiptNumber])
+  @@index([registrationId])
+  @@index([paymentLocationId])
+  @@index([collectedById])
+  @@index([createdAt])
+}
+
+model Credential {
+  id               String           @id @default(uuid())
+  credentialNumber String           @unique // PASS-2026-XXXXXX
+  registrationId   String
+  attendeeId       String
+  secureToken      String           @unique // ss_qr_<32_bytes_hex>
+  status           CredentialStatus @default(ACTIVE)
+  issuedAt         DateTime         @default(now())
+  usedAt           DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  registration Registration  @relation(fields: [registrationId], references: [id])
+  attendee     Attendee      @relation(fields: [attendeeId], references: [id])
+  scanAttempts ScanAttempt[]
+  entries      Entry[]
+
+  @@index([secureToken])
+  @@index([credentialNumber])
+  @@index([status])
+  @@index([attendeeId])
+}
+
+model ScanAttempt {
+  id               String     @id @default(uuid())
+  eventId          String
+  credentialId     String?
+  scannedById      String
+  result           ScanResult
+  rawTokenScanned  String
+  scannedAt        DateTime   @default(now())
+
+  event      Event       @relation(fields: [eventId], references: [id])
+  credential Credential? @relation(fields: [credentialId], references: [id])
+  scannedBy  User        @relation("ScannedBy", fields: [scannedById], references: [id])
+
+  @@index([eventId])
+  @@index([credentialId])
+  @@index([scannedById])
+  @@index([result])
+  @@index([scannedAt])
+}
+
+model Entry {
+  id                 String             @id @default(uuid())
+  eventId            String
+  attendeeId         String?
+  registrationId     String?
+  credentialId       String?
+  entryType          EntryType          @default(QR)
+  verificationMethod VerificationMethod @default(QR_SCAN)
+  verifiedById       String
+  notes              String?
+  createdAt          DateTime           @default(now())
+
+  event        Event         @relation(fields: [eventId], references: [id])
+  attendee     Attendee?     @relation(fields: [attendeeId], references: [id])
+  registration Registration? @relation(fields: [registrationId], references: [id])
+  credential   Credential?   @relation(fields: [credentialId], references: [id])
+  verifiedBy   User          @relation("VerifiedBy", fields: [verifiedById], references: [id])
+
+  @@index([eventId])
+  @@index([attendeeId])
+  @@index([registrationId])
+  @@index([credentialId])
+  @@index([verifiedById])
+  @@index([createdAt])
+}
+
+model Gazebo {
+  id           String       @id @default(uuid())
+  gazeboNumber String       @unique // GZB-L1-01 to GZB-L3-04
+  level        Int          // 1, 2, 3
+  price        Decimal      @db.Decimal(10, 2)
+  status       GazeboStatus @default(AVAILABLE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  inquiries GazeboInquiry[]
+
+  @@index([level])
+  @@index([status])
+}
+
+model GazeboInquiry {
+  id            String              @id @default(uuid())
+  inquiryNumber String              @unique // GZB-INQ-XXXXXX
+  gazeboId      String?
+  level         Int                 // 1, 2, 3
+  fullName      String
+  phone         String
+  notes         String?
+  status        GazeboInquiryStatus @default(NEW)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  gazebo Gazebo? @relation(fields: [gazeboId], references: [id])
+
+  @@index([inquiryNumber])
+  @@index([level])
+  @@index([status])
+}
+
+model SponsorInquiry {
+  id              String        @id @default(uuid())
+  companyName     String
+  contactName     String
+  phone           String
+  email           String?
+  sponsorshipType String?
+  notes           String?
+  status          InquiryStatus @default(NEW)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model StallInquiry {
+  id          String        @id @default(uuid())
+  brandName   String
+  contactName String
+  phone       String
+  category    String?
+  notes       String?
+  status      InquiryStatus @default(NEW)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String
+  action       String
+  targetEntity String
+  targetId     String?
+  payload      Json?
+  createdAt    DateTime @default(now())
+
+  actor User @relation("Actor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetEntity])
+  @@index([createdAt])
+}
+
+model Media {
+  id        String   @id @default(uuid())
+  title     String
+  mediaType String   @default("IMAGE") // IMAGE or VIDEO
+  filePath  String
+  section   String   @default("GENERAL")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mediaType])
+  @@index([section])
+  @@index([isActive])
+}

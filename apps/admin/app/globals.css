@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-midnight: #0f172a;
+  --bg-obsidian: #020617;
+  --gold-primary: #d4af37;
+  --gold-light: #f3e5ab;
+  --gold-dark: #997a15;
+  --ivory-white: #faf8f5;
+  --amber-accent: #f59e0b;
+}
+
+body {
+  color: var(--ivory-white);
+  background: var(--bg-obsidian);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  selection-background-color: var(--gold-primary);
+  selection-color: #000000;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+.font-editorial {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Custom Gold Ring Cursor */
+.custom-cursor-ring {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(212, 175, 55, 0.7);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease-out, width 0.2s ease, height 0.2s ease, border-color 0.2s ease;
+  z-index: 9999;
+}
+
+.custom-cursor-dot {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  background-color: var(--gold-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+}
+
+/* Garba Dandiya Crossed Line Micro-Interaction */
+.dandiya-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dandiya-btn::before,
+.dandiya-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 1.5px;
+  background: var(--gold-primary);
+  transition: width 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.dandiya-btn:hover::before {
+  width: 100%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.dandiya-btn:hover::after {
+  width: 100%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* Garba Radial Mask Chapter Reveal */
+.garba-radial-mask {
+  mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+}
+
+/* Ambient Gold Glow Utility */
+.gold-glow {
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+}
+
+.gold-glow-lg {
+  box-shadow: 0 0 50px rgba(212, 175, 55, 0.4);
+}
+
+/* Glassmorphism Drawer Backdrop */
+.drawer-backdrop {
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(16px);
+}
+
+/* Keyframe Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s infinite ease-in-out;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-100px) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+.animate-particle {
+  animation: particleFloat 6s infinite linear;
+}

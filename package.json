@@ -1,0 +1,29 @@
+{
+  "name": "safed-sheri",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Safed Sheri Specialized Operational Management System",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:admin": "npm run build --workspace=apps/admin",
+    "start:api": "npm run start:dev --workspace=apps/api",
+    "start:admin": "npm run dev --workspace=apps/admin",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:seed": "npx prisma db seed",
+    "test:api": "npm run test --workspace=apps/api",
+    "test:e2e": "npm run test:e2e --workspace=apps/api"
+  },
+  "devDependencies": {
+    "prisma": "^5.10.0",
+    "typescript": "^5.3.3"
+  },
+  "prisma": {
+    "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  }
+}
