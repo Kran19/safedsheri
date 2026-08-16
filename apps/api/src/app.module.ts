@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AttendeesModule } from './attendees/attendees.module';
@@ -14,10 +15,12 @@ import { AuditModule } from './audit/audit.module';
 import { MediaModule } from './media/media.module';
 import { GazebosModule } from './gazebos/gazebos.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
     PrismaModule,
+    CommonModule,
     AuthModule,
     UsersModule,
     AttendeesModule,
@@ -32,6 +35,7 @@ import { InquiriesModule } from './inquiries/inquiries.module';
     MediaModule,
     GazebosModule,
     InquiriesModule,
+    UploadsModule,
   ],
 })
 export class AppModule {}

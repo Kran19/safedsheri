@@ -1,16 +1,21 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentMethod, PaymentStatus, RegistrationStatus, CredentialStatus } from '@prisma/client';
+import { CredentialsService } from '../credentials/credentials.service';
+import { EncryptionService } from '../common/encryption.service';
+import { PaymentMethod, PaymentStatus, RegistrationStatus, PassType, Gender } from '@prisma/client';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private credentialsService: CredentialsService,
+    private encryptionService: EncryptionService,
+  ) {}
 
-  async findAll(locationId?: string, collectedById?: string) {
+  async findAll(status?: PaymentStatus) {
     const where: any = {};
-    if (locationId) where.paymentLocationId = locationId;
-    if (collectedById) where.collectedById = collectedById;
+    if (status) where.status = status;
 
     const payments = await this.prisma.payment.findMany({
       where,
@@ -20,7 +25,7 @@ export class PaymentsService {
             attendees: {
               include: {
                 attendee: {
-                  select: { id: true, fullName: true, phone: true, aadhaarMasked: true },
+                  select: { id: true, fullName: true, phone: true, gender: true, aadhaarMasked: true },
                 },
               },
             },
@@ -34,16 +39,65 @@ export class PaymentsService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take: 200,
     });
 
     return { success: true, data: payments };
   }
 
+  async getFinancialStats() {
+    const payments = await this.prisma.payment.findMany({
+      where: { status: PaymentStatus.CONFIRMED },
+      include: {
+        registration: {
+          select: { passType: true },
+        },
+      },
+    });
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    let totalVolume = 0;
+    let todayVolume = 0;
+    const methodBreakdown: Record<string, number> = {
+      ONLINE_GATEWAY: 0,
+      UPI_QR: 0,
+      CUSTOM_DIRECT: 0,
+    };
+    const passBreakdown: Record<string, number> = {
+      SINGLE: 0,
+      COUPLE: 0,
+      GAZEBO: 0,
+    };
+
+    for (const p of payments) {
+      const amt = Number(p.amount);
+      totalVolume += amt;
+      if (new Date(p.createdAt) >= todayStart) {
+        todayVolume += amt;
+      }
+      methodBreakdown[p.method] = (methodBreakdown[p.method] || 0) + amt;
+      const pt = p.registration?.passType || 'SINGLE';
+      passBreakdown[pt] = (passBreakdown[pt] || 0) + 1;
+    }
+
+    return {
+      success: true,
+      data: {
+        totalVolume,
+        todayVolume,
+        totalTransactions: payments.length,
+        methodBreakdown,
+        passBreakdown,
+      },
+    };
+  }
+
   async findOne(id: string) {
     const payment = await this.prisma.payment.findFirst({
       where: {
-        OR: [{ id }, { receiptNumber: id }],
+        OR: [{ id }, { receiptNumber: id }, { providerReference: id }],
       },
       include: {
         registration: {
@@ -65,143 +119,369 @@ export class PaymentsService {
     return { success: true, data: payment };
   }
 
-  async recordPayment(data: {
-    registrationId: string;
-    paymentLocationId: string;
-    collectedById: string;
-    amount?: number;
+  async getOrderDetails(paymentLinkId: string) {
+    const registration = await this.prisma.registration.findFirst({
+      where: { paymentLinkId },
+      include: {
+        pricingPhase: true,
+        attendees: {
+          include: {
+            attendee: {
+              select: {
+                fullName: true,
+                gender: true,
+                phone: true,
+                aadhaarMasked: true,
+              },
+            },
+          },
+        },
+        payments: {
+          where: { status: PaymentStatus.CONFIRMED },
+        },
+      },
+    });
+
+    if (!registration) {
+      throw new NotFoundException('Invalid or expired payment link');
+    }
+
+    const amountDue = Number(registration.amountDue);
+    const upiQrPayload = `upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${amountDue}&tn=SS26-${registration.registrationNumber}&tr=${registration.paymentLinkId}`;
+
+    return {
+      success: true,
+      data: {
+        registrationId: registration.id,
+        registrationNumber: registration.registrationNumber,
+        passType: registration.passType,
+        amountDue,
+        status: registration.status,
+        phaseName: registration.pricingPhase.phaseName,
+        attendees: registration.attendees.map((a) => ({
+          fullName: a.attendee.fullName,
+          gender: a.attendee.gender,
+          phone: a.attendee.phone,
+          aadhaarMasked: a.attendee.aadhaarMasked,
+        })),
+        isPaid: registration.payments.length > 0,
+        paymentLinkId: registration.paymentLinkId,
+        upiQrPayload,
+      },
+    };
+  }
+
+  async generateCounterUpiQr(registrationId: string) {
+    const reg = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        attendees: {
+          include: {
+            attendee: {
+              select: { fullName: true, phone: true, gender: true, aadhaarMasked: true },
+            },
+          },
+        },
+        pricingPhase: true,
+        payments: { where: { status: PaymentStatus.CONFIRMED } },
+      },
+    });
+
+    if (!reg) {
+      throw new NotFoundException('Registration not found');
+    }
+
+    let paymentLinkId = reg.paymentLinkId;
+    if (!paymentLinkId) {
+      paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;
+      await this.prisma.registration.update({
+        where: { id: reg.id },
+        data: { paymentLinkId, status: RegistrationStatus.PAYMENT_PENDING },
+      });
+    }
+
+    const amountDue = Number(reg.amountDue);
+    const upiQrPayload = `upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${amountDue}&tn=SS26-${reg.registrationNumber}&tr=${paymentLinkId}`;
+
+    return {
+      success: true,
+      data: {
+        registrationId: reg.id,
+        registrationNumber: reg.registrationNumber,
+        passType: reg.passType,
+        amountDue,
+        status: reg.status,
+        isPaid: reg.payments.length > 0,
+        paymentLinkId,
+        upiQrPayload,
+        attendees: reg.attendees.map((a) => a.attendee),
+      },
+      message: 'Dynamic UPI QR generated for online payment',
+    };
+  }
+
+  async sendWhatsAppPaymentLink(registrationId: string) {
+    const reg = await this.prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        attendees: { include: { attendee: true } },
+      },
+    });
+
+    if (!reg) throw new NotFoundException('Registration not found');
+    const primary = reg.attendees[0]?.attendee;
+    if (!primary) throw new BadRequestException('Primary attendee not found');
+
+    const paymentUrl = `http://localhost:3000/?pay=${reg.paymentLinkId}`;
+
+    return {
+      success: true,
+      message: `WhatsApp payment link dispatched to ${primary.phone} for ₹${Number(reg.amountDue).toLocaleString()}`,
+      data: {
+        phone: primary.phone,
+        attendeeName: primary.fullName,
+        paymentUrl,
+      },
+    };
+  }
+
+  async createManualDeskEntry(dto: {
+    passType: PassType;
+    customAmount: number;
+    paymentMethod: PaymentMethod;
+    attendees: Array<{
+      fullName: string;
+      phone: string;
+      email?: string;
+      gender: Gender;
+      aadhaarNumber: string;
+    }>;
     notes?: string;
+    staffUserId: string;
   }) {
-    // Execute Option A: Atomic Prisma Transaction with SELECT FOR UPDATE Row Lock for Idempotency
-    const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Lock Target Registration Row in PostgreSQL
-      const lockedRegs: any[] = await tx.$queryRaw`
-        SELECT id, "registrationNumber", status, "amountDue" FROM "Registration" WHERE id = ${data.registrationId} FOR UPDATE
-      `;
+    if (!dto.attendees || dto.attendees.length === 0) {
+      throw new BadRequestException('At least 1 attendee is required');
+    }
 
-      if (!lockedRegs || lockedRegs.length === 0) {
-        throw new NotFoundException('Registration not found');
-      }
+    if (dto.passType === PassType.SINGLE && dto.attendees[0].gender !== Gender.FEMALE) {
+      throw new BadRequestException('Single Pass is strictly reserved for female attendees');
+    }
 
-      const lockedReg = lockedRegs[0];
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Get Active Event & Phase
+      const event = await tx.event.findFirst({ where: { status: 'ACTIVE' } });
+      const phase = await tx.pricingPhase.findFirst({ where: { isActive: true } });
+      if (!event || !phase) throw new BadRequestException('Active event or pricing phase missing');
 
-      // IDEMPOTENCY CHECK: If payment is ALREADY CONFIRMED, return existing payment & credentials without duplicating!
-      if (lockedReg.status === RegistrationStatus.PAYMENT_CONFIRMED) {
-        const existingPayment = await tx.payment.findFirst({
-          where: { registrationId: data.registrationId },
-        });
-        const existingReg = await tx.registration.findUnique({
-          where: { id: data.registrationId },
-          include: { attendees: { include: { attendee: true } } },
-        });
-        const existingCreds = await tx.credential.findMany({
-          where: { registrationId: data.registrationId },
-        });
+      // 2. Generate Registration Number
+      const count = await tx.registration.count();
+      const registrationNumber = `SS-2026-${(count + 101).toString().padStart(6, '0')}`;
+      const paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;
 
-        return {
-          payment: existingPayment,
-          registration: existingReg,
-          credentials: existingCreds,
-          isAlreadyConfirmed: true,
-        };
-      }
-
-      if (lockedReg.status === RegistrationStatus.CANCELLED) {
-        throw new BadRequestException('Cannot record payment for a cancelled registration');
-      }
-
-      // Fetch registration attendees & details
-      const registration = await tx.registration.findUnique({
-        where: { id: data.registrationId },
-        include: {
-          attendees: { include: { attendee: true } },
-          credentials: true,
-        },
-      });
-
-      // Authoritative Backend Price (Client-supplied amount is NEVER trusted)
-      const authoritativeAmount = Number(registration.amountDue);
-
-      // 2. Generate Unique Receipt Number (RCP-2026-XXXXXX)
-      const pCount = await tx.payment.count();
-      const receiptSeq = (pCount + 101).toString().padStart(6, '0');
-      const receiptNumber = `RCP-2026-${receiptSeq}`;
-
-      // 3. Create Cash Payment Record
-      const payment = await tx.payment.create({
+      // 3. Create Registration in PASS_ISSUED state
+      const registration = await tx.registration.create({
         data: {
-          registrationId: data.registrationId,
-          paymentLocationId: data.paymentLocationId,
-          collectedById: data.collectedById,
-          amount: authoritativeAmount,
-          method: PaymentMethod.CASH,
-          status: PaymentStatus.CONFIRMED,
-          receiptNumber,
-          notes: data.notes,
+          registrationNumber,
+          eventId: event.id,
+          pricingPhaseId: phase.id,
+          passType: dto.passType,
+          amountDue: dto.customAmount,
+          status: RegistrationStatus.PASS_ISSUED,
+          paymentLinkId,
+          createdById: dto.staffUserId,
+          reviewedById: dto.staffUserId,
+          reviewedAt: new Date(),
+          reviewNotes: dto.notes || 'Manual Desk Entry by Staff',
         },
       });
 
-      // 4. Transactionally Update Registration Status to PAYMENT_CONFIRMED
-      const updatedRegistration = await tx.registration.update({
-        where: { id: data.registrationId },
-        data: { status: RegistrationStatus.PAYMENT_CONFIRMED },
-      });
+      // 4. Create Attendees and Link
+      for (let i = 0; i < dto.attendees.length; i++) {
+        const attDto = dto.attendees[i];
+        const cleanAadhaar = attDto.aadhaarNumber.replace(/\D/g, '');
+        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
+        const aadhaarMasked = `XXXX-XXXX-${cleanAadhaar.slice(-4)}`;
+        const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
 
-      // 5. Generate 1 Unique Active Credential per Individual Attendee (Single = 1, Couple = 2)
-      const issuedCredentials = [];
-      const cCount = await tx.credential.count();
+        let attendee = await tx.attendee.findUnique({
+          where: { aadhaarHmac },
+        });
 
-      for (let i = 0; i < registration.attendees.length; i++) {
-        const regAtt = registration.attendees[i];
-        const randomHex = crypto.randomBytes(16).toString('hex');
-        const secureToken = `ss_qr_${randomHex}`;
-        const credSeq = (cCount + i + 101).toString().padStart(6, '0');
-        const suffix = registration.attendees.length > 1 ? `-${String.fromCharCode(65 + i)}` : '';
-        const credentialNumber = `PASS-2026-${credSeq}${suffix}`;
+        if (!attendee) {
+          attendee = await tx.attendee.create({
+            data: {
+              fullName: attDto.fullName,
+              phone: attDto.phone,
+              email: attDto.email,
+              gender: attDto.gender,
+              aadhaarHmac,
+              aadhaarMasked,
+              aadhaarEncrypted,
+            },
+          });
+        }
 
-        const cred = await tx.credential.create({
+        await tx.registrationAttendee.create({
           data: {
-            credentialNumber,
-            registrationId: data.registrationId,
-            attendeeId: regAtt.attendeeId,
-            secureToken,
-            status: CredentialStatus.ACTIVE,
-            issuedAt: new Date(),
+            registrationId: registration.id,
+            attendeeId: attendee.id,
+            isPrimary: i === 0,
           },
         });
-        issuedCredentials.push(cred);
       }
 
-      // 6. Write Immutable Audit Log Entry
+      // 5. Create Confirmed Payment Record
+      const receiptSeq = (await tx.payment.count() + 1001).toString();
+      const receiptNumber = `RCP-2026-${receiptSeq}`;
+      const providerRef = `DESK-${dto.paymentMethod}-${Date.now().toString().slice(-6)}`;
+
+      const payment = await tx.payment.create({
+        data: {
+          registrationId: registration.id,
+          amount: dto.customAmount,
+          method: dto.paymentMethod,
+          status: PaymentStatus.CONFIRMED,
+          receiptNumber,
+          provider: 'BOX_OFFICE_DESK_OPERATIONS',
+          providerReference: providerRef,
+          paymentLinkId,
+          collectedById: dto.staffUserId,
+          notes: dto.notes || `Manual desk payment recorded via ${dto.paymentMethod}`,
+        },
+      });
+
+      // 6. Mint Instant Credentials
+      const credentials = await this.credentialsService.generateCredentialsForRegistration(registration.id, tx);
+
+      // 7. Audit Log
       await tx.auditLog.create({
         data: {
-          actorId: data.collectedById,
-          action: 'CASH_PAYMENT_CONFIRMED_AND_PASSES_ISSUED',
-          targetEntity: 'Payment',
-          targetId: payment.id,
+          actorId: dto.staffUserId,
+          action: 'MANUAL_DESK_ENTRY_CREATED',
+          targetEntity: 'Registration',
+          targetId: registration.id,
           payload: {
             receiptNumber,
-            amount: authoritativeAmount,
-            method: PaymentMethod.CASH,
-            issuedCredentialsCount: issuedCredentials.length,
+            amount: dto.customAmount,
+            method: dto.paymentMethod,
+            credentialsCount: credentials.length,
           },
         },
       });
 
       return {
-        payment,
-        registration: updatedRegistration,
-        credentials: issuedCredentials,
-        isAlreadyConfirmed: false,
+        success: true,
+        data: {
+          registration,
+          payment,
+          credentials,
+        },
+        message: `Manual entry created! Receipt #${receiptNumber} generated with ${credentials.length} active pass(es).`,
       };
     });
+  }
 
-    return {
-      success: true,
-      data: result,
-      message: result.isAlreadyConfirmed
-        ? `Payment was already confirmed previously for this registration.`
-        : `Cash payment confirmed! Issued ${result.credentials.length} active pass credential(s). Receipt: ${result.payment.receiptNumber}`,
-    };
+  async confirmGatewayPayment(data: {
+    paymentLinkId: string;
+    providerReference?: string;
+    notes?: string;
+    method?: PaymentMethod;
+  }) {
+    return await this.prisma.$transaction(async (tx) => {
+      const registration = await tx.registration.findFirst({
+        where: { paymentLinkId: data.paymentLinkId },
+        include: { credentials: true },
+      });
+
+      if (!registration) {
+        throw new NotFoundException(`Order with paymentLinkId "${data.paymentLinkId}" not found`);
+      }
+
+      const lockedRows: any[] = await tx.$queryRaw`
+        SELECT id, "registrationNumber", status, "amountDue", "createdById"
+        FROM "Registration"
+        WHERE id = ${registration.id}
+        FOR UPDATE
+      `;
+      const lockedReg = lockedRows[0];
+
+      if (
+        lockedReg.status !== RegistrationStatus.APPROVED &&
+        lockedReg.status !== RegistrationStatus.PAYMENT_PENDING
+      ) {
+        if (lockedReg.status === RegistrationStatus.PAYMENT_CONFIRMED || lockedReg.status === RegistrationStatus.PASS_ISSUED) {
+          const existingPayment = await tx.payment.findFirst({
+            where: { registrationId: lockedReg.id, status: PaymentStatus.CONFIRMED },
+          });
+          return {
+            success: true,
+            data: {
+              registration: lockedReg,
+              payment: existingPayment,
+              credentials: registration.credentials,
+            },
+            message: 'Payment was already confirmed',
+          };
+        }
+        throw new BadRequestException(
+          `Cannot process payment for application in ${lockedReg.status} status. Admin approval is required first.`,
+        );
+      }
+
+      const receiptSeq = (await tx.payment.count() + 1001).toString();
+      const receiptNumber = `RCP-2026-${receiptSeq}`;
+      const providerRef = data.providerReference || `PG-UPI-${Date.now().toString().slice(-6)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
+      const payment = await tx.payment.create({
+        data: {
+          registrationId: lockedReg.id,
+          amount: lockedReg.amountDue,
+          method: data.method || PaymentMethod.UPI_QR,
+          status: PaymentStatus.CONFIRMED,
+          receiptNumber,
+          provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
+          providerReference: providerRef,
+          paymentLinkId: data.paymentLinkId,
+          notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
+        },
+      });
+
+      await tx.registration.update({
+        where: { id: lockedReg.id },
+        data: { status: RegistrationStatus.PAYMENT_CONFIRMED },
+      });
+
+      const credentials = await this.credentialsService.generateCredentialsForRegistration(lockedReg.id, tx);
+
+      await tx.auditLog.create({
+        data: {
+          actorId: lockedReg.createdById,
+          action: 'ONLINE_PAYMENT_CONFIRMED_PASS_ISSUED',
+          targetEntity: 'Registration',
+          targetId: lockedReg.id,
+          payload: {
+            receiptNumber,
+            amount: Number(lockedReg.amountDue),
+            providerReference: providerRef,
+            method: data.method || PaymentMethod.UPI_QR,
+            credentialsCount: credentials.length,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          registrationId: lockedReg.id,
+          registrationNumber: lockedReg.registrationNumber,
+          receiptNumber,
+          providerReference: providerRef,
+          amount: Number(lockedReg.amountDue),
+          status: RegistrationStatus.PASS_ISSUED,
+          credentialsCount: credentials.length,
+        },
+        message: 'Online Payment Confirmed! Active Pass Credentials Issued.',
+      };
+    });
   }
 }

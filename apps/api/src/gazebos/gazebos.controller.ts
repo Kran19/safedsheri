@@ -7,7 +7,7 @@ import { Roles } from '../auth/roles.decorator';
 import { Role, GazeboInquiryStatus } from '@prisma/client';
 
 @ApiTags('Gazebos')
-@Controller('api/v1')
+@Controller('')
 export class GazebosController {
   constructor(private readonly gazebosService: GazebosService) {}
 

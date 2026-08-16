@@ -8,18 +8,25 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently -n \"API,ADMIN\" -c \"cyan,magenta\" \"npm run dev:api\" \"npm run dev:admin\"",
+    "dev:all": "npm run dev",
+    "dev:api": "npm run start:dev --workspace=apps/api",
+    "dev:admin": "npm run dev --workspace=apps/admin",
     "build": "npm run build --workspaces --if-present",
+    "build:types": "npm run build --workspace=packages/types",
     "build:api": "npm run build --workspace=apps/api",
     "build:admin": "npm run build --workspace=apps/admin",
     "start:api": "npm run start:dev --workspace=apps/api",
     "start:admin": "npm run dev --workspace=apps/admin",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
-    "prisma:seed": "npx prisma db seed",
-    "test:api": "npm run test --workspace=apps/api",
-    "test:e2e": "npm run test:e2e --workspace=apps/api"
+    "prisma:seed": "npx ts-node prisma/seed.ts",
+    "test:e2e": "npx ts-node scripts/e2e-verification.ts"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "playwright": "^1.62.1",
+    "pptxgenjs": "^4.0.1",
     "prisma": "^5.10.0",
     "typescript": "^5.3.3"
   },

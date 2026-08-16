@@ -10,7 +10,7 @@ import { Role } from '@prisma/client';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
-@Controller('api/v1/attendees')
+@Controller('attendees')
 export class AttendeesController {
   constructor(private readonly attendeesService: AttendeesService) {}
 

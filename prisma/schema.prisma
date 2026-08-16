@@ -14,18 +14,40 @@ enum Role {
   ATTENDEE
 }
 
+enum Gender {
+  FEMALE
+  MALE
+  OTHER
+}
+
+enum PassType {
+  SINGLE
+  COUPLE
+  GAZEBO
+}
+
 enum RegistrationStatus {
-  PENDING_PAYMENT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  PAYMENT_PENDING
   PAYMENT_CONFIRMED
+  PASS_ISSUED
+  REJECTED
   CANCELLED
+  PAYMENT_FAILED
 }
 
 enum PaymentMethod {
-  CASH
+  ONLINE_GATEWAY
+  UPI_QR
+  CUSTOM_DIRECT
 }
 
 enum PaymentStatus {
+  PENDING
   CONFIRMED
+  FAILED
   CANCELLED
   REFUNDED
 }
@@ -34,6 +56,7 @@ enum CredentialStatus {
   ACTIVE
   USED
   CANCELLED
+  EXPIRED
 }
 
 enum ScanResult {
@@ -43,6 +66,7 @@ enum ScanResult {
   INVALID_TOKEN
   WRONG_EVENT
   PAYMENT_NOT_CONFIRMED
+  EXPIRED
 }
 
 enum EntryType {
@@ -68,6 +92,7 @@ enum GazeboInquiryStatus {
   CONTACTED
   DISCUSSION
   HOLD
+  APPROVED
   CONFIRMED
   REJECTED
   CANCELLED
@@ -90,11 +115,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  registrationsCreated Registration[]  @relation("CreatedBy")
-  paymentsCollected    Payment[]       @relation("CollectedBy")
-  entriesVerified      Entry[]         @relation("VerifiedBy")
-  scanAttempts         ScanAttempt[]   @relation("ScannedBy")
-  auditLogs            AuditLog[]      @relation("Actor")
+  registrationsCreated  Registration[]  @relation("CreatedBy")
+  registrationsReviewed Registration[]  @relation("ReviewedBy")
+  paymentsCollected     Payment[]       @relation("CollectedBy")
+  entriesVerified       Entry[]         @relation("VerifiedBy")
+  scanAttempts          ScanAttempt[]   @relation("ScannedBy")
+  auditLogs             AuditLog[]      @relation("Actor")
 
   @@index([username])
   @@index([role])
@@ -102,7 +128,7 @@ model User {
 
 model Event {
   id        String   @id @default(uuid())
-  name      String   @default("Safed Sheri")
+  name      String   @default("Safed Sheri 2026")
   eventDate DateTime // Canonical: 2026-10-09T00:00:00.000Z
   status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
@@ -117,13 +143,22 @@ model Event {
 }
 
 model PricingPhase {
-  id          String   @id @default(uuid())
-  phaseName   String   @unique // EARLY_BIRD, PHASE_1, PHASE_2
-  singlePrice Decimal  @db.Decimal(10, 2)
-  couplePrice Decimal  @db.Decimal(10, 2)
-  isActive    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String    @id @default(uuid())
+  phaseName          String    @unique // EARLY_BIRD, REGULAR, FINAL
+  singlePrice        Decimal   @db.Decimal(10, 2)
+  couplePrice        Decimal   @db.Decimal(10, 2)
+  nextSinglePrice    Decimal?  @db.Decimal(10, 2)
+  nextCouplePrice    Decimal?  @db.Decimal(10, 2)
+  showSinglePrice    Boolean   @default(true)
+  showCouplePrice    Boolean   @default(true)
+  showGazeboPrice    Boolean   @default(false)
+  isCountdownActive  Boolean   @default(false)
+  countdownTarget    DateTime?
+  urgencyTagline     String?
+  hiddenPriceLabel   String?   @default("Price Revealed on Approval")
+  isActive           Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   registrations Registration[]
 
@@ -135,17 +170,38 @@ model Attendee {
   fullName         String
   phone            String
   email            String?
-  aadhaarMasked    String   // MANDATORY NOT NULL: XXXX XXXX 1234
-  aadhaarEncrypted String   // MANDATORY NOT NULL: AES-256-GCM encrypted hex
+  gender           Gender   @default(FEMALE)
+  aadhaarHmac      String   @unique // HMAC-SHA-256(server_secret, normalized_aadhaar)
+  aadhaarMasked    String   // MANDATORY: XXXX XXXX 1234
+  aadhaarEncrypted String   // MANDATORY: AES-256-GCM encrypted hex
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  document      AadhaarDocument?
   registrations RegistrationAttendee[]
   credentials   Credential[]
   entries       Entry[]
 
   @@index([phone])
   @@index([fullName])
+  @@index([gender])
+  @@index([aadhaarHmac])
+}
+
+model AadhaarDocument {
+  id               String   @id @default(uuid())
+  attendeeId       String   @unique
+  storageKey       String   // Private local disk path or secure storage key
+  originalFilename String
+  mimeType         String   // image/jpeg, image/png, image/webp, application/pdf
+  sizeBytes        Int
+  checksum         String   // SHA-256 hash of file content
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+
+  @@index([attendeeId])
 }
 
 model Registration {
@@ -153,8 +209,13 @@ model Registration {
   registrationNumber String             @unique // SS-2026-XXXXXX
   eventId            String
   pricingPhaseId     String
-  status             RegistrationStatus @default(PENDING_PAYMENT)
+  passType           PassType           @default(SINGLE)
+  status             RegistrationStatus @default(SUBMITTED)
   amountDue          Decimal            @db.Decimal(10, 2)
+  paymentLinkId      String?            @unique // Unique payment order reference
+  reviewNotes        String?
+  reviewedById       String?
+  reviewedAt         DateTime?
   createdById        String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -162,6 +223,7 @@ model Registration {
   event        Event                  @relation(fields: [eventId], references: [id])
   pricingPhase PricingPhase           @relation(fields: [pricingPhaseId], references: [id])
   createdBy    User                   @relation("CreatedBy", fields: [createdById], references: [id])
+  reviewedBy   User?                  @relation("ReviewedBy", fields: [reviewedById], references: [id])
   attendees    RegistrationAttendee[]
   payments     Payment[]
   credentials  Credential[]
@@ -169,19 +231,25 @@ model Registration {
 
   @@index([registrationNumber])
   @@index([status])
+  @@index([passType])
   @@index([eventId])
   @@index([pricingPhaseId])
+  @@index([paymentLinkId])
 }
 
 model RegistrationAttendee {
   registrationId String
   attendeeId     String
-  isPrimary      Boolean @default(false)
+  isPrimary      Boolean            @default(false)
+  status         RegistrationStatus @default(SUBMITTED)
+  reviewNotes    String?
+  reviewedAt     DateTime?
 
-  registration Registration @relation(fields: [registrationId], references: [id])
-  attendee     Attendee     @relation(fields: [attendeeId], references: [id])
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  attendee     Attendee     @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
 
   @@id([registrationId, attendeeId])
+  @@index([status])
 }
 
 model PaymentLocation {
@@ -200,58 +268,64 @@ model PaymentLocation {
 model Payment {
   id                String        @id @default(uuid())
   registrationId    String
-  paymentLocationId String
-  collectedById     String
+  paymentLocationId String?
+  collectedById     String?
   amount            Decimal       @db.Decimal(10, 2)
-  method            PaymentMethod @default(CASH)
-  status            PaymentStatus @default(CONFIRMED)
+  method            PaymentMethod @default(ONLINE_GATEWAY)
+  status            PaymentStatus @default(PENDING)
   receiptNumber     String        @unique // RCP-2026-XXXXXX
+  provider          String        @default("SAFED_SHERI_GATEWAY")
+  providerReference String?       @unique // PG-TXN-XXXXXX
+  paymentLinkId     String?
   notes             String?
+  failureReason     String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  registration    Registration    @relation(fields: [registrationId], references: [id])
-  paymentLocation PaymentLocation @relation(fields: [paymentLocationId], references: [id])
-  collectedBy     User            @relation("CollectedBy", fields: [collectedById], references: [id])
+  registration    Registration     @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  paymentLocation PaymentLocation? @relation(fields: [paymentLocationId], references: [id])
+  collectedBy     User?            @relation("CollectedBy", fields: [collectedById], references: [id])
 
   @@index([receiptNumber])
   @@index([registrationId])
-  @@index([paymentLocationId])
-  @@index([collectedById])
+  @@index([providerReference])
+  @@index([status])
   @@index([createdAt])
 }
 
 model Credential {
   id               String           @id @default(uuid())
   credentialNumber String           @unique // PASS-2026-XXXXXX
+  passCode         String           @unique // Visible human code: SS26-SINGLE-XXXX, SS26-COUPLE-XXXX
   registrationId   String
   attendeeId       String
-  secureToken      String           @unique // ss_qr_<32_bytes_hex>
+  secureToken      String           @unique // Private QR secret: ss_qr_<64_hex_chars>
   status           CredentialStatus @default(ACTIVE)
   issuedAt         DateTime         @default(now())
   usedAt           DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  registration Registration  @relation(fields: [registrationId], references: [id])
-  attendee     Attendee      @relation(fields: [attendeeId], references: [id])
+  registration Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  attendee     Attendee      @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
   scanAttempts ScanAttempt[]
   entries      Entry[]
 
   @@index([secureToken])
+  @@index([passCode])
   @@index([credentialNumber])
   @@index([status])
   @@index([attendeeId])
 }
 
 model ScanAttempt {
-  id               String     @id @default(uuid())
-  eventId          String
-  credentialId     String?
-  scannedById      String
-  result           ScanResult
-  rawTokenScanned  String
-  scannedAt        DateTime   @default(now())
+  id              String     @id @default(uuid())
+  eventId         String
+  credentialId    String?
+  scannedById     String
+  result          ScanResult
+  rawTokenScanned String
+  scannedAt       DateTime   @default(now())
 
   event      Event       @relation(fields: [eventId], references: [id])
   credential Credential? @relation(fields: [credentialId], references: [id])
@@ -368,20 +442,4 @@ model AuditLog {
   @@index([action])
   @@index([targetEntity])
   @@index([createdAt])
-}
-
-model Media {
-  id        String   @id @default(uuid())
-  title     String
-  mediaType String   @default("IMAGE") // IMAGE or VIDEO
-  filePath  String
-  section   String   @default("GENERAL")
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([mediaType])
-  @@index([section])
-  @@index([isActive])
 }

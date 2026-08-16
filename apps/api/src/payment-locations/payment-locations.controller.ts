@@ -9,7 +9,7 @@ import { Role } from '@prisma/client';
 @ApiTags('Payment Locations')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('api/v1/payment-locations')
+@Controller('payment-locations')
 export class PaymentLocationsController {
   constructor(private readonly locationsService: PaymentLocationsService) {}
 

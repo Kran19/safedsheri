@@ -4,11 +4,12 @@ import * as crypto from 'crypto';
 @Injectable()
 export class EncryptionService {
   private readonly secretKey: Buffer;
+  private readonly hmacSecret: string;
 
   constructor() {
     const keyString = process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef';
-    // Ensure 32 bytes for aes-256-gcm
     this.secretKey = Buffer.from(keyString.padEnd(32, '0').slice(0, 32));
+    this.hmacSecret = process.env.AADHAAR_HMAC_SECRET || 'safed_sheri_2026_aadhaar_hmac_secret_key_prod';
   }
 
   encrypt(text: string): string {
@@ -38,6 +39,15 @@ export class EncryptionService {
     } catch {
       return '[Decryption Error]';
     }
+  }
+
+  computeAadhaarHmac(aadhaar: string): string {
+    if (!aadhaar) return '';
+    const normalized = aadhaar.replace(/\s+/g, '').trim();
+    return crypto
+      .createHmac('sha256', this.hmacSecret)
+      .update(normalized)
+      .digest('hex');
   }
 
   maskAadhaar(aadhaar: string): string {

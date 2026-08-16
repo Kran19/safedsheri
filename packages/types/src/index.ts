@@ -8,18 +8,40 @@ export enum UserRole {
   SECURITY = 'ENTRY_VERIFICATION',
 }
 
+export enum Gender {
+  FEMALE = 'FEMALE',
+  MALE = 'MALE',
+  OTHER = 'OTHER',
+}
+
+export enum PassType {
+  SINGLE = 'SINGLE',
+  COUPLE = 'COUPLE',
+  GAZEBO = 'GAZEBO',
+}
+
 export enum RegistrationStatus {
-  PENDING_PAYMENT = 'PENDING_PAYMENT',
+  SUBMITTED = 'SUBMITTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  APPROVED = 'APPROVED',
+  PAYMENT_PENDING = 'PAYMENT_PENDING',
   PAYMENT_CONFIRMED = 'PAYMENT_CONFIRMED',
+  PASS_ISSUED = 'PASS_ISSUED',
+  REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
 }
 
 export enum PaymentMethod {
-  CASH = 'CASH',
+  ONLINE_GATEWAY = 'ONLINE_GATEWAY',
+  UPI_QR = 'UPI_QR',
+  CUSTOM_DIRECT = 'CUSTOM_DIRECT',
 }
 
 export enum PaymentStatus {
+  PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
+  FAILED = 'FAILED',
   CANCELLED = 'CANCELLED',
   REFUNDED = 'REFUNDED',
 }
@@ -28,6 +50,7 @@ export enum CredentialStatus {
   ACTIVE = 'ACTIVE',
   USED = 'USED',
   CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
 }
 
 export enum ScanResult {
@@ -37,6 +60,7 @@ export enum ScanResult {
   INVALID_TOKEN = 'INVALID_TOKEN',
   WRONG_EVENT = 'WRONG_EVENT',
   PAYMENT_NOT_CONFIRMED = 'PAYMENT_NOT_CONFIRMED',
+  EXPIRED = 'EXPIRED',
 }
 
 export enum EntryType {
@@ -62,6 +86,7 @@ export enum GazeboInquiryStatus {
   CONTACTED = 'CONTACTED',
   DISCUSSION = 'DISCUSSION',
   HOLD = 'HOLD',
+  APPROVED = 'APPROVED',
   CONFIRMED = 'CONFIRMED',
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
@@ -91,6 +116,21 @@ export interface ScanResultResponse {
   status: 'VALID' | 'NOT_VALID';
   reason?: ScanResult;
   attendeeName?: string;
+  passType?: PassType;
+  passCode?: string;
+  attendeeCount?: number;
   registrationNumber?: string;
   scannedAt: string;
+}
+
+export interface AttendeeInput {
+  fullName: string;
+  phone: string;
+  email?: string;
+  gender: Gender;
+  aadhaarNumber: string;
+  documentKey: string;
+  originalFilename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
 }

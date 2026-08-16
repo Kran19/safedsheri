@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+const API_BASE = '/api/v1';
 
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -8,6 +8,13 @@ export function getAuthToken(): string | null {
 export function setAuthToken(token: string) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('safedsheri_jwt', token);
+  }
+}
+
+export function setStoredAuth(token: string, user: any) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('safedsheri_jwt', token);
+    localStorage.setItem('safedsheri_user', JSON.stringify(user));
   }
 }
 
@@ -43,6 +50,15 @@ export async function apiRequest<T = any>(
       ...options,
       headers,
     });
+    
+    if (res.status === 401) {
+      clearAuthToken();
+      return {
+        success: false,
+        error: { code: 'UNAUTHORIZED', statusCode: 401, message: 'Session expired or unauthenticated. Please log in.' },
+      };
+    }
+
     const json = await res.json();
     return json;
   } catch (err: any) {

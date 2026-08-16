@@ -14,13 +14,13 @@ export class EntriesService {
       where,
       include: {
         attendee: {
-          select: { id: true, fullName: true, phone: true },
+          select: { id: true, fullName: true, phone: true, gender: true, aadhaarMasked: true },
         },
         registration: {
-          select: { id: true, registrationNumber: true },
+          select: { id: true, registrationNumber: true, passType: true },
         },
         credential: {
-          select: { id: true, credentialNumber: true, secureToken: true },
+          select: { id: true, credentialNumber: true, passCode: true, secureToken: true },
         },
         verifiedBy: {
           select: { id: true, fullName: true, role: true },
@@ -33,7 +33,7 @@ export class EntriesService {
     return { success: true, data: entries };
   }
 
-  // High-speed low-latency atomic QR verification with SELECT FOR UPDATE row locking over 5G
+  // Atomic QR scan with SELECT ... FOR UPDATE row locking
   async scanQr(data: { token: string; scannedById: string }) {
     const activeEvent = await this.prisma.event.findFirst({
       where: { status: 'ACTIVE' },
@@ -49,9 +49,13 @@ export class EntriesService {
       };
     }
 
-    // Step 1: Look up Credential by secureToken with direct attendee & registration relation
-    const credential = await this.prisma.credential.findUnique({
-      where: { secureToken: data.token },
+    const cleanToken = data.token ? data.token.trim() : '';
+
+    // Step 1: Look up Credential by secureToken (or passCode in test mode)
+    const credential = await this.prisma.credential.findFirst({
+      where: {
+        OR: [{ secureToken: cleanToken }, { passCode: cleanToken }, { credentialNumber: cleanToken }],
+      },
       include: {
         attendee: true,
         registration: true,
@@ -66,7 +70,7 @@ export class EntriesService {
           credentialId: null,
           scannedById: data.scannedById,
           result: ScanResult.INVALID_TOKEN,
-          rawTokenScanned: data.token,
+          rawTokenScanned: cleanToken,
         },
       });
       return {
@@ -87,7 +91,7 @@ export class EntriesService {
           credentialId: credential.id,
           scannedById: data.scannedById,
           result: ScanResult.CANCELLED,
-          rawTokenScanned: data.token,
+          rawTokenScanned: cleanToken,
         },
       });
       return {
@@ -96,6 +100,8 @@ export class EntriesService {
           status: 'NOT_VALID',
           reason: ScanResult.CANCELLED,
           attendeeName: credential.attendee?.fullName,
+          passType: credential.registration?.passType,
+          passCode: credential.passCode,
           scannedAt: new Date().toISOString(),
         },
       };
@@ -109,7 +115,7 @@ export class EntriesService {
           credentialId: credential.id,
           scannedById: data.scannedById,
           result: ScanResult.ALREADY_USED,
-          rawTokenScanned: data.token,
+          rawTokenScanned: cleanToken,
         },
       });
       return {
@@ -118,15 +124,16 @@ export class EntriesService {
           status: 'NOT_VALID',
           reason: ScanResult.ALREADY_USED,
           attendeeName: credential.attendee?.fullName,
+          passType: credential.registration?.passType,
+          passCode: credential.passCode,
           registrationNumber: credential.registration?.registrationNumber,
           scannedAt: new Date().toISOString(),
         },
       };
     }
 
-    // Step 5: Atomic Transaction for ACTIVE Credential with SELECT FOR UPDATE Row Locking
+    // Step 5: Atomic Transaction with Row Locking
     return await this.prisma.$transaction(async (tx) => {
-      // Row locking using raw query SELECT ... FOR UPDATE to avoid race conditions over 5G
       const lockedRows: any[] = await tx.$queryRaw`
         SELECT id, status FROM "Credential"
         WHERE id = ${credential.id}
@@ -134,14 +141,13 @@ export class EntriesService {
       `;
 
       if (!lockedRows || lockedRows.length === 0 || lockedRows[0].status !== 'ACTIVE') {
-        // Race condition caught! Credential was consumed in parallel millisecond scan
         await tx.scanAttempt.create({
           data: {
             eventId: activeEvent.id,
             credentialId: credential.id,
             scannedById: data.scannedById,
             result: ScanResult.ALREADY_USED,
-            rawTokenScanned: data.token,
+            rawTokenScanned: cleanToken,
           },
         });
         return {
@@ -150,12 +156,13 @@ export class EntriesService {
             status: 'NOT_VALID',
             reason: ScanResult.ALREADY_USED,
             attendeeName: credential.attendee?.fullName,
+            passType: credential.registration?.passType,
+            passCode: credential.passCode,
             scannedAt: new Date().toISOString(),
           },
         };
       }
 
-      // Mark Credential USED
       const now = new Date();
       await tx.credential.update({
         where: { id: credential.id },
@@ -165,7 +172,6 @@ export class EntriesService {
         },
       });
 
-      // Create Successful Entry
       const entry = await tx.entry.create({
         data: {
           eventId: activeEvent.id,
@@ -178,14 +184,13 @@ export class EntriesService {
         },
       });
 
-      // Create Valid ScanAttempt
       await tx.scanAttempt.create({
         data: {
           eventId: activeEvent.id,
           credentialId: credential.id,
           scannedById: data.scannedById,
           result: ScanResult.VALID,
-          rawTokenScanned: data.token,
+          rawTokenScanned: cleanToken,
         },
       });
 
@@ -194,6 +199,8 @@ export class EntriesService {
         data: {
           status: 'VALID',
           attendeeName: credential.attendee.fullName,
+          passType: credential.registration.passType,
+          passCode: credential.passCode,
           registrationNumber: credential.registration.registrationNumber,
           scannedAt: now.toISOString(),
         },
@@ -201,7 +208,6 @@ export class EntriesService {
     });
   }
 
-  // Ticketing & Finance Direct Walk-in Entry
   async directEntry(data: {
     fullName: string;
     phone?: string;

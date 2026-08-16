@@ -7,7 +7,7 @@ import { Roles } from '../auth/roles.decorator';
 import { Role, InquiryStatus } from '@prisma/client';
 
 @ApiTags('Sponsor & Stall Inquiries')
-@Controller('api/v1')
+@Controller('')
 export class InquiriesController {
   constructor(private readonly inquiriesService: InquiriesService) {}
 

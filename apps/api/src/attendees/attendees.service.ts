@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/encryption.service';
+import { Gender } from '@prisma/client';
 
 @Injectable()
 export class AttendeesService {
@@ -15,22 +16,37 @@ export class AttendeesService {
           OR: [
             { fullName: { contains: search, mode: 'insensitive' as const } },
             { phone: { contains: search } },
+            { aadhaarMasked: { contains: search } },
           ],
         }
       : {};
 
     const attendees = await this.prisma.attendee.findMany({
       where,
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        email: true,
-        aadhaarMasked: true,
-        createdAt: true,
+      include: {
+        document: true,
+        credentials: {
+          select: {
+            id: true,
+            passCode: true,
+            status: true,
+          },
+        },
+        registrations: {
+          include: {
+            registration: {
+              select: {
+                id: true,
+                registrationNumber: true,
+                passType: true,
+                status: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take: 150,
     });
 
     return { success: true, data: attendees };
@@ -39,25 +55,12 @@ export class AttendeesService {
   async findOne(id: string) {
     const attendee = await this.prisma.attendee.findUnique({
       where: { id },
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        email: true,
-        aadhaarMasked: true,
-        createdAt: true,
+      include: {
+        document: true,
+        credentials: true,
         registrations: {
-          select: {
-            isPrimary: true,
-            registration: {
-              select: {
-                id: true,
-                registrationNumber: true,
-                status: true,
-                amountDue: true,
-                createdAt: true,
-              },
-            },
+          include: {
+            registration: true,
           },
         },
       },
@@ -68,28 +71,32 @@ export class AttendeesService {
     return { success: true, data: attendee };
   }
 
-  async create(data: { fullName: string; phone: string; email?: string; aadhaarNumber: string }) {
+  async create(data: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    gender?: Gender;
+    aadhaarNumber: string;
+  }) {
     if (!data.aadhaarNumber || data.aadhaarNumber.trim().length === 0) {
       throw new BadRequestException('Aadhaar number is mandatory');
     }
     const aadhaarMasked = this.encryptionService.maskAadhaar(data.aadhaarNumber);
     const aadhaarEncrypted = this.encryptionService.encrypt(data.aadhaarNumber);
+    const aadhaarHmac = this.encryptionService.computeAadhaarHmac(data.aadhaarNumber);
 
     const attendee = await this.prisma.attendee.create({
       data: {
         fullName: data.fullName,
         phone: data.phone,
         email: data.email,
+        gender: data.gender || Gender.FEMALE,
+        aadhaarHmac,
         aadhaarMasked,
         aadhaarEncrypted,
       },
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        email: true,
-        aadhaarMasked: true,
-        createdAt: true,
+      include: {
+        document: true,
       },
     });
 

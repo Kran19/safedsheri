@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 @ApiTags('Content & Media')
-@Controller('api/v1/content')
+@Controller('content')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 

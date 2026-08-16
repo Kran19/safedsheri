@@ -9,7 +9,7 @@ import { Role, EntryType } from '@prisma/client';
 @ApiTags('Entries')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('api/v1/entries')
+@Controller('entries')
 export class EntriesController {
   constructor(private readonly entriesService: EntriesService) {}
 

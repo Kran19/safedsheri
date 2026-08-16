@@ -8,9 +8,12 @@ async function bootstrap() {
   const logger = new Logger('SafedSheriBootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // Set Global Prefix to /api/v1
+  app.setGlobalPrefix('api/v1');
+
   // Enable CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -35,10 +38,9 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 Safed Sheri API running on: http://localhost:${port}/api/v1`);
-  logger.log(`📚 Swagger Documentation available at: http://localhost:${port}/api/docs`);
+  logger.log(`📚 Swagger Docs available at: http://localhost:${port}/api/docs`);
 }
-
 bootstrap();

@@ -10,7 +10,7 @@ import { Role, ScanResult } from '@prisma/client';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.SUPER_ADMIN, Role.ENTRY_VERIFICATION)
-@Controller('api/v1/scan-attempts')
+@Controller('scan-attempts')
 export class ScanAttemptsController {
   constructor(private readonly scanAttemptsService: ScanAttemptsService) {}
 
