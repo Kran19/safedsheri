@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import safedSheriLogo from '../../public/images/safed-sheri-logo.png';
 
 interface LogoSlotProps {
   className?: string;
@@ -32,7 +33,7 @@ export default function LogoSlot({
       <div className={`relative ${sizeClasses[size]} flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-br from-[#FFF9EE] to-[#F5EFEB] p-1 shadow-md border border-[#EAD9B8]`}>
         {!hasError ? (
           <Image
-            src="/images/safed-sheri-logo.png"
+            src={safedSheriLogo}
             alt="सफ़ेद Sheri"
             fill
             sizes="(max-width: 768px) 100vw, 150px"
