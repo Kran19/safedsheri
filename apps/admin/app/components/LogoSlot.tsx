@@ -31,7 +31,7 @@ export default function LogoSlot({
       <div className={`relative ${sizeClasses[size]} flex-shrink-0 flex items-center justify-center rounded-full bg-gradient-to-br from-[#FFF9EE] to-[#F5EFEB] p-1 shadow-md border border-[#EAD9B8]`}>
         {!hasError ? (
           <img
-            src="/images/safed-sheri-logo.png"
+            src="/safedsheri/images/safed-sheri-logo.png"
             alt="सफ़ेद Sheri"
             className="w-full h-full object-contain rounded-full filter drop-shadow-[0_2px_6px_rgba(217,148,39,0.25)] transition-transform duration-300 hover:scale-105"
             onError={() => setHasError(true)}
