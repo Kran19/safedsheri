@@ -108,8 +108,19 @@ export default function SuperAdminDashboard() {
     getMaintenanceMode().then(setIsMaintenanceMode);
   }, []);
 
-  async function loadOverviewData() {
-    setLoading(true);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+        loadOverviewData(true);
+        if (activeTab !== 'overview') {
+          loadTabContent(activeTab, true);
+        }
+      }, 5000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, activeTab]);
+
+  async function loadOverviewData(silent = false) {
+    if (!silent) setLoading(true);
     setError('');
     const resOverview = await apiRequest('/reports/overview');
     if (resOverview.success) {
@@ -126,13 +137,15 @@ export default function SuperAdminDashboard() {
     const resGazebos = await apiRequest('/gazebos');
     if (resGazebos.success) setGazebos(resGazebos.data || []);
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 
-  async function loadTabContent(tab: string) {
+  async function loadTabContent(tab: string, silent = false) {
     setActiveTab(tab as any);
-    setMessage('');
-    setError('');
+    if (!silent) {
+      setMessage('');
+      setError('');
+    }
 
     if (tab === 'applications') {
       const res = await apiRequest('/registrations');

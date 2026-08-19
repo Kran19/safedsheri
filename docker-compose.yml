@@ -28,7 +28,7 @@ services:
     container_name: safedsheri-api
     restart: always
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/safedsheri?schema=public}
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/safedsheri?schema=public
       PORT: ${PORT:-4000}
       NODE_ENV: ${NODE_ENV:-production}
       JWT_SECRET: ${JWT_SECRET}

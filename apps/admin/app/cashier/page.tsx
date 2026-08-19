@@ -64,8 +64,16 @@ export default function CashierDeskTerminal() {
     loadFinancialData();
   }, []);
 
-  async function loadFinancialData() {
-    setLoadingLedger(true);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+        loadFinancialData(true);
+      }, 5000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+  async function loadFinancialData(silent = false) {
+    if (!silent) setLoadingLedger(true);
     setError('');
     const resStats = await apiRequest('/payments/stats');
     if (resStats.success) {
@@ -80,7 +88,7 @@ export default function CashierDeskTerminal() {
     if (resTx.success) {
       setTransactions(resTx.data || []);
     }
-    setLoadingLedger(false);
+    if (!silent) setLoadingLedger(false);
   }
 
   async function handleSearchReg(e?: React.FormEvent) {

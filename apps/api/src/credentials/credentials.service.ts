@@ -129,12 +129,34 @@ export class CredentialsService {
     const last10 = cleanDigits.slice(-10);
     attendeeWhereOr.push({ phone: { contains: last10 } });
 
-    const attendees = await this.prisma.attendee.findMany({
+    const initialAttendees = await this.prisma.attendee.findMany({
       where: {
         OR: attendeeWhereOr,
       },
+      include: { registrations: true },
+    });
+
+    if (!initialAttendees || initialAttendees.length === 0) {
+      return {
+        success: true,
+        data: [],
+        message: `No booking records found for "${query}".`,
+      };
+    }
+
+    const registrationIds = Array.from(
+      new Set(initialAttendees.flatMap((att) => att.registrations.map((r) => r.registrationId)))
+    );
+
+    const attendees = await this.prisma.attendee.findMany({
+      where: {
+        registrations: {
+          some: { registrationId: { in: registrationIds } }
+        }
+      },
       include: {
         registrations: {
+          where: { registrationId: { in: registrationIds } },
           include: {
             registration: {
               include: {
@@ -147,6 +169,7 @@ export class CredentialsService {
           orderBy: { registration: { createdAt: 'desc' } },
         },
         credentials: {
+          where: { registrationId: { in: registrationIds } },
           include: {
             registration: true,
           },
@@ -155,14 +178,6 @@ export class CredentialsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
-    if (!attendees || attendees.length === 0) {
-      return {
-        success: true,
-        data: [],
-        message: `No booking records found for "${query}".`,
-      };
-    }
 
     const passes = [];
 

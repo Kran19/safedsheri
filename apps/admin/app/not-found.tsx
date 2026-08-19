@@ -37,12 +37,12 @@ export default function NotFound() {
           The page you are looking for has been moved or doesn't exist yet.
         </p>
 
-        <Link 
-          href="/" 
+        <a 
+          href="/safedsheri" 
           className="px-8 py-3 bg-transparent border-2 border-[#D99427] text-[#D99427] rounded-full uppercase tracking-widest text-xs font-semibold hover:bg-[#D99427] hover:text-[#0F0F0F] transition-all duration-300 shadow-[0_0_15px_rgba(217,148,39,0.2)] hover:shadow-[0_0_30px_rgba(217,148,39,0.4)]"
         >
           Return to Arena
-        </Link>
+        </a>
       </div>
 
       <style jsx global>{`

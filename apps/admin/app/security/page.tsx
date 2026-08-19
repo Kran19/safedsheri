@@ -4,12 +4,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest, getAuthToken, getStoredUser } from '../../lib/api';
 import { CheckCircle2, XCircle, RefreshCw, Camera, Keyboard, Lock, Shield } from 'lucide-react';
+import { useRef } from 'react';
 import LogoSlot from '../components/LogoSlot';
 
 export default function SecurityScannerPage() {
   const router = useRouter();
   const [manualToken, setManualToken] = useState('');
   const [scanning, setScanning] = useState(false);
+  const scanningRef = useRef(false);
+  useEffect(() => {
+    scanningRef.current = scanning;
+  }, [scanning]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [scanResult, setScanResult] = useState<{
     status: 'VALID' | 'NOT_VALID' | null;
@@ -31,6 +36,41 @@ export default function SecurityScannerPage() {
     }
     setIsAuthenticated(true);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated !== true) return;
+
+    let scanner: any;
+
+    const initScanner = async () => {
+      // Dynamic import to prevent Next.js SSR window errors
+      const { Html5QrcodeScanner } = await import('html5-qrcode');
+
+      scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false
+      );
+
+      const onScanSuccess = (decodedText: string) => {
+        if (!scanningRef.current) {
+          processScan(decodedText);
+        }
+      };
+
+      scanner.render(onScanSuccess, (err: any) => {
+        // ignore errors like 'QR code not found'
+      });
+    };
+
+    initScanner();
+
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
+    };
+  }, [isAuthenticated]);
 
   async function processScan(token: string) {
     if (!token || scanning) return;
@@ -165,13 +205,7 @@ export default function SecurityScannerPage() {
 
       {/* SCANNER CAMERA SIMULATOR / INPUT */}
       <div className="p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg space-y-5">
-        <div className="h-56 rounded-2xl bg-[#FFFDF9] border-2 border-dashed border-[#EAD9B8] flex flex-col items-center justify-center space-y-3 relative overflow-hidden">
-          <div className="absolute inset-x-8 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-[#D99427] to-transparent animate-pulse" />
-          <Camera className="w-10 h-10 text-[#D99427]" />
-          <span className="text-xs text-[#8C6019] font-mono font-bold uppercase tracking-wider">
-            Ready for Camera Optical Scan
-          </span>
-        </div>
+        <div id="qr-reader" className="w-full overflow-hidden rounded-2xl border-2 border-dashed border-[#EAD9B8] bg-[#FFFDF9]"></div>
 
         <form onSubmit={handleManualSubmit} className="space-y-3">
           <label className="block text-xs font-bold text-[#6E5336]">

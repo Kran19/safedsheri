@@ -23,7 +23,7 @@ export function AadhaarDocumentPreview({ document, token }: AadhaarDocumentPrevi
     return null;
   }
 
-  const apiBase = '/api/v1';
+  const apiBase = '/safedsheri/api/v1';
   const docUrl = `${apiBase}/uploads/document/${document.id}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   const isPdf = document.mimeType?.includes('pdf') || document.originalFilename?.toLowerCase().endsWith('.pdf');
 

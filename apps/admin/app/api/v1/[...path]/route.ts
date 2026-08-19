@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_TARGET = process.env.INTERNAL_API_URL || 'http://api:4000/api/v1';
+const rawApiTarget = process.env.INTERNAL_API_URL || 'http://127.0.0.1:4000/api/v1';
+const API_TARGET = rawApiTarget.replace('localhost', '127.0.0.1');
 
 async function handleProxy(req: NextRequest, { params }: { params: { path: string[] } }) {
   const subPath = params.path ? params.path.join('/') : '';
   const search = req.nextUrl.search || '';
   const targetUrl = `${API_TARGET}/${subPath}${search}`;
+  console.log('PROXYING TO:', targetUrl, 'using API_TARGET:', API_TARGET);
 
   const headers = new Headers(req.headers);
   headers.delete('host');
@@ -19,16 +21,9 @@ async function handleProxy(req: NextRequest, { params }: { params: { path: strin
     };
 
     if (req.method !== 'GET' && req.method !== 'HEAD') {
-      const contentType = req.headers.get('content-type') || '';
-      if (contentType.includes('multipart/form-data')) {
-        const formData = await req.formData();
-        fetchOptions.body = formData;
-        headers.delete('content-type'); // Allow fetch to set boundary automatically
-      } else {
-        const bodyBuf = await req.arrayBuffer();
-        if (bodyBuf.byteLength > 0) {
-          fetchOptions.body = bodyBuf;
-        }
+      const bodyBuf = await req.arrayBuffer();
+      if (bodyBuf.byteLength > 0) {
+        fetchOptions.body = bodyBuf;
       }
     }
 

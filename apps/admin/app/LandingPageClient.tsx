@@ -171,6 +171,8 @@ export default function SafedSheriLandingPage() {
   const [wizardStep, setWizardStep] = useState<'QUANTITY' | 'ATTENDEE' | 'SUMMARY'>('QUANTITY');
   const [currentAttendeeIndex, setCurrentAttendeeIndex] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
   const [showDressCode, setShowDressCode] = useState(true);
 
   // Auto-Save Draft to LocalStorage
@@ -426,6 +428,9 @@ export default function SafedSheriLandingPage() {
     setIsBookingOpen(true);
     setBookingError(null);
     setSubmittedApplication(null);
+    setTermsAccepted(false);
+    setShowTerms(false);
+    setTermsError(false);
   };
 
   const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1423,33 +1428,46 @@ export default function SafedSheriLandingPage() {
                       </div>
 
                       {/* Terms and Conditions */}
-                      <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 text-left shadow-sm">
-                        <label className="flex items-start space-x-4 cursor-pointer">
+                      <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 text-left shadow-sm animate-fade-in">
+                        <div className="flex items-start space-x-4">
                           <div className="flex-shrink-0 mt-0.5">
                             <input
                               type="checkbox"
+                              id="terms-checkbox-single"
                               checked={termsAccepted}
                               onChange={(e) => setTermsAccepted(e.target.checked)}
                               className="w-5 h-5 text-[#D99427] bg-white border-[#D99427] rounded focus:ring-[#D99427] cursor-pointer accent-[#D99427]"
                             />
                           </div>
-                          <div className="text-xs text-[#6E5336] space-y-2">
-                            <p className="font-bold text-[#2D1F0E] text-sm mb-2">I agree to the Safed Sheri 2026 Terms & Conditions:</p>
-                            <ul className="list-disc pl-4 space-y-1.5 opacity-80">
-                              <li><strong>Compulsory Dress Code:</strong> 75% White Rule: At least 75% of your visible attire must be pure white. Entry is strictly conditional on adherence.</li>
-                              <li>Placeholder 2: [Client will provide text]</li>
-                              <li>Placeholder 3: [Client will provide text]</li>
-                              <li>Placeholder 4: [Client will provide text]</li>
-                            </ul>
+                          <div className="text-xs text-[#6E5336] w-full">
+                            <label htmlFor="terms-checkbox-single" className="font-bold text-[#2D1F0E] text-sm cursor-pointer block">I agree to the Safed Sheri 2026 Terms &amp; Conditions</label>
+                            <button type="button" onClick={() => setShowTerms(!showTerms)} className="text-[#D99427] font-bold mt-1 hover:underline outline-none">
+                              {showTerms ? 'Hide Details' : 'Read More'}
+                            </button>
+
+                            {showTerms && (
+                              <ul className="list-disc pl-4 mt-3 space-y-2 opacity-90 leading-snug animate-fade-in">
+                                <li><strong>MANDATORY 75% WHITE RULE:</strong> Entry is strictly conditional on adherence. You will be denied entry without refund if this is violated.</li>
+                                <li><strong>NO REFUNDS:</strong> Passes are strictly non-refundable and non-transferable under any circumstances.</li>
+                                <li><strong>RIGHT OF ADMISSION:</strong> Management reserves the right to refuse admission or remove anyone failing to comply with rules or causing a disturbance.</li>
+                                <li><strong>VALID ID:</strong> Original Government ID matching the pass name is mandatory at the gate. No digital copies accepted.</li>
+                              </ul>
+                            )}
+                            {termsError && (
+                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠ You must accept the Terms & Conditions to continue.</p>
+                            )}
                           </div>
-                        </label>
+                        </div>
                       </div>
 
                       <button
                         type="button"
-                        onClick={handleNextStep}
-                        disabled={!termsAccepted}
-                        className="w-full py-4 mt-6 rounded-2xl bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center justify-center space-x-2 transition disabled:opacity-50"
+                        onClick={() => {
+                          if (!termsAccepted) { setTermsError(true); return; }
+                          setTermsError(false);
+                          handleNextStep();
+                        }}
+                        className="w-full py-4 mt-6 rounded-2xl bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center justify-center space-x-2 transition"
                       >
                         <span>Continue to Guest Details</span>
                         <ChevronRight className="w-4 h-4" />
@@ -1623,6 +1641,41 @@ export default function SafedSheriLandingPage() {
                       )}
                     </div>
 
+                    {/* Terms and Conditions — shown on Couple pass first guest screen */}
+                    {selectedPass === 'COUPLE' && currentAttendeeIndex === 0 && (
+                      <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 text-left shadow-sm animate-fade-in">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <input
+                              type="checkbox"
+                              id="terms-checkbox-couple"
+                              checked={termsAccepted}
+                              onChange={(e) => setTermsAccepted(e.target.checked)}
+                              className="w-5 h-5 text-[#D99427] bg-white border-[#D99427] rounded focus:ring-[#D99427] cursor-pointer accent-[#D99427]"
+                            />
+                          </div>
+                          <div className="text-xs text-[#6E5336] w-full">
+                            <label htmlFor="terms-checkbox-couple" className="font-bold text-[#2D1F0E] text-sm cursor-pointer block">I agree to the Safed Sheri 2026 Terms &amp; Conditions</label>
+                            <button type="button" onClick={() => setShowTerms(!showTerms)} className="text-[#D99427] font-bold mt-1 hover:underline outline-none">
+                              {showTerms ? 'Hide Details' : 'Read More'}
+                            </button>
+
+                            {showTerms && (
+                              <ul className="list-disc pl-4 mt-3 space-y-2 opacity-90 leading-snug animate-fade-in">
+                                <li><strong>MANDATORY 75% WHITE RULE:</strong> Entry is strictly conditional on adherence. You will be denied entry without refund if this is violated.</li>
+                                <li><strong>NO REFUNDS:</strong> Passes are strictly non-refundable and non-transferable under any circumstances.</li>
+                                <li><strong>RIGHT OF ADMISSION:</strong> Management reserves the right to refuse admission or remove anyone failing to comply with rules or causing a disturbance.</li>
+                                <li><strong>VALID ID:</strong> Original Government ID matching the pass name is mandatory at the gate. No digital copies accepted.</li>
+                              </ul>
+                            )}
+                            {termsError && (
+                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠ You must accept the Terms &amp; Conditions to continue.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Navigation Bar */}
                     <div className="flex items-center justify-between pt-2">
                       <button
@@ -1636,7 +1689,14 @@ export default function SafedSheriLandingPage() {
 
                       <button
                         type="button"
-                        onClick={handleNextStep}
+                        onClick={() => {
+                          if (selectedPass === 'COUPLE' && currentAttendeeIndex === 0 && !termsAccepted) {
+                            setTermsError(true);
+                            return;
+                          }
+                          setTermsError(false);
+                          handleNextStep();
+                        }}
                         className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center space-x-2 transition"
                       >
                         <span>
@@ -1850,6 +1910,25 @@ export default function SafedSheriLandingPage() {
                   {walletLoading ? 'Searching...' : 'Search'}
                 </button>
               </form>
+
+              {/* Refresh button after first search */}
+              {walletSearched && !walletLoading && (
+                <button
+                  onClick={() => {
+                    const cleanDigits = walletPhone.replace(/\D/g, '');
+                    if (!cleanDigits) return;
+                    setWalletLoading(true);
+                    fetch(`${API_BASE}/credentials/my-pass?query=${encodeURIComponent(cleanDigits)}`)
+                      .then(res => res.json())
+                      .then(json => { if (json.success && json.data) setWalletPasses(json.data); })
+                      .catch(console.error)
+                      .finally(() => setWalletLoading(false));
+                  }}
+                  className="text-[11px] text-[#D99427] font-bold hover:underline flex items-center space-x-1"
+                >
+                  <span>↻ Refresh Status</span>
+                </button>
+              )}
 
               {/* SEARCH RESULTS */}
               {walletSearched && (
@@ -2174,6 +2253,17 @@ export default function SafedSheriLandingPage() {
                   onClick={() => {
                     setActivePaymentLink(null);
                     setIsWalletOpen(true);
+                    // Auto-refresh wallet to show the newly minted pass
+                    const cleanDigits = walletPhone.replace(/\D/g, '');
+                    if (cleanDigits) {
+                      setWalletLoading(true);
+                      setWalletSearched(true);
+                      fetch(`${API_BASE}/credentials/my-pass?query=${encodeURIComponent(cleanDigits)}`)
+                        .then(res => res.json())
+                        .then(json => { if (json.success && json.data) setWalletPasses(json.data); })
+                        .catch(console.error)
+                        .finally(() => setWalletLoading(false));
+                    }
                   }}
                   className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-90 transition shadow-md"
                 >
