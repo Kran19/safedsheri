@@ -36,6 +36,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/tsconfig.json ./
 
 # Make entrypoint executable
+RUN dos2unix ./apps/api/entrypoint.sh || true
 RUN chmod +x ./apps/api/entrypoint.sh
 
 EXPOSE 4000

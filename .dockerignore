@@ -9,3 +9,5 @@ yarn-debug.log*
 yarn-error.log*
 image sectionwise
 ai video safesheri
+**/node_modules
+**/.next

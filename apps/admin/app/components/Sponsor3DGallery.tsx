@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { garbaAudio } from './GarbaAudioEngine';
-import { Sparkles, Crown, Award, ExternalLink, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { Sparkles, Crown, Award, ExternalLink, ChevronLeft, ChevronRight, Play, Pause, Store } from 'lucide-react';
 
 interface Sponsor {
   id: string;
@@ -172,7 +172,9 @@ interface Sponsor3DGalleryProps {
   onOpenSponsorModal?: () => void;
 }
 
-export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) {
+export function Sponsor3DGallery({ 
+  onOpenSponsorModal 
+}: Sponsor3DGalleryProps) {
   const [rotation, setRotation] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -396,7 +398,7 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
           </div>
         </div>
 
-        {/* LUXURY SPONSORSHIP INQUIRY CTA BANNER */}
+      {/* LUXURY SPONSORSHIP INQUIRY CTA BANNER */}
         <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#24180A] via-[#2D1F0E] to-[#1A1105] border-2 border-[#D99427]/60 shadow-2xl text-white flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-60 h-60 bg-[#D99427]/10 rounded-full blur-2xl pointer-events-none" />
           <div className="space-y-2 text-center md:text-left z-10 max-w-xl">
@@ -408,7 +410,7 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
               Showcase Your Brand to 10,000+ Elite Attendees
             </h3>
             <p className="text-xs text-[#D1C2A5] leading-relaxed">
-              Title Presenting Sponsorship, VIP Cabana Activations, Beverage Alliances, and Food Pavilions available for Safed Sheri 2026 in Rajkot.
+              Title Presenting Sponsorship, VIP Cabana Activations, Beverage Alliances, and Brand Activations available for Safed Sheri 2026 in Rajkot.
             </p>
           </div>
 
@@ -425,6 +427,7 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
             </button>
           </div>
         </div>
+
       </div>
     </section>
   );

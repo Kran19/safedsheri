@@ -169,9 +169,9 @@ export class CredentialsService {
     for (const att of attendees) {
       const regAttList = att.registrations || [];
 
-      // Check if this attendee has any active credential
+      // Check if this attendee has any active or used credential
       const activeCred = att.credentials.find(
-        (c) => c.status === CredentialStatus.ACTIVE
+        (c) => c.status === CredentialStatus.ACTIVE || c.status === CredentialStatus.USED
       );
 
       // Check if attendee is part of an active/pending registration where this attendee is NOT rejected
@@ -208,6 +208,7 @@ export class CredentialsService {
             reviewNotes: activeRegLink?.reviewNotes || targetReg.reviewNotes,
             submittedAt: targetReg.createdAt,
             hasActivePass: Boolean(activeCred && activeCred.status === CredentialStatus.ACTIVE),
+            hasUsedPass: Boolean(activeCred && activeCred.status === CredentialStatus.USED),
             credential: activeCred
               ? {
                   credentialNumber: activeCred.credentialNumber,
@@ -253,6 +254,7 @@ export class CredentialsService {
               'Aadhaar document verification failed. Please upload a clear document and apply again.',
             submittedAt: reg.createdAt,
             hasActivePass: false,
+            hasUsedPass: false,
             credential: null,
             isPaymentPending: false,
             isUnderReview: false,

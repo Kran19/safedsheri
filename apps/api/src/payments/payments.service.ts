@@ -263,9 +263,7 @@ export class PaymentsService {
       throw new BadRequestException('At least 1 attendee is required');
     }
 
-    if (dto.passType === PassType.SINGLE && dto.attendees[0].gender !== Gender.FEMALE) {
-      throw new BadRequestException('Single Pass is strictly reserved for female attendees');
-    }
+    // Removed Single Pass Female rule to allow any gender to book
 
     return await this.prisma.$transaction(async (tx) => {
       // 1. Get Active Event & Phase

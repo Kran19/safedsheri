@@ -7,7 +7,8 @@ import {
   Users, CreditCard, Ticket, Activity, Shield, FileText, AlertCircle, 
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
-  EyeOff, Clock, Sliders, ArrowRight
+  EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
+  Tag, MapPin
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -15,7 +16,7 @@ import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'stalls' | 'scans' | 'audit' | 'pricing'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing'>('applications');
   
   const [overview, setOverview] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
@@ -24,7 +25,6 @@ export default function SuperAdminDashboard() {
   const [gazebos, setGazebos] = useState<any[]>([]);
   const [gazeboInquiries, setGazeboInquiries] = useState<any[]>([]);
   const [sponsorInquiries, setSponsorInquiries] = useState<any[]>([]);
-  const [stallInquiries, setStallInquiries] = useState<any[]>([]);
   const [scans, setScans] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
@@ -54,6 +54,25 @@ export default function SuperAdminDashboard() {
   const [reviewNotes, setReviewNotes] = useState('');
   const [attendeeDecisions, setAttendeeDecisions] = useState<Record<string, { status: 'APPROVED' | 'REJECTED'; notes: string }>>({});
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Inquiry Action Details Modal State
+  const [selectedInquiry, setSelectedInquiry] = useState<any | null>(null);
+  const [inquiryType, setInquiryType] = useState<'sponsor' | 'gazebo' | null>(null);
+
+  // Helper: Colored status badge for inquiry status
+  function getInquiryStatusBadge(status: string) {
+    const map: Record<string, string> = {
+      NEW: 'bg-blue-100 text-blue-800 border-blue-200',
+      CONTACTED: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      DISCUSSION: 'bg-purple-100 text-purple-800 border-purple-200',
+      HOLD: 'bg-amber-100 text-amber-800 border-amber-300',
+      APPROVED: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      CONFIRMED: 'bg-teal-100 text-teal-800 border-teal-300',
+      REJECTED: 'bg-rose-100 text-rose-800 border-rose-200',
+      CANCELLED: 'bg-gray-100 text-gray-600 border-gray-200',
+    };
+    return map[status] || 'bg-gray-100 text-gray-600 border-gray-200';
+  }
 
   function openReviewModal(app: any) {
     setSelectedApp(app);
@@ -129,9 +148,6 @@ export default function SuperAdminDashboard() {
     } else if (tab === 'sponsors') {
       const res = await apiRequest('/sponsor-inquiries');
       if (res.success) setSponsorInquiries(res.data || []);
-    } else if (tab === 'stalls') {
-      const res = await apiRequest('/stall-inquiries');
-      if (res.success) setStallInquiries(res.data || []);
     } else if (tab === 'scans') {
       const res = await apiRequest('/scan-attempts');
       if (res.success) setScans(res.data || []);
@@ -282,6 +298,28 @@ export default function SuperAdminDashboard() {
     setMessage(`Batch completed: ${approvedCount} application(s) approved.`);
     loadOverviewData();
     loadTabContent('applications');
+  }
+
+  async function handleUpdateInquiryStatus(id: string, type: 'sponsor' | 'gazebo', status: string) {
+    setActionLoading(true);
+    let endpoint = '';
+    if (type === 'sponsor') endpoint = `/sponsor-inquiries/${id}/status`;
+    if (type === 'gazebo') endpoint = `/gazebos/inquiries/${id}/status`;
+
+    const res = await apiRequest(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+
+    if (res.success) {
+      setMessage(`Status updated to ${status}.`);
+      setSelectedInquiry(null);
+      setInquiryType(null);
+      loadTabContent(type + 's' as any);
+    } else {
+      setError(res.error?.message || 'Failed to update status.');
+    }
+    setActionLoading(false);
   }
 
   // Filtered applications for custom filter component
@@ -593,7 +631,6 @@ export default function SuperAdminDashboard() {
           { id: 'pricing', label: 'Pricing & Urgency Control', icon: Timer },
           { id: 'gazebos', label: 'Gazebos (VIP)', icon: Crown },
           { id: 'sponsors', label: 'Sponsors & Brands', icon: Building2 },
-          { id: 'stalls', label: 'Stall Inquiries', icon: Store },
           { id: 'scans', label: 'Security Scans', icon: Shield },
           { id: 'audit', label: 'Audit Log', icon: FileText },
         ].map((tab) => {
@@ -737,11 +774,30 @@ export default function SuperAdminDashboard() {
           <AdvancedTabulatorTable
             data={gazeboInquiries}
             columns={[
-              { key: 'fullName', title: 'Host Name', sortable: true, render: (r) => <strong>{r.fullName}</strong> },
-              { key: 'phone', title: 'WhatsApp Phone', sortable: true, render: (r) => <span className="font-mono">{r.phone}</span> },
-              { key: 'level', title: 'Level', sortable: true, render: (r) => <span>Level {r.level}</span> },
-              { key: 'status', title: 'Status', sortable: true, render: (r) => <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">{r.status}</span> },
-              { key: 'createdAt', title: 'Date', sortable: true, render: (r) => <span>{new Date(r.createdAt).toLocaleDateString()}</span> },
+              { key: 'inquiryNumber', title: 'Ref #', sortable: true, render: (r) => <span className="font-mono text-[11px] text-[#8C6019] font-bold">{r.inquiryNumber || '—'}</span> },
+              { key: 'fullName', title: 'Host Name', sortable: true, render: (r) => <strong className="text-[#2D1F0E]">{r.fullName}</strong> },
+              { key: 'phone', title: 'WhatsApp', sortable: true, render: (r) => <span className="font-mono text-xs">{r.phone}</span> },
+              { key: 'level', title: 'Level', sortable: true, render: (r) => (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                  Level {r.level}
+                </span>
+              )},
+              { key: 'status', title: 'Status', sortable: true, render: (r) => (
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getInquiryStatusBadge(r.status)}`}>
+                  {r.status}
+                </span>
+              )},
+              { key: 'createdAt', title: 'Date', sortable: true, render: (r) => <span className="text-[11px] text-[#6E5336]">{new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span> },
+              { key: 'actions', title: 'Actions', sortable: false, align: 'right', render: (r) => (
+                  <button
+                    onClick={() => { setSelectedInquiry(r); setInquiryType('gazebo'); }}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FAF6EE] border border-[#EAD9B8] text-[11px] font-bold text-[#8C6019] hover:border-[#D99427] transition shadow-sm"
+                  >
+                    <Eye className="w-3 h-3" />
+                    <span>View & Act</span>
+                  </button>
+                ) 
+              }
             ]}
             keyField="id"
             title="VIP Gazebo Inquiries"
@@ -757,11 +813,28 @@ export default function SuperAdminDashboard() {
         <AdvancedTabulatorTable
           data={sponsorInquiries}
           columns={[
-            { key: 'companyName', title: 'Company Name', sortable: true, render: (r) => <strong>{r.companyName}</strong> },
-            { key: 'contactName', title: 'Contact Person', sortable: true },
-            { key: 'phone', title: 'Phone', sortable: true, render: (r) => <span className="font-mono">{r.phone}</span> },
-            { key: 'sponsorshipType', title: 'Sponsorship Tier', sortable: true },
-            { key: 'status', title: 'Status', sortable: true, render: (r) => <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">{r.status}</span> },
+            { key: 'companyName', title: 'Company Name', sortable: true, render: (r) => <strong className="text-[#2D1F0E]">{r.companyName}</strong> },
+            { key: 'contactName', title: 'Contact Person', sortable: true, render: (r) => <span>{r.contactName}</span> },
+            { key: 'phone', title: 'Phone', sortable: true, render: (r) => <span className="font-mono text-xs">{r.phone}</span> },
+            { key: 'sponsorshipType', title: 'Tier', sortable: true, render: (r) => (
+              <span className="text-[11px] text-[#6E5336] truncate max-w-[180px] block">{r.sponsorshipType?.split('(')[0]?.trim() || '—'}</span>
+            )},
+            { key: 'status', title: 'Status', sortable: true, render: (r) => (
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getInquiryStatusBadge(r.status)}`}>
+                {r.status}
+              </span>
+            )},
+            { key: 'createdAt', title: 'Date', sortable: true, render: (r) => <span className="text-[11px] text-[#6E5336]">{new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span> },
+            { key: 'actions', title: 'Actions', sortable: false, align: 'right', render: (r) => (
+                <button
+                  onClick={() => { setSelectedInquiry(r); setInquiryType('sponsor'); }}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FAF6EE] border border-[#EAD9B8] text-[11px] font-bold text-[#8C6019] hover:border-[#D99427] transition shadow-sm"
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>View & Act</span>
+                </button>
+              ) 
+            }
           ]}
           keyField="id"
           title="Corporate Brand & Sponsor Inquiries"
@@ -769,24 +842,6 @@ export default function SuperAdminDashboard() {
         />
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB 6: STALL INQUIRIES */}
-      {/* ========================================================================= */}
-      {activeTab === 'stalls' && (
-        <AdvancedTabulatorTable
-          data={stallInquiries}
-          columns={[
-            { key: 'brandName', title: 'Brand / Stall Name', sortable: true, render: (r) => <strong>{r.brandName}</strong> },
-            { key: 'contactName', title: 'Owner Contact', sortable: true },
-            { key: 'phone', title: 'Phone', sortable: true, render: (r) => <span className="font-mono">{r.phone}</span> },
-            { key: 'category', title: 'Category', sortable: true },
-            { key: 'status', title: 'Status', sortable: true, render: (r) => <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">{r.status}</span> },
-          ]}
-          keyField="id"
-          title="Food & Merchandise Stall Inquiries"
-          subtitle="Gourmet dining and retail stall allocations"
-        />
-      )}
 
       {/* ========================================================================= */}
       {/* TAB 7: PRICING & URGENCY CONTROL TERMINAL */}
@@ -1426,6 +1481,203 @@ export default function SuperAdminDashboard() {
                 </div>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* INQUIRY ACTION DETAILS MODAL */}
+      {/* ========================================================================= */}
+      {selectedInquiry && inquiryType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="bg-[#FFFDF9] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-2xl p-6 md:p-8 shadow-2xl relative text-[#2D1F0E] my-auto">
+            <button
+              onClick={() => {
+                setSelectedInquiry(null);
+                setInquiryType(null);
+              }}
+              className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
+            >
+              ✕
+            </button>
+            <div className="space-y-6">
+              {/* Modal Header */}
+              <div>
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-[10px] font-mono tracking-widest text-[#8C6019] uppercase font-bold">
+                    {inquiryType === 'sponsor' ? '🏢 SPONSOR' : '🏛️ GAZEBO'} INQUIRY DETAILS
+                  </span>
+                  {selectedInquiry.inquiryNumber && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                      {selectedInquiry.inquiryNumber}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#2D1F0E]">
+                  {selectedInquiry.brandName || selectedInquiry.companyName || selectedInquiry.fullName}
+                </h2>
+                <div className="flex items-center space-x-3 mt-2">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getInquiryStatusBadge(selectedInquiry.status)}`}>
+                    Current: {selectedInquiry.status}
+                  </span>
+                  <span className="text-xs font-mono text-[#6E5336]">
+                    {new Date(selectedInquiry.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider flex items-center space-x-1">
+                      <span>Contact Person</span>
+                    </div>
+                    <div className="text-sm font-bold text-[#2D1F0E] mt-0.5">
+                      {selectedInquiry.contactName || selectedInquiry.fullName}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider">WhatsApp Phone</div>
+                    <div className="flex items-center space-x-2 mt-0.5">
+                      <span className="text-sm font-bold text-[#2D1F0E] font-mono">
+                        +91 {selectedInquiry.phone}
+                      </span>
+                      <a
+                        href={`https://wa.me/91${selectedInquiry.phone?.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-bold hover:bg-emerald-700 transition shadow-sm"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        <span>WhatsApp</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Gazebo Level */}
+                  {inquiryType === 'gazebo' && selectedInquiry.level && (
+                    <div>
+                      <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider flex items-center space-x-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>Gazebo Level</span>
+                      </div>
+                      <div className="mt-0.5">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                          Level {selectedInquiry.level} —
+                          {selectedInquiry.level === 1 ? ' Elevated Amphitheater' :
+                           selectedInquiry.level === 2 ? ' Royal Pavilion' :
+                           ' Imperial Sky Lounge'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Assigned Gazebo */}
+                  {inquiryType === 'gazebo' && selectedInquiry.gazebo && (
+                    <div>
+                      <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider">Assigned Unit</div>
+                      <div className="text-sm font-bold text-[#2D1F0E] mt-0.5 font-mono">{selectedInquiry.gazebo.gazeboNumber}</div>
+                    </div>
+                  )}
+
+
+                  {/* Sponsor Tier */}
+                  {selectedInquiry.sponsorshipType && (
+                    <div className="col-span-2">
+                      <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider">Sponsorship Tier</div>
+                      <div className="text-sm font-bold text-[#D99427] mt-0.5">{selectedInquiry.sponsorshipType}</div>
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  {selectedInquiry.email && (
+                    <div className="col-span-2">
+                      <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider">Email Address</div>
+                      <div className="text-sm font-bold text-[#2D1F0E] mt-0.5">{selectedInquiry.email}</div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Notes & Requirements */}
+                <div className="pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider mb-2">
+                    {inquiryType === 'gazebo' ? '🏛️ VIP Concierge Requests' :
+                     inquiryType === 'sponsor' ? '📋 Brand Objectives & Activation Notes' :
+                     '📝 Special Requirements & Notes'}
+                  </div>
+                  <div className="text-sm text-[#2D1F0E] bg-white p-3.5 rounded-xl border border-[#EAD9B8] italic whitespace-pre-wrap leading-relaxed">
+                    {selectedInquiry.notes || 'No special requirements or notes provided.'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                {/* Primary Actions: Reject / Contact / Approve */}
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, inquiryType, 'REJECTED')}
+                    disabled={actionLoading || selectedInquiry.status === 'REJECTED'}
+                    className="flex-1 px-4 py-2.5 rounded-full bg-rose-50 text-rose-700 font-bold text-xs uppercase hover:bg-rose-100 border border-rose-200 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                  >
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                    <span>Reject</span>
+                  </button>
+                  <button
+                    onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, inquiryType, 'CONTACTED')}
+                    disabled={actionLoading || selectedInquiry.status === 'CONTACTED'}
+                    className="flex-1 px-4 py-2.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs uppercase hover:bg-indigo-100 border border-indigo-200 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Mark Contacted</span>
+                  </button>
+                  <button
+                    onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, inquiryType, 'APPROVED')}
+                    disabled={actionLoading || selectedInquiry.status === 'APPROVED'}
+                    className="flex-1 px-4 py-2.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs uppercase hover:bg-emerald-100 border border-emerald-200 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Approve</span>
+                  </button>
+                </div>
+
+                {/* Gazebo-only: HOLD / DISCUSSION / CONFIRMED */}
+                {inquiryType === 'gazebo' && (
+                  <div className="flex gap-3 flex-wrap pt-2 border-t border-[#EAD9B8]">
+                    <div className="w-full text-[10px] font-bold text-[#8C6019] uppercase tracking-wider flex items-center space-x-1">
+                      <Crown className="w-3 h-3" />
+                      <span>Gazebo-Specific Actions</span>
+                    </div>
+                    <button
+                      onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, 'gazebo', 'HOLD')}
+                      disabled={actionLoading || selectedInquiry.status === 'HOLD'}
+                      className="flex-1 px-4 py-2.5 rounded-full bg-amber-50 text-amber-800 font-bold text-xs uppercase hover:bg-amber-100 border border-amber-300 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Place on Hold</span>
+                    </button>
+                    <button
+                      onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, 'gazebo', 'DISCUSSION')}
+                      disabled={actionLoading || selectedInquiry.status === 'DISCUSSION'}
+                      className="flex-1 px-4 py-2.5 rounded-full bg-purple-50 text-purple-800 font-bold text-xs uppercase hover:bg-purple-100 border border-purple-200 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>In Discussion</span>
+                    </button>
+                    <button
+                      onClick={() => handleUpdateInquiryStatus(selectedInquiry.id, 'gazebo', 'CONFIRMED')}
+                      disabled={actionLoading || selectedInquiry.status === 'CONFIRMED'}
+                      className="flex-1 px-4 py-2.5 rounded-full bg-teal-50 text-teal-800 font-bold text-xs uppercase hover:bg-teal-100 border border-teal-300 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Confirm Booking</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

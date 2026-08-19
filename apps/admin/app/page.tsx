@@ -7,7 +7,7 @@ import { IllusionEngine } from './components/IllusionEngine';
 import LogoSlot from './components/LogoSlot';
 import { garbaAudio } from './components/GarbaAudioEngine';
 import { Sponsor3DGallery } from './components/Sponsor3DGallery';
-import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send } from 'lucide-react';
 
 const API_BASE = '/api/v1';
 
@@ -208,18 +208,8 @@ export default function SafedSheriLandingPage() {
     notes: '',
   });
 
-  // Stall Modal State
-  const [isStallModalOpen, setIsStallModalOpen] = useState(false);
-  const [stallForm, setStallForm] = useState({
-    brandName: '',
-    category: 'GOURMET_FOOD',
-    contactPerson: '',
-    phone: '',
-    email: '',
-    description: '',
-  });
-  const [stallSuccess, setStallSuccess] = useState(false);
-  const [stallLoading, setStallLoading] = useState(false);
+  // Gazebo Error State
+  const [gazeboError, setGazeboError] = useState<string | null>(null);
 
   // Review Invariant Modal
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
@@ -462,16 +452,7 @@ export default function SafedSheriLandingPage() {
     setBookingLoading(true);
     setBookingError(null);
 
-    // Validate Single Pass Female rule
-    if (selectedPass === 'SINGLE') {
-      for (let i = 0; i < attendees.length; i++) {
-        if (attendees[i].gender === 'MALE') {
-          setBookingError(`Single Pass is strictly reserved for female attendees. (Attendee #${i + 1}: ${attendees[i].fullName || 'Guest'})`);
-          setBookingLoading(false);
-          return;
-        }
-      }
-    }
+    // Removed Single Pass Female rule to allow any gender to book
 
     // Validate in-batch unique Aadhaar and required fields
     const batchAadhaarSet = new Set<string>();
@@ -680,8 +661,8 @@ export default function SafedSheriLandingPage() {
       </div>
 
       {/* HERO SECTION WITH OFFICIAL LOGO */}
-      <section id="call" className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-28 pb-16 z-10">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <section id="call" className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-28 pb-16 z-10 overflow-hidden">
+        <div className="max-w-4xl mx-auto space-y-6 relative z-10">
           <div className="flex justify-center mb-2">
             <div 
               className="relative p-2 rounded-full bg-gradient-to-b from-[#FFF9EE] via-[#FDFBF7] to-[#F5EFEB] shadow-xl border-2 border-[#EAD9B8] cursor-pointer hover:scale-105 transition"
@@ -893,7 +874,9 @@ export default function SafedSheriLandingPage() {
 
       {/* CHAPTER 5: 3D INTERACTIVE SPONSORS & BRANDS GALLERY */}
       <div id="sponsors">
-        <Sponsor3DGallery onOpenSponsorModal={() => setIsSponsorModalOpen(true)} />
+        <Sponsor3DGallery 
+          onOpenSponsorModal={() => setIsSponsorModalOpen(true)}
+        />
       </div>
 
       {/* URGENCY REVERSE COUNTDOWN STOP WATCH TICKER BANNER */}
@@ -1836,9 +1819,13 @@ export default function SafedSheriLandingPage() {
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 shadow-sm">
                                 ⏳ UNDER REVIEW
                               </span>
+                            ) : p.hasUsedPass ? (
+                              <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-gray-100 text-gray-800 border border-gray-300 shadow-sm flex items-center space-x-1">
+                                <span>❌ USED PASS</span>
+                              </span>
                             ) : (
-                              <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300 shadow-sm">
-                                ✕ RESUBMISSION NEEDED
+                              <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300 shadow-sm flex items-center space-x-1">
+                                <span>✕ RESUBMISSION NEEDED</span>
                               </span>
                             )}
                           </div>
@@ -1916,7 +1903,7 @@ export default function SafedSheriLandingPage() {
                         )}
 
                         {/* 4. REJECTED / RESUBMISSION REQUIRED CARD */}
-                        {(!p.hasActivePass && !p.isPaymentPending && !p.isUnderReview && p.registrationStatus !== 'PAYMENT_PENDING' && p.registrationStatus !== 'APPROVED' && p.registrationStatus !== 'UNDER_REVIEW' && p.registrationStatus !== 'SUBMITTED') && (
+                        {(!p.hasActivePass && !p.hasUsedPass && !p.isPaymentPending && !p.isUnderReview && p.registrationStatus !== 'PAYMENT_PENDING' && p.registrationStatus !== 'APPROVED' && p.registrationStatus !== 'UNDER_REVIEW' && p.registrationStatus !== 'SUBMITTED') && (
                           <div className="p-5 rounded-2xl bg-gradient-to-r from-rose-50 to-[#FFF7F7] border-2 border-rose-200 text-xs space-y-3.5 shadow-sm">
                             <div className="flex items-center space-x-2 text-rose-900 font-bold">
                               <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
@@ -1945,6 +1932,22 @@ export default function SafedSheriLandingPage() {
                               >
                                 <span>Re-Apply / Upload Clear ID →</span>
                               </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 5. USED PASS CARD */}
+                        {p.hasUsedPass && (
+                          <div className="p-5 rounded-2xl bg-gradient-to-r from-gray-50 to-[#F9F9F9] border-2 border-gray-300 text-xs space-y-3.5 shadow-sm">
+                            <div className="flex items-center space-x-2 text-gray-800 font-bold">
+                              <AlertCircle className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                              <span>Pass Already Used / Unauthorized</span>
+                            </div>
+
+                            <div className="text-[#6E5336] text-[11px] bg-white p-3.5 rounded-xl border border-gray-200 space-y-1">
+                              <p className="italic text-gray-700 leading-relaxed">
+                                You have already used this QR code / Pass for entry. Re-entry or duplicate usage of the same pass is strictly prohibited and unauthorized.
+                              </p>
                             </div>
                           </div>
                         )}
@@ -2117,17 +2120,35 @@ export default function SafedSheriLandingPage() {
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
+                  setGazeboError(null);
+                  const phoneVal = gazeboForm.phone.replace(/\D/g, '');
+                  if (!gazeboForm.fullName || gazeboForm.fullName.trim().length < 2) {
+                    setGazeboError('Please enter your full legal name (minimum 2 characters).');
+                    return;
+                  }
+                  if (phoneVal.length !== 10) {
+                    setGazeboError('Please enter a valid 10-digit WhatsApp mobile number.');
+                    return;
+                  }
                   garbaAudio.playDhol();
+                  setGazeboLoading(true);
                   try {
-                    await fetch(`${API_BASE}/gazebos/inquiries`, {
+                    const res = await fetch(`${API_BASE}/gazebo-inquiries`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(gazeboForm),
+                      body: JSON.stringify({ ...gazeboForm, phone: phoneVal }),
                     });
-                    setGazeboSuccess(true);
-                    garbaAudio.playGhunghroo();
-                  } catch (err) {
-                    console.error(err);
+                    const json = await res.json();
+                    if (json.success) {
+                      setGazeboSuccess(true);
+                      garbaAudio.playGhunghroo();
+                    } else {
+                      setGazeboError(json.message || json.error?.message || 'Submission failed. Please try again.');
+                    }
+                  } catch (err: any) {
+                    setGazeboError('Network error. Please check your connection and try again.');
+                  } finally {
+                    setGazeboLoading(false);
                   }
                 }}
                 className="space-y-5"
@@ -2138,20 +2159,29 @@ export default function SafedSheriLandingPage() {
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Reserve Gazebo Lounge</h3>
                   <p className="text-xs text-[#6E5336] mt-1">
-                    Private viewing lounges for 10-15 guests with dedicated hospitality service. Pricing on request.
+                    Private viewing lounges for 10–15 guests with dedicated hospitality service. Pricing on request.
                   </p>
                 </div>
+
+                {/* Inline Error Banner */}
+                {gazeboError && (
+                  <div className="flex items-start space-x-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-500" />
+                    <span>{gazeboError}</span>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Host Legal Name *</label>
                     <input
                       type="text"
-                      required
                       value={gazeboForm.fullName}
-                      onChange={(e) => setGazeboForm({ ...gazeboForm, fullName: e.target.value })}
-                      placeholder="Full Name"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                      onChange={(e) => { setGazeboError(null); setGazeboForm({ ...gazeboForm, fullName: e.target.value }); }}
+                      placeholder="Full Name (as on ID)"
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none transition ${
+                        gazeboError && !gazeboForm.fullName.trim() ? 'border-rose-400' : 'border-[#EAD9B8]'
+                      }`}
                     />
                   </div>
 
@@ -2159,12 +2189,26 @@ export default function SafedSheriLandingPage() {
                     <label className="block text-[11px] font-bold text-[#6E5336] mb-1">WhatsApp Phone (+91) *</label>
                     <input
                       type="tel"
-                      required
                       value={gazeboForm.phone}
-                      onChange={(e) => setGazeboForm({ ...gazeboForm, phone: e.target.value })}
-                      placeholder="e.g. 9876543210"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setGazeboError(null);
+                        setGazeboForm({ ...gazeboForm, phone: val });
+                      }}
+                      placeholder="10-digit mobile number"
+                      maxLength={10}
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs font-mono focus:border-[#D99427] outline-none transition ${
+                        gazeboError && gazeboForm.phone.replace(/\D/g,'').length !== 10 ? 'border-rose-400' : 'border-[#EAD9B8]'
+                      }`}
                     />
+                    {gazeboForm.phone.length > 0 && (
+                      <div className={`text-[10px] mt-1 font-mono ${
+                        gazeboForm.phone.replace(/\D/g,'').length === 10 ? 'text-emerald-700' : 'text-[#8C6019]'
+                      }`}>
+                        {gazeboForm.phone.replace(/\D/g,'').length}/10 digits
+                        {gazeboForm.phone.replace(/\D/g,'').length === 10 && ' ✓'}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -2174,19 +2218,19 @@ export default function SafedSheriLandingPage() {
                       onChange={(e) => setGazeboForm({ ...gazeboForm, level: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
                     >
-                      <option value={1}>Level 1 — Elevated Amphitheater</option>
-                      <option value={2}>Level 2 — Royal Pavilion</option>
-                      <option value={3}>Level 3 — Imperial Sky Lounge</option>
+                      <option value={1}>Level 1 — Elevated Amphitheater (₹85,000)</option>
+                      <option value={2}>Level 2 — Royal Pavilion (₹1,00,000)</option>
+                      <option value={3}>Level 3 — Imperial Sky Lounge (₹1,25,000)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Special Hospitality Requests</label>
+                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">VIP Concierge Requests</label>
                     <textarea
                       rows={3}
                       value={gazeboForm.notes}
                       onChange={(e) => setGazeboForm({ ...gazeboForm, notes: e.target.value })}
-                      placeholder="Dietary preferences, guest count, custom branding..."
+                      placeholder="Guest count, dietary preferences, custom branding, AV requirements..."
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none resize-none"
                     />
                   </div>
@@ -2194,9 +2238,14 @@ export default function SafedSheriLandingPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg shadow-[#D99427]/30"
+                  disabled={gazeboLoading}
+                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 disabled:opacity-70 flex items-center justify-center space-x-2"
                 >
-                  Submit Gazebo Inquiry
+                  {gazeboLoading ? (
+                    <span className="animate-pulse">Submitting Inquiry...</span>
+                  ) : (
+                    <><Crown className="w-4 h-4" /><span>Submit VIP Gazebo Inquiry</span></>
+                  )}
                 </button>
               </form>
             ) : (
@@ -2341,7 +2390,6 @@ export default function SafedSheriLandingPage() {
                       <option value="Powered By Partner (Main Stage & Broadcast)">⭐ Powered By Partner (Main Stage & Broadcast Alliances)</option>
                       <option value="Associate Luxury Sponsor (Acoustic & Fashion)">✨ Associate Luxury Sponsor (Ethnic Fashion / Acoustics / Jewels)</option>
                       <option value="Official Beverage & Hospitality Partner">☕ Official Beverage & Hospitality Partner</option>
-                      <option value="Gourmet Food / Dessert Stall Partner">🍨 Gourmet Food / Dessert Pavilion Partner</option>
                       <option value="VIP Experiential Lounge Activation">🏛️ VIP Cabana Experiential Lounge Activation</option>
                     </select>
                   </div>
@@ -2415,6 +2463,8 @@ export default function SafedSheriLandingPage() {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }
