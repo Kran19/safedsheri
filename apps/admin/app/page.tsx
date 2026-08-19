@@ -9,7 +9,7 @@ import { garbaAudio } from './components/GarbaAudioEngine';
 import { Sponsor3DGallery } from './components/Sponsor3DGallery';
 import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send } from 'lucide-react';
 
-const API_BASE = '/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/safedsheri/api/v1';
 
 // Auto-formats 12-digit Aadhaar to 4-4-4: "1234 5678 9012"
 function formatAadhaarNumber(val: string): string {
