@@ -8,15 +8,16 @@ import {
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
-  Tag, MapPin
+  Tag, MapPin, Settings
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
 import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
+import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenance';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings'>('applications');
   
   const [overview, setOverview] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
@@ -27,6 +28,7 @@ export default function SuperAdminDashboard() {
   const [sponsorInquiries, setSponsorInquiries] = useState<any[]>([]);
   const [scans, setScans] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(false);
 
   // Pricing & Urgency Control State
   const [pricingSettings, setPricingSettings] = useState<any>({
@@ -103,6 +105,7 @@ export default function SuperAdminDashboard() {
     }
     setIsAuthenticated(true);
     loadOverviewData();
+    getMaintenanceMode().then(setIsMaintenanceMode);
   }, []);
 
   async function loadOverviewData() {
@@ -1180,6 +1183,35 @@ export default function SuperAdminDashboard() {
           title="Super Admin Audit & Change Trail"
           subtitle="Immutable operational security log"
         />
+      )}
+
+      {activeTab === 'settings' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-[#2D1F0E] text-[#FDFBF7] p-8 rounded-2xl shadow-xl relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h2 className="text-2xl font-serif text-[#D99427] mb-2 flex items-center gap-3">
+                  <AlertCircle className="w-6 h-6" />
+                  Global Maintenance Mode
+                </h2>
+                <p className="text-sm text-[#A3927B] max-w-xl">
+                  Force the public-facing landing page into a premium 500 error screen. 
+                  This will block all traffic from accessing the application while you work on updates. 
+                  The admin dashboard will remain fully accessible to you.
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  const newState = await toggleMaintenanceMode(isMaintenanceMode);
+                  setIsMaintenanceMode(newState);
+                }}
+                className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors focus:outline-none ${isMaintenanceMode ? 'bg-[#D99427]' : 'bg-[#6E5336]'}`}
+              >
+                <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isMaintenanceMode ? 'translate-x-9' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ========================================================================= */}

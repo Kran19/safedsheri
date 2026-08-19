@@ -443,3 +443,9 @@ model AuditLog {
   @@index([targetEntity])
   @@index([createdAt])
 }
+
+
+model SystemSetting {
+  key   String @id
+  value String
+}
