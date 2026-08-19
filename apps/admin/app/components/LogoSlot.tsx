@@ -37,6 +37,7 @@ export default function LogoSlot({
             fill
             sizes="(max-width: 768px) 100vw, 150px"
             className="object-contain rounded-full filter drop-shadow-[0_2px_6px_rgba(217,148,39,0.25)] transition-transform duration-300 hover:scale-105"
+            unoptimized={true}
             onError={() => setHasError(true)}
           />
         ) : (
