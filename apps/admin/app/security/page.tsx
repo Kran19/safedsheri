@@ -44,13 +44,9 @@ export default function SecurityScannerPage() {
 
     const initScanner = async () => {
       // Dynamic import to prevent Next.js SSR window errors
-      const { Html5QrcodeScanner } = await import('html5-qrcode');
+      const { Html5Qrcode } = await import('html5-qrcode');
 
-      scanner = new Html5QrcodeScanner(
-        'qr-reader',
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        false
-      );
+      scanner = new Html5Qrcode('qr-reader');
 
       const onScanSuccess = (decodedText: string) => {
         if (!scanningRef.current) {
@@ -58,16 +54,25 @@ export default function SecurityScannerPage() {
         }
       };
 
-      scanner.render(onScanSuccess, (err: any) => {
-        // ignore errors like 'QR code not found'
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess,
+        (err: any) => {
+          // ignore errors like 'QR code not found'
+        }
+      ).catch((err: any) => {
+        console.error('Failed to start scanner:', err);
       });
     };
 
     initScanner();
 
     return () => {
-      if (scanner) {
-        scanner.clear().catch(console.error);
+      if (scanner && scanner.isScanning) {
+        scanner.stop().then(() => scanner.clear()).catch(console.error);
+      } else if (scanner) {
+        scanner.clear();
       }
     };
   }, [isAuthenticated]);

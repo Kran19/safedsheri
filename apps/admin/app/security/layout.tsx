@@ -32,14 +32,14 @@ export default function SecurityLayout({ children }: { children: React.ReactNode
       <header className="h-16 bg-white border-b border-amber-300/40 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50 shadow-xs">
         <div className="flex items-center gap-3">
           <LogoSlot />
-          <div>
+          <div className="hidden md:block">
             <h1 className="text-sm md:text-base font-bold text-[#1C160F] tracking-wide font-cinzel">GATE SCANNER</h1>
             <p className="text-[10px] md:text-xs text-amber-800 font-semibold font-mono">Safed Sheri 2026 Verification</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-[#1C160F]">{user.fullName}</span>
+          <span className="hidden md:block text-xs font-bold text-[#1C160F]">{user.fullName}</span>
           <button
             onClick={handleLogout}
             className="p-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg transition-colors shadow-xs flex items-center gap-1 text-xs font-bold"

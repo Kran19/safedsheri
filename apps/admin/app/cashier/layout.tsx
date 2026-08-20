@@ -32,14 +32,14 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
       <header className="h-16 bg-white border-b border-amber-300/40 flex items-center justify-between px-6 sticky top-0 z-50 shadow-xs">
         <div className="flex items-center gap-3">
           <LogoSlot />
-          <div>
+          <div className="hidden md:block">
             <h1 className="text-base font-bold text-[#1C160F] tracking-wide font-cinzel">CASHIER TERMINAL</h1>
             <p className="text-xs text-amber-800 font-semibold font-mono">Physical Payment & Walk-in Counter</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="text-right text-xs">
+          <div className="hidden md:block text-right text-xs">
             <p className="font-semibold text-[#1C160F]">{user.fullName}</p>
             <p className="text-amber-800 font-bold uppercase tracking-wider">{user.role}</p>
           </div>
