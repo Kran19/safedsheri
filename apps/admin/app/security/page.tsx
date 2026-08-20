@@ -39,40 +39,59 @@ export default function SecurityScannerPage() {
 
   useEffect(() => {
     if (isAuthenticated !== true) return;
-
+    let isMounted = true;
     let scanner: any;
 
     const initScanner = async () => {
-      // Dynamic import to prevent Next.js SSR window errors
-      const { Html5Qrcode } = await import('html5-qrcode');
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        if (!isMounted) return;
 
-      scanner = new Html5Qrcode('qr-reader');
+        scanner = new Html5Qrcode('qr-reader');
 
-      const onScanSuccess = (decodedText: string) => {
-        if (!scanningRef.current) {
-          processScan(decodedText);
+        const onScanSuccess = (decodedText: string) => {
+          if (!scanningRef.current) {
+            processScan(decodedText);
+          }
+        };
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        try {
+          if (isMounted) {
+            await scanner.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
+          }
+        } catch (err) {
+          console.warn('Environment camera failed, falling back to user camera', err);
+          if (isMounted) {
+            try {
+              await scanner.start({ facingMode: 'user' }, config, onScanSuccess, () => {});
+            } catch (fallbackErr) {
+              console.error('All camera attempts failed:', fallbackErr);
+            }
+          }
         }
-      };
-
-      scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess,
-        (err: any) => {
-          // ignore errors like 'QR code not found'
-        }
-      ).catch((err: any) => {
-        console.error('Failed to start scanner:', err);
-      });
+      } catch (err) {
+        console.error('Failed to initialize scanner library:', err);
+      }
     };
 
-    initScanner();
+    // Add a small delay to ensure DOM is fully painted and stable
+    const timer = setTimeout(() => {
+      initScanner();
+    }, 100);
 
     return () => {
-      if (scanner && scanner.isScanning) {
-        scanner.stop().then(() => scanner.clear()).catch(console.error);
-      } else if (scanner) {
-        scanner.clear();
+      isMounted = false;
+      clearTimeout(timer);
+      if (scanner) {
+        if (scanner.isScanning) {
+          scanner.stop().then(() => {
+            try { scanner.clear(); } catch (e) {}
+          }).catch(console.error);
+        } else {
+          try { scanner.clear(); } catch (e) {}
+        }
       }
     };
   }, [isAuthenticated]);
