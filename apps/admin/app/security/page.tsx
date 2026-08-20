@@ -100,15 +100,14 @@ export default function SecurityScannerPage() {
   }, [isAuthenticated]);
 
   async function processScan(token: string) {
-    if (!token || scanning) return;
+    if (!token || scanningRef.current) return;
+    scanningRef.current = true;
     setScanning(true);
 
     const res = await apiRequest('/entries/scan', {
       method: 'POST',
       body: JSON.stringify({ token: token.trim() }),
     });
-
-    setScanning(false);
 
     if (res.success && res.data) {
       setScanResult(res.data);
@@ -128,7 +127,9 @@ export default function SecurityScannerPage() {
 
       setTimeout(() => {
         setScanResult({ status: null });
-      }, 2500);
+        scanningRef.current = false;
+        setScanning(false);
+      }, 3000);
     } else {
       if (res.error?.code === 'UNAUTHORIZED') {
         setIsAuthenticated(false);
@@ -136,11 +137,13 @@ export default function SecurityScannerPage() {
       }
       setScanResult({
         status: 'NOT_VALID',
-        reason: 'INVALID_TOKEN',
+        reason: res.error?.message || 'INVALID_TOKEN',
       });
       setTimeout(() => {
         setScanResult({ status: null });
-      }, 2500);
+        scanningRef.current = false;
+        setScanning(false);
+      }, 3000);
     }
   }
 
