@@ -2390,9 +2390,9 @@ export default function SafedSheriLandingPage() {
                       onChange={(e) => setGazeboForm({ ...gazeboForm, level: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
                     >
-                      <option value={1}>Level 1 — Elevated Amphitheater (₹85,000)</option>
-                      <option value={2}>Level 2 — Royal Pavilion (₹1,00,000)</option>
-                      <option value={3}>Level 3 — Imperial Sky Lounge (₹1,25,000)</option>
+                      <option value={1}>Level 1 — Elevated Amphitheater</option>
+                      <option value={2}>Level 2 — Royal Pavilion</option>
+                      <option value={3}>Level 3 — Imperial Sky Lounge</option>
                     </select>
                   </div>
 

@@ -41,7 +41,7 @@ export default function NotFound() {
           href="/safedsheri" 
           className="px-8 py-3 bg-transparent border-2 border-[#D99427] text-[#D99427] rounded-full uppercase tracking-widest text-xs font-semibold hover:bg-[#D99427] hover:text-[#0F0F0F] transition-all duration-300 shadow-[0_0_15px_rgba(217,148,39,0.2)] hover:shadow-[0_0_30px_rgba(217,148,39,0.4)]"
         >
-          Return to Arena
+          Return to home
         </a>
       </div>
 
