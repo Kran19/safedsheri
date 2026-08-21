@@ -55,6 +55,13 @@ export default function SafedSheriLandingPage() {
   const colourSectionRef = useRef<HTMLElement>(null);
   const colourTrackRef = useRef<HTMLDivElement>(null);
 
+  // GSAP 3D Scroll Refs (Chapter IV Gazebo)
+  const gazeboSectionRef = useRef<HTMLElement>(null);
+  const gazeboHeadingRef = useRef<HTMLDivElement>(null);
+  const gazeboLeftRef = useRef<HTMLDivElement>(null);
+  const gazeboCenterRef = useRef<HTMLDivElement>(null);
+  const gazeboRightRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
@@ -85,6 +92,35 @@ export default function SafedSheriLandingPage() {
         refreshPriority: 10,
         anticipatePin: 1,
       });
+
+      // 2. 3D Scroll Animation for Chapter IV (Gazebos)
+      if (gazeboSectionRef.current && !isMobile) {
+        // Initial States
+        gsap.set(gazeboLeftRef.current, { xPercent: 0, z: -800, rotationY: 25, opacity: 0, scale: 0.9 });
+        gsap.set(gazeboRightRef.current, { xPercent: 0, z: -800, rotationY: -25, opacity: 0, scale: 0.9 });
+        gsap.set(gazeboCenterRef.current, { z: -400, rotationX: 10, opacity: 0, scale: 0.95 });
+        gsap.set(gazeboHeadingRef.current, { y: 30, opacity: 0 });
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: gazeboSectionRef.current,
+            start: "center center",
+            end: "+=250%",
+            scrub: 1.2,
+            pin: true,
+          }
+        });
+
+        // Phase 2: Enter
+        tl.to(gazeboHeadingRef.current, { y: 0, opacity: 1, duration: 1 })
+          .to(gazeboCenterRef.current, { z: -100, rotationX: 0, opacity: 1, scale: 1, duration: 1 }, "<")
+          .to([gazeboLeftRef.current, gazeboRightRef.current], { opacity: 0.5, duration: 1 }, "<+0.2");
+
+        // Phase 3 & 4: Spread
+        tl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
+      }
     });
 
     return () => ctx.revert();
@@ -1035,9 +1071,10 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* CHAPTER 4: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
-      <section id="gazebos" className="relative py-24 px-6 z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+      <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10 overflow-hidden hidden md:block">
+        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[800px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
+          
+          <div ref={gazeboHeadingRef} className="text-center max-w-2xl mx-auto space-y-3 absolute top-24 z-50 pointer-events-none">
             <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
             <p className="text-sm text-[#6E5336] leading-relaxed">
@@ -1045,8 +1082,10 @@ export default function SafedSheriLandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group">
+          <div className="relative w-full h-[600px] flex items-center justify-center mt-32" style={{ transformStyle: 'preserve-3d' }}>
+            
+            {/* LEFT CARD */}
+            <div ref={gazeboLeftRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 1
@@ -1078,7 +1117,8 @@ export default function SafedSheriLandingPage() {
               </button>
             </div>
 
-            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 relative group">
+            {/* CENTER CARD */}
+            <div ref={gazeboCenterRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
               <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
                 Royal Tier
               </div>
@@ -1113,7 +1153,8 @@ export default function SafedSheriLandingPage() {
               </button>
             </div>
 
-            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group">
+            {/* RIGHT CARD */}
+            <div ref={gazeboRightRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 3
@@ -1141,6 +1182,84 @@ export default function SafedSheriLandingPage() {
                 onClick={() => handlePassSelect('GAZEBO')}
                 className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
               >
+                Inquire Gazebo 3
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MOBILE FALLBACK (STATIC GRID) */}
+      <section className="relative py-24 px-6 z-10 md:hidden border-b border-[#EAD9B8]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
+            <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
+            <p className="text-sm text-[#6E5336] leading-relaxed">
+              Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8">
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6">
+              <div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                  LEVEL 1
+                </span>
+                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 1</h3>
+                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                  <img src="/images/gazebos/dhol.png" alt="Gazebo 1" className="object-contain h-full w-full" />
+                </div>
+                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
+                  <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
+                </div>
+              </div>
+              <button onClick={() => handlePassSelect('GAZEBO')} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
+                Inquire Gazebo 1
+              </button>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 relative">
+              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
+                Royal Tier
+              </div>
+              <div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
+                  LEVEL 2
+                </span>
+                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 2</h3>
+                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                  <img src="/images/gazebos/garba.png" alt="Gazebo 2" className="object-contain h-full w-full" />
+                </div>
+                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
+                  <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
+                </div>
+              </div>
+              <button onClick={() => handlePassSelect('GAZEBO')} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-lg">
+                Inquire Gazebo 2
+              </button>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6">
+              <div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                  LEVEL 3
+                </span>
+                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 3</h3>
+                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                  <img src="/images/gazebos/dandiya.png" alt="Gazebo 3" className="object-cover h-full w-full rounded-lg" />
+                </div>
+                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
+                  <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
+                </div>
+              </div>
+              <button onClick={() => handlePassSelect('GAZEBO')} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
                 Inquire Gazebo 3
               </button>
             </div>
