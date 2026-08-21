@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -1046,17 +1046,24 @@ export default function SafedSheriLandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition">
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group">
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 1
                 </span>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-3">Elevated Amphitheater</h3>
-                <p className="text-xs text-[#6E5336] mt-2 leading-relaxed">
-                  Prime tier elevation right on the edge of the acoustic garba circle. Seats 10-12 guests.
-                </p>
+                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 1</h3>
+                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                
+                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                  <img 
+                    src="/images/gazebos/dhol.png" 
+                    alt="Gazebo 1" 
+                    className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+
                 <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-xs text-[#6E5336]">Hospitality Pricing:</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
                   <div className="text-lg font-serif font-bold text-[#D99427] italic">
                     Price on Request • VIP Inquiry Only
                   </div>
@@ -1065,26 +1072,33 @@ export default function SafedSheriLandingPage() {
 
               <button
                 onClick={() => handlePassSelect('GAZEBO')}
-                className="w-full py-3 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
               >
-                Inquire Level 1 Lounge
+                Inquire Gazebo 1
               </button>
             </div>
 
-            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 relative">
-              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 relative group">
+              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
                 Royal Tier
               </div>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
                   LEVEL 2
                 </span>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-3">Royal Pavilion</h3>
-                <p className="text-xs text-[#6E5336] mt-2 leading-relaxed">
-                  Center stage panoramic viewing deck with luxury plush sofas and dedicated valet. Seats 12-15 guests.
-                </p>
+                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 2</h3>
+                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                
+                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                  <img 
+                    src="/images/gazebos/garba.png" 
+                    alt="Gazebo 2" 
+                    className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+
                 <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-xs text-[#6E5336]">Hospitality Pricing:</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
                   <div className="text-lg font-serif font-bold text-[#D99427] italic">
                     Price on Request • VIP Inquiry Only
                   </div>
@@ -1093,23 +1107,30 @@ export default function SafedSheriLandingPage() {
 
               <button
                 onClick={() => handlePassSelect('GAZEBO')}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-[#D99427]/25"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-[#D99427]/25"
               >
-                Inquire Royal Pavilion
+                Inquire Gazebo 2
               </button>
             </div>
 
-            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition">
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group">
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 3
                 </span>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-3">Imperial Sky Lounge</h3>
-                <p className="text-xs text-[#6E5336] mt-2 leading-relaxed">
-                  Highest elevation private sky cabana with bespoke chef curation and private security cordon.
-                </p>
+                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 3</h3>
+                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                
+                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                  <img 
+                    src="/images/gazebos/dandiya.png" 
+                    alt="Gazebo 3" 
+                    className="object-cover h-full w-full rounded-lg group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+
                 <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-xs text-[#6E5336]">Hospitality Pricing:</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
                   <div className="text-lg font-serif font-bold text-[#D99427] italic">
                     Price on Request • VIP Inquiry Only
                   </div>
@@ -1118,9 +1139,9 @@ export default function SafedSheriLandingPage() {
 
               <button
                 onClick={() => handlePassSelect('GAZEBO')}
-                className="w-full py-3 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
               >
-                Inquire Imperial Lounge
+                Inquire Gazebo 3
               </button>
             </div>
           </div>
