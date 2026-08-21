@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CredentialsService } from '../credentials/credentials.service';
 import { EncryptionService } from '../common/encryption.service';
 import { PaymentMethod, PaymentStatus, RegistrationStatus, PassType, Gender } from '@prisma/client';
+import { PaymentGatewayService } from './payment-gateway.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class PaymentsService {
     private prisma: PrismaService,
     private credentialsService: CredentialsService,
     private encryptionService: EncryptionService,
+    private paymentGatewayService: PaymentGatewayService,
   ) {}
 
   async findAll(status?: PaymentStatus) {
@@ -149,6 +151,15 @@ export class PaymentsService {
     const amountDue = Number(registration.amountDue);
     const upiQrPayload = `upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${amountDue}&tn=SS26-${registration.registrationNumber}&tr=${registration.paymentLinkId}`;
 
+    // Create a real Razorpay Order on the fly so the frontend can check out
+    const orderData = await this.paymentGatewayService.createPaymentOrder({
+      registrationId: registration.id,
+      registrationNumber: registration.registrationNumber,
+      amount: amountDue,
+      customerName: registration.attendees[0]?.attendee.fullName || 'Customer',
+      customerPhone: registration.attendees[0]?.attendee.phone || '0000000000',
+    });
+
     return {
       success: true,
       data: {
@@ -167,6 +178,8 @@ export class PaymentsService {
         isPaid: registration.payments.length > 0,
         paymentLinkId: registration.paymentLinkId,
         upiQrPayload,
+        razorpayOrderId: orderData.razorpayOrderId,
+        razorpayKeyId: orderData.razorpayKeyId,
       },
     };
   }
