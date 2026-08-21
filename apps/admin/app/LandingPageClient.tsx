@@ -776,6 +776,7 @@ export default function SafedSheriLandingPage() {
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
+              id="buy-btn"
               href="#passes"
               onClick={() => garbaAudio.playDhol()}
               className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-[0.2em] uppercase rounded-full shadow-lg shadow-[#D99427]/30 hover:scale-105 transition"
