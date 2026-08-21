@@ -813,10 +813,7 @@ export default function SafedSheriLandingPage() {
                   <span className="text-[#D99427] font-bold text-sm">✓</span>
                   <span>Pure White, Pearl White, Ivory & Off-White accepted</span>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-[#D99427] font-bold text-sm">✓</span>
-                  <span>Subtle Royal Gold embroidery & mirror work permitted</span>
-                </div>
+
                 <div className="flex items-center space-x-3">
                   <span className="text-red-500 font-bold text-sm">✕</span>
                   <span>Non-white outfits will be strictly denied entry at the gate</span>
