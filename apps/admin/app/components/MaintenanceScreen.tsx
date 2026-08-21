@@ -21,7 +21,7 @@ export function MaintenanceScreen() {
         
         <div className="relative w-full max-w-lg aspect-square md:aspect-video rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(217,148,39,0.15)] mb-10 border border-[#D99427]/30 group">
           <Image 
-            src="/safedsheri/images/developer-coding.jpg" 
+            src="/images/developer-coding.jpg" 
             alt="Developer coding" 
             fill 
             className="object-cover transition-transform duration-[10s] ease-in-out group-hover:scale-110"

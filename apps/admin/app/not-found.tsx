@@ -22,7 +22,7 @@ export default function NotFound() {
         
         <div className="relative w-full max-w-lg aspect-square md:aspect-video rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(217,148,39,0.15)] mb-10 border border-[#D99427]/30 group">
           <Image 
-            src="/safedsheri/images/developer-coding.jpg" 
+            src="/images/developer-coding.jpg" 
             alt="Developer coding" 
             fill 
             className="object-cover transition-transform duration-[10s] ease-in-out group-hover:scale-110"
@@ -38,7 +38,7 @@ export default function NotFound() {
         </p>
 
         <a 
-          href="/safedsheri" 
+          href="/" 
           className="px-8 py-3 bg-transparent border-2 border-[#D99427] text-[#D99427] rounded-full uppercase tracking-widest text-xs font-semibold hover:bg-[#D99427] hover:text-[#0F0F0F] transition-all duration-300 shadow-[0_0_15px_rgba(217,148,39,0.2)] hover:shadow-[0_0_30px_rgba(217,148,39,0.4)]"
         >
           Return to home

@@ -17,7 +17,7 @@ RUN npm run build --workspace=packages/types
 
 # Disable Next.js Telemetry during Docker build
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_API_URL=/safedsheri/api/v1
+ENV NEXT_PUBLIC_API_URL=/api/v1
 
 RUN npm run build --workspace=apps/admin
 
