@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
-import Razorpay from 'razorpay';
+const Razorpay = require('razorpay');
 
 export interface PaymentOrderRequest {
   registrationId: string;
