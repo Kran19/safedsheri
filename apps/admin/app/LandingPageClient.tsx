@@ -755,6 +755,10 @@ export default function SafedSheriLandingPage() {
               Dress Code
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'colour' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
+            <a href="#gazebos" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gazebos' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+              Gazebo Lounges
+              <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'gazebos' ? 'scale-x-100' : 'scale-x-0'}`} />
+            </a>
             <a href="#the-women" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'the-women' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Organizers
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'the-women' ? 'scale-x-100' : 'scale-x-0'}`} />
@@ -1017,13 +1021,11 @@ export default function SafedSheriLandingPage() {
               </div>
             </div>
             
-            {/* Bottom Separator */}
+      {/* Bottom Separator */}
             <div className="w-full h-[1px] bg-[#EAD9B8]"></div>
           </div>
         </div>
       </section>
-
-      <TheWomenSection />
 
       {/* URGENCY REVERSE COUNTDOWN STOP WATCH TICKER BANNER */}
       {pricing?.isCountdownActive && !timeLeft.expired && (
@@ -1070,19 +1072,20 @@ export default function SafedSheriLandingPage() {
         </div>
       )}
 
-      {/* CHAPTER 4: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
+      {/* CHAPTER 3: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
       <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10 overflow-hidden hidden md:block">
-        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[800px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
-          
-          <div ref={gazeboHeadingRef} className="text-center max-w-2xl mx-auto space-y-3 absolute top-24 z-50 pointer-events-none">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
-            <p className="text-sm text-[#6E5336] leading-relaxed">
-              Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
-            </p>
-          </div>
+        
+        <div ref={gazeboHeadingRef} className="text-center max-w-2xl mx-auto space-y-3 relative z-50 pointer-events-none mb-10">
+          <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
+          <p className="text-sm text-[#6E5336] leading-relaxed">
+            Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
+          </p>
+        </div>
 
-          <div className="relative w-full h-[600px] flex items-center justify-center mt-32" style={{ transformStyle: 'preserve-3d' }}>
+        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[600px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
+          
+          <div className="relative w-full h-[600px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
             
             {/* LEFT CARD */}
             <div ref={gazeboLeftRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
@@ -1193,7 +1196,7 @@ export default function SafedSheriLandingPage() {
       <section className="relative py-24 px-6 z-10 md:hidden border-b border-[#EAD9B8]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
             <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
             <p className="text-sm text-[#6E5336] leading-relaxed">
               Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
@@ -1266,6 +1269,8 @@ export default function SafedSheriLandingPage() {
           </div>
         </div>
       </section>
+
+      <TheWomenSection />
       {/* CHAPTER 4: PASS SELECTION & BOOKING */}
       <section id="passes" className="relative py-24 px-6 z-10 bg-[#FFFDF9] border-t border-[#EAD9B8]">
         <div className="max-w-6xl mx-auto">
@@ -1500,6 +1505,7 @@ export default function SafedSheriLandingPage() {
           <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-semibold">
             <a href="#call" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>The Concept</a>
             <a href="#colour" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>75% White Rule</a>
+            <a href="#gazebos" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gazebo Lounges</a>
             <a href="#the-women" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Organizers</a>
             <a href="#passes" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Pass Privilege</a>
           </div>
