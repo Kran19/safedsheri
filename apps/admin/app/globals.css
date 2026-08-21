@@ -29,6 +29,24 @@ body {
   selection-color: #2D1F0E;
 }
 
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Lenis Desktop Smooth Scroll */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
 .font-cinzel {
   font-family: 'Cinzel', serif;
 }

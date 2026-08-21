@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safed Sheri - VIP Gazebo Cabanas</title>
+    
+    <!-- GSAP & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        /* ==================================================
+           SCOPED CSS
+           ================================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+        :root {
+            --sd-bg: #FDFBF7;
+            --sd-text-dark: #2D1F0E;
+            --sd-text-light: #6E5336;
+            --sd-gold-primary: #D99427;
+            --sd-gold-light: #F6C85F;
+            --sd-border: #EAD9B8;
+            --sd-surface: #ffffff;
+            --sd-surface-alt: #FFF9EE;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--sd-bg);
+            /* Adding extra space above and below to test scrolling */
+            padding-top: 100vh; 
+            padding-bottom: 100vh;
+        }
+
+        .sd-gazebo-section {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--sd-bg);
+            color: var(--sd-text-dark);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .sd-gazebo-heading-wrapper {
+            text-align: center;
+            max-width: 600px;
+            margin-bottom: 60px;
+            z-index: 10;
+        }
+
+        .sd-gazebo-heading-wrapper h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            color: var(--sd-text-dark);
+        }
+
+        .sd-gazebo-heading-wrapper p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--sd-text-light);
+            margin: 0;
+        }
+
+        .sd-gazebo-stage {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 500px;
+            perspective: 1800px; /* Crucial for the 3D depth effect */
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sd-gazebo-card {
+            position: absolute;
+            width: 340px;
+            height: 480px;
+            background-color: var(--sd-surface);
+            border: 1px solid var(--sd-border);
+            border-radius: 24px;
+            padding: 40px 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 20px 40px rgba(217, 148, 39, 0.05);
+            box-sizing: border-box;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+        }
+
+        /* Specific card overrides to match the premium editorial feel */
+        .sd-gazebo-center {
+            background: linear-gradient(180deg, var(--sd-surface-alt) 0%, var(--sd-surface) 100%);
+            border: 2px solid var(--sd-gold-primary);
+            box-shadow: 0 30px 60px rgba(217, 148, 39, 0.12);
+            z-index: 3;
+        }
+
+        .sd-gazebo-left { z-index: 2; }
+        .sd-gazebo-right { z-index: 1; }
+
+        /* Card Typography & Layout */
+        .sd-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sd-card-tier {
+            align-self: flex-start;
+            padding: 4px 12px;
+            background-color: #FFF5DC;
+            border: 1px solid var(--sd-border);
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #8C6019;
+        }
+
+        .sd-card-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--sd-gold-primary);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .sd-card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0;
+            color: var(--sd-text-dark);
+        }
+
+        .sd-card-desc {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--sd-text-light);
+            margin: 16px 0 0 0;
+        }
+
+        .sd-card-seats {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--sd-text-dark);
+            margin-top: 12px;
+        }
+
+        .sd-card-footer {
+            border-top: 1px solid var(--sd-border);
+            padding-top: 24px;
+        }
+
+        .sd-card-pricing {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--sd-gold-primary);
+            margin-bottom: 24px;
+        }
+
+        .sd-card-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            background-color: var(--sd-text-dark);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sd-gazebo-center .sd-card-btn {
+            background: linear-gradient(90deg, var(--sd-gold-light), #E5A93C);
+            color: var(--sd-text-dark);
+            box-shadow: 0 10px 20px rgba(217, 148, 39, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sd-gazebo-stage { transform: scale(0.8); }
+        }
+        @media (max-width: 768px) {
+            .sd-gazebo-stage { 
+                transform: scale(0.6); 
+                height: 400px;
+            }
+            .sd-gazebo-heading-wrapper h2 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="sd-gazebo-section">
+        <div class="sd-gazebo-heading-wrapper">
+            <h2>VIP Gazebo Cabanas</h2>
+            <p>Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.</p>
+        </div>
+
+        <div class="sd-gazebo-stage">
+            <!-- LEFT CARD -->
+            <div class="sd-gazebo-card sd-gazebo-left">
+                <div class="sd-card-header">
+                    <span class="sd-card-tier">LEVEL 1</span>
+                    <h4 class="sd-card-name">AABHA</h4>
+                    <h3 class="sd-card-title">Elevated<br>Amphitheater</h3>
+                    <p class="sd-card-desc">Prime tier elevation right on the edge of the acoustic garba circle.</p>
+                    <div class="sd-card-seats">Seats 10–12 guests.</div>
+                </div>
+                <div class="sd-card-footer">
+                    <div class="sd-card-pricing">Price on Request • VIP Inquiry Only</div>
+                    <button class="sd-card-btn">INQUIRE AABHA</button>
+                </div>
+            </div>
+
+            <!-- CENTER CARD -->
+            <div class="sd-gazebo-card sd-gazebo-center">
+                <div class="sd-card-header">
+                    <span class="sd-card-tier" style="border-color: #E5A93C;">LEVEL 2</span>
+                    <h4 class="sd-card-name">ISHANI</h4>
+                    <h3 class="sd-card-title">Royal<br>Pavilion</h3>
+                    <p class="sd-card-desc">Center stage panoramic viewing deck with luxury plush sofas and dedicated valet.</p>
+                    <div class="sd-card-seats">Seats 12–15 guests.</div>
+                </div>
+                <div class="sd-card-footer">
+                    <div class="sd-card-pricing">Price on Request • VIP Inquiry Only</div>
+                    <button class="sd-card-btn">INQUIRE ISHANI</button>
+                </div>
+            </div>
+
+            <!-- RIGHT CARD -->
+            <div class="sd-gazebo-card sd-gazebo-right">
+                <div class="sd-card-header">
+                    <span class="sd-card-tier">LEVEL 3</span>
+                    <h4 class="sd-card-name">AURELIA</h4>
+                    <h3 class="sd-card-title">Imperial<br>Sky Lounge</h3>
+                    <p class="sd-card-desc">Highest elevation private sky cabana with bespoke chef curation and private security cordon.</p>
+                </div>
+                <div class="sd-card-footer">
+                    <div class="sd-card-pricing">Price on Request • VIP Inquiry Only</div>
+                    <button class="sd-card-btn">INQUIRE AURELIA</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // ==================================================
+        // ANIMATION SETUP
+        // ==================================================
+        
+        // 1. Initial State Setting (Phase 1)
+        // Push the cards deep into the Z-axis, scale them down slightly, and stack them behind the center card.
+        gsap.set('.sd-gazebo-left', { xPercent: 0, z: -800, rotationY: 25, opacity: 0, scale: 0.9 });
+        gsap.set('.sd-gazebo-right', { xPercent: 0, z: -800, rotationY: -25, opacity: 0, scale: 0.9 });
+        gsap.set('.sd-gazebo-center', { z: -400, rotationX: 10, opacity: 0, scale: 0.95 });
+        gsap.set('.sd-gazebo-heading-wrapper', { y: 30, opacity: 0 });
+
+        // 2. Timeline Construction
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: ".sd-gazebo-section",
+                start: "center center", // Pin when the section hits the center of the viewport
+                end: "+=250%",          // Total scroll distance (adjust this to make it faster/slower)
+                scrub: 1.2,             // Smooth interpolating scrub
+                pin: true,              // Pin the section
+                // markers: true        // Uncomment this to see the ScrollTrigger bounds
+            }
+        });
+
+        // PHASE 2: Elements Entering
+        // Bring the heading up and fade in the center card moving slightly forward
+        tl.to('.sd-gazebo-heading-wrapper', { y: 0, opacity: 1, duration: 1 })
+          .to('.sd-gazebo-center', { z: -100, rotationX: 0, opacity: 1, scale: 1, duration: 1 }, "<")
+          .to(['.sd-gazebo-left', '.sd-gazebo-right'], { opacity: 0.5, duration: 1 }, "<+0.2");
+
+        // PHASE 3 & 4: The 3D Composition Spread
+        // As the user continues scrolling, the side cards swing out along the X-axis, flatten their rotation, and come forward in Z-space.
+        tl.to('.sd-gazebo-left', { 
+            xPercent: -108, // SCROLL DISTANCE HORIZONTAL: Spread to the left
+            z: 0,           // Bring to front
+            rotationY: 0,   // Flatten 3D rotation
+            opacity: 1, 
+            scale: 1,
+            duration: 2,
+            ease: "power2.out"
+        }, "spread")
+        
+        .to('.sd-gazebo-right', { 
+            xPercent: 108,  // SCROLL DISTANCE HORIZONTAL: Spread to the right
+            z: 0,           // Bring to front
+            rotationY: 0,   // Flatten 3D rotation
+            opacity: 1,
+            scale: 1,
+            duration: 2,
+            ease: "power2.out"
+        }, "spread")
+        
+        .to('.sd-gazebo-center', { 
+            z: 50,          // Center card pops slightly forward to maintain hierarchy
+            duration: 2,
+            ease: "power2.out"
+        }, "spread");
+
+    </script>
+</body>
+</html>
