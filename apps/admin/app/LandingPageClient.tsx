@@ -810,8 +810,8 @@ export default function SafedSheriLandingPage() {
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="w-11 h-11 rounded-xl bg-[#FFF5DC] border border-[#E5A93C] flex-shrink-0 flex items-center justify-center">
-            <span className="text-xl">â˜€ï¸</span>
+          <div className="w-11 h-11 rounded-xl bg-[#FFF5DC] border border-[#E5A93C] flex-shrink-0 flex items-center justify-center text-[#D99427]">
+            <Sparkles className="w-6 h-6" />
           </div>
           <div className="text-xs">
             <div className="font-serif font-bold text-[#8C6019] tracking-wide uppercase text-[11px]">
