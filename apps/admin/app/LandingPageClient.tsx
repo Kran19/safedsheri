@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -134,7 +134,7 @@ export default function SafedSheriLandingPage() {
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '⚡ Early Bird Phase Ending Soon — Lock in passes at ₹3,500 before price escalates to ₹6,500!',
+    urgencyTagline: 'âš¡ Early Bird Phase Ending Soon â€” Lock in passes at â‚¹3,500 before price escalates to â‚¹6,500!',
     hiddenPriceLabel: 'Price Revealed on Approval',
     phaseName: 'EARLY_BIRD',
   });
@@ -769,7 +769,7 @@ export default function SafedSheriLandingPage() {
             <X className="w-4 h-4" />
           </button>
           <div className="w-11 h-11 rounded-xl bg-[#FFF5DC] border border-[#E5A93C] flex-shrink-0 flex items-center justify-center">
-            <span className="text-xl">☀️</span>
+            <span className="text-xl">â˜€ï¸</span>
           </div>
           <div className="text-xs">
             <div className="font-serif font-bold text-[#8C6019] tracking-wide uppercase text-[11px]">
@@ -798,7 +798,7 @@ export default function SafedSheriLandingPage() {
             <div className="hero-pill inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#FFF9EE] border border-[#EAD9B8]">
               <span className="w-2 h-2 rounded-full bg-[#D99427] animate-pulse" />
               <span className="text-[11px] font-bold tracking-[0.25em] text-[#8C6019] uppercase">
-                The Grand Heritage Arena • Rajkot • Navratri 2026
+                The Grand Heritage Arena â€¢ Rajkot â€¢ Navratri 2026
               </span>
             </div>
 
@@ -874,7 +874,7 @@ export default function SafedSheriLandingPage() {
             <div className="flex items-center w-full mb-4">
               <span className="text-[10px] font-bold text-[#8C6019] uppercase tracking-[0.2em] whitespace-nowrap mr-4">MANDATORY RULE</span>
               <div className="h-[1px] bg-[#D99427] flex-grow relative">
-                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-xs">✦</span>
+                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-xs">âœ¦</span>
               </div>
             </div>
 
@@ -895,7 +895,7 @@ export default function SafedSheriLandingPage() {
             {/* Accepted items */}
             <div className="flex items-center mb-4">
               <div className="w-11 h-11 rounded-full border border-[#D99427] flex items-center justify-center flex-shrink-0 mr-5">
-                <span className="text-[#D99427] text-lg font-bold">✓</span>
+                <span className="text-[#D99427] text-lg font-bold">âœ“</span>
               </div>
               <p className="text-[13px] md:text-sm text-[#4A3B2C] leading-snug">
                 Pure White, Pearl White,<br />Ivory & Off-White accepted
@@ -910,7 +910,7 @@ export default function SafedSheriLandingPage() {
             {/* Rejected items */}
             <div className="flex items-center">
               <div className="w-11 h-11 rounded-full border border-[#D99427] flex items-center justify-center flex-shrink-0 mr-5">
-                <span className="text-red-700 text-lg font-bold">✕</span>
+                <span className="text-red-700 text-lg font-bold">âœ•</span>
               </div>
               <p className="text-[13px] md:text-sm text-[#4A3B2C] leading-snug">
                 Non-white outfits will be strictly<br />denied entry at the gate
@@ -933,7 +933,7 @@ export default function SafedSheriLandingPage() {
             <div className="flex items-center w-full mb-4">
               <span className="text-[10px] font-bold text-[#8C6019] uppercase tracking-[0.2em] whitespace-nowrap mr-4">VERIFIED IDENTITY</span>
               <div className="h-[1px] bg-[#D99427] flex-grow relative">
-                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-xs">✦</span>
+                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-xs">âœ¦</span>
               </div>
             </div>
 
@@ -949,7 +949,7 @@ export default function SafedSheriLandingPage() {
 
             {/* Center Separator with diamond */}
             <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-6 flex justify-center items-center">
-               <span className="absolute text-[#D99427] text-[10px]">✦</span>
+               <span className="absolute text-[#D99427] text-[10px]">âœ¦</span>
             </div>
 
             {/* Bottom Content */}
@@ -1000,7 +1000,7 @@ export default function SafedSheriLandingPage() {
               <div>
                 <div className="inline-flex items-center space-x-2 text-[10px] font-mono tracking-widest font-bold text-[#F6C85F] uppercase mb-0.5">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-ping mr-1" />
-                  LIMITED TIME REVERSE COUNTDOWN • {pricing.phaseName} PHASE
+                  LIMITED TIME REVERSE COUNTDOWN â€¢ {pricing.phaseName} PHASE
                 </div>
                 <div className="text-xs md:text-sm font-serif font-bold text-white tracking-wide">
                   {pricing.urgencyTagline || 'Lock in your passes at current phase rates before price escalates!'}
@@ -1034,6 +1034,98 @@ export default function SafedSheriLandingPage() {
         </div>
       )}
 
+      {/* CHAPTER 4: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
+      <section id="gazebos" className="relative py-24 px-6 z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
+            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
+            <p className="text-sm text-[#6E5336] leading-relaxed">
+              Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition">
+              <div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                  LEVEL 1
+                </span>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-3">Elevated Amphitheater</h3>
+                <p className="text-xs text-[#6E5336] mt-2 leading-relaxed">
+                  Prime tier elevation right on the edge of the acoustic garba circle. Seats 10-12 guests.
+                </p>
+                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-xs text-[#6E5336]">Hospitality Pricing:</div>
+                  <div className="text-lg font-serif font-bold text-[#D99427] italic">
+                    Price on Request • VIP Inquiry Only
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePassSelect('GAZEBO')}
+                className="w-full py-3 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+              >
+                Inquire Level 1 Lounge
+              </button>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 relative">
+              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
+                Royal Tier
+              </div>
+              <div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
+                  LEVEL 2
+                </span>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-3">Royal Pavilion</h3>
+                <p className="text-xs text-[#6E5336] mt-2 leading-relaxed">
+                  Center stage panoramic viewing deck with luxury plush sofas and dedicated valet. Seats 12-15 guests.
+                </p>
+                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-xs text-[#6E5336]">Hospitality Pricing:</div>
+                  <div className="text-lg font-serif font-bold text-[#D99427] italic">
+                    Price on Request • VIP Inquiry Only
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePassSelect('GAZEBO')}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-[#D99427]/25"
+              >
+                Inquire Royal Pavilion
+              </button>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition">
+              <div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                  LEVEL 3
+                </span>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-3">Imperial Sky Lounge</h3>
+                <p className="text-xs text-[#6E5336] mt-2 leading-relaxed">
+                  Highest elevation private sky cabana with bespoke chef curation and private security cordon.
+                </p>
+                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
+                  <div className="text-xs text-[#6E5336]">Hospitality Pricing:</div>
+                  <div className="text-lg font-serif font-bold text-[#D99427] italic">
+                    Price on Request • VIP Inquiry Only
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePassSelect('GAZEBO')}
+                className="w-full py-3 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+              >
+                Inquire Imperial Lounge
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* CHAPTER 4: PASS SELECTION & BOOKING */}
       <section id="passes" className="relative py-24 px-6 z-10 bg-[#FFFDF9] border-t border-[#EAD9B8]">
         <div className="max-w-6xl mx-auto">
@@ -1068,11 +1160,11 @@ export default function SafedSheriLandingPage() {
                   <div className="mb-6">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.singlePrice?.toLocaleString()}
+                        â‚¹{pricing.singlePrice?.toLocaleString()}
                       </span>
                       {pricing.nextSinglePrice && (
                         <span className="text-xs font-mono text-gray-400 line-through">
-                          ₹{pricing.nextSinglePrice?.toLocaleString()}
+                          â‚¹{pricing.nextSinglePrice?.toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -1094,15 +1186,15 @@ export default function SafedSheriLandingPage() {
 
                 <div className="space-y-2.5 text-xs text-[#6E5336] mb-8 border-t border-[#EAD9B8] pt-6">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>1 Verified Female Entry per Pass</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>Unique Dynamic QR Pass</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>75% White Attire Compulsory</span>
                   </div>
                 </div>
@@ -1141,11 +1233,11 @@ export default function SafedSheriLandingPage() {
                   <div className="mb-6">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.couplePrice?.toLocaleString()}
+                        â‚¹{pricing.couplePrice?.toLocaleString()}
                       </span>
                       {pricing.nextCouplePrice && (
                         <span className="text-xs font-mono text-gray-400 line-through">
-                          ₹{pricing.nextCouplePrice?.toLocaleString()}
+                          â‚¹{pricing.nextCouplePrice?.toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -1167,15 +1259,15 @@ export default function SafedSheriLandingPage() {
 
                 <div className="space-y-2.5 text-xs text-[#6E5336] mb-8 border-t border-[#EAD9B8] pt-6">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>2 Individually Verified Attendees</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>2 Unique Dynamic QR Passes</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>75% White Attire Compulsory</span>
                   </div>
                 </div>
@@ -1211,7 +1303,7 @@ export default function SafedSheriLandingPage() {
                   <div className="mb-6">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString() : '999'}
+                        â‚¹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString() : '999'}
                       </span>
                     </div>
                     <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
@@ -1232,16 +1324,16 @@ export default function SafedSheriLandingPage() {
 
                 <div className="space-y-2.5 text-xs text-[#6E5336] mb-8 border-t border-[#EAD9B8] pt-6">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>1 Verified Kid Entry per Pass</span>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>Unique Dynamic QR Pass</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span className="text-[#D99427] font-bold">âœ“</span>
                     <span>75% White Attire Compulsory</span>
                   </div>
                 </div>
@@ -1273,8 +1365,8 @@ export default function SafedSheriLandingPage() {
           </div>
 
           <div className="text-center md:text-right">
-            <div className="font-semibold text-[#2D1F0E]">The Grand Heritage Arena • Kalawad Road, Rajkot, Gujarat</div>
-            <div className="text-[11px] text-[#8C6019] mt-0.5">© 2026 Safed Sheri Cultural Gala. All rights reserved.</div>
+            <div className="font-semibold text-[#2D1F0E]">The Grand Heritage Arena â€¢ Kalawad Road, Rajkot, Gujarat</div>
+            <div className="text-[11px] text-[#8C6019] mt-0.5">Â© 2026 Safed Sheri Cultural Gala. All rights reserved.</div>
           </div>
         </div>
       </footer>
@@ -1292,7 +1384,7 @@ export default function SafedSheriLandingPage() {
                 <LogoSlot size="sm" />
                 <div>
                   <span className="text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase block">
-                    SAFED SHERI 2026 • OFFICIAL REGISTRATION
+                    SAFED SHERI 2026 â€¢ OFFICIAL REGISTRATION
                   </span>
                   <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#2D1F0E]">
                     {selectedPass === 'SINGLE' ? 'FEMALE' : selectedPass === 'KIDS' ? 'KIDS' : selectedPass} Pass Booking
@@ -1314,7 +1406,7 @@ export default function SafedSheriLandingPage() {
                   onClick={() => setIsBookingOpen(false)}
                   className="w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8] text-sm font-bold shadow-sm"
                 >
-                  ✕
+                  âœ•
                 </button>
               </div>
             </div>
@@ -1398,13 +1490,13 @@ export default function SafedSheriLandingPage() {
                   </div>
 
                   <div className="text-[11px] font-mono font-bold text-[#8C6019] hidden sm:block">
-                    Draft Saved ✓
+                    Draft Saved âœ“
                   </div>
                 </div>
 
                 {bookingError && (
                   <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center space-x-3 shadow-sm">
-                    <span className="text-base">⚠️</span>
+                    <span className="text-base">âš ï¸</span>
                     <span className="font-medium">{bookingError}</span>
                   </div>
                 )}
@@ -1416,7 +1508,7 @@ export default function SafedSheriLandingPage() {
                   <div className="space-y-6 animate-fade-in py-2">
                     <div className="text-center space-y-2">
                       <span className="text-xs font-mono font-bold text-[#8C6019] uppercase tracking-widest">
-                        STEP 1 OF 3 • SELECT PASS QUANTITY
+                        STEP 1 OF 3 â€¢ SELECT PASS QUANTITY
                       </span>
                       <h4 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E]">
                         How many passes do you wish to book?
@@ -1464,7 +1556,7 @@ export default function SafedSheriLandingPage() {
                             key={i}
                             className="px-3 py-1 rounded-full bg-white border border-[#EAD9B8] text-[11px] font-bold text-[#8C6019] shadow-sm flex items-center space-x-1"
                           >
-                            <span>{selectedPass === 'KIDS' ? '👶' : '👸'}</span>
+                            <span>{selectedPass === 'KIDS' ? 'ðŸ‘¶' : 'ðŸ‘¸'}</span>
                             <span>{i === 0 ? 'Primary Contact' : `Guest #${i + 1}`}</span>
                           </span>
                         ))}
@@ -1474,9 +1566,9 @@ export default function SafedSheriLandingPage() {
                       <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] text-xs text-[#2D1F0E] space-y-1 shadow-sm">
                         {pricing.showSinglePrice ? (
                           <>
-                            <div className="text-[#6E5336]">Phase Pricing: ₹{(selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice)?.toLocaleString()} per pass</div>
+                            <div className="text-[#6E5336]">Phase Pricing: â‚¹{(selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice)?.toLocaleString()} per pass</div>
                             <div className="text-xl font-serif font-bold text-[#D99427]">
-                              Total: ₹{((selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice) * attendees.length).toLocaleString()}
+                              Total: â‚¹{((selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice) * attendees.length).toLocaleString()}
                             </div>
                           </>
                         ) : (
@@ -1519,7 +1611,7 @@ export default function SafedSheriLandingPage() {
                               </ul>
                             )}
                             {termsError && (
-                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠ You must accept the Terms & Conditions to continue.</p>
+                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">âš  You must accept the Terms & Conditions to continue.</p>
                             )}
                           </div>
                         </div>
@@ -1576,7 +1668,7 @@ export default function SafedSheriLandingPage() {
                       {/* KIDS SPECIFIC MANDATORY AADHAAR NOTICE */}
                       {selectedPass === 'KIDS' && (
                         <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2.5">
-                          <span className="text-base">👶</span>
+                          <span className="text-base">ðŸ‘¶</span>
                           <span className="font-semibold">
                             Child Aadhaar Card is mandatory for every kid pass. Original ID must be presented at the gate.
                           </span>
@@ -1728,7 +1820,7 @@ export default function SafedSheriLandingPage() {
                       )}
                     </div>
 
-                    {/* Terms and Conditions — shown on Couple pass first guest screen */}
+                    {/* Terms and Conditions â€” shown on Couple pass first guest screen */}
                     {selectedPass === 'COUPLE' && currentAttendeeIndex === 0 && (
                       <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 text-left shadow-sm animate-fade-in">
                         <div className="flex items-start space-x-4">
@@ -1756,7 +1848,7 @@ export default function SafedSheriLandingPage() {
                               </ul>
                             )}
                             {termsError && (
-                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠ You must accept the Terms &amp; Conditions to continue.</p>
+                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">âš  You must accept the Terms &amp; Conditions to continue.</p>
                             )}
                           </div>
                         </div>
@@ -1804,7 +1896,7 @@ export default function SafedSheriLandingPage() {
                   <div className="space-y-6 animate-fade-in">
                     <div className="text-center space-y-1">
                       <span className="text-xs font-mono font-bold text-[#8C6019] uppercase tracking-widest">
-                        FINAL STEP • EXECUTIVE REVIEW
+                        FINAL STEP â€¢ EXECUTIVE REVIEW
                       </span>
                       <h4 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E]">
                         Verify Details & Submit Booking
@@ -1834,7 +1926,7 @@ export default function SafedSheriLandingPage() {
                               <div className="font-bold text-[#2D1F0E]">{att.fullName || `Guest #${idx + 1}`}</div>
                               <div className="text-[#6E5336] font-mono text-[11px] flex items-center space-x-2">
                                 <span>Aadhaar: {formatAadhaarNumber(att.aadhaarNumber)}</span>
-                                <span>•</span>
+                                <span>â€¢</span>
                                 <span>+91 {formatPhoneNumber(att.phone)}</span>
                               </div>
                             </div>
@@ -1862,7 +1954,7 @@ export default function SafedSheriLandingPage() {
                       </div>
                       {(selectedPass === 'COUPLE' ? pricing.showCouplePrice : pricing.showSinglePrice) ? (
                         <div className="text-2xl font-serif font-bold text-[#D99427]">
-                          ₹{(selectedPass === 'COUPLE' ? pricing.couplePrice : (selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice) * attendees.length).toLocaleString()}
+                          â‚¹{(selectedPass === 'COUPLE' ? pricing.couplePrice : (selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice) * attendees.length).toLocaleString()}
                         </div>
                       ) : (
                         <div className="text-xs font-bold text-[#8C6019] bg-[#FAF6EE] px-4 py-2 rounded-xl border border-[#EAD9B8] flex items-center space-x-1.5">
@@ -1900,7 +1992,7 @@ export default function SafedSheriLandingPage() {
               /* SUBMISSION SUCCESS CONFIRMATION */
               <div className="text-center py-8 space-y-6 animate-fade-in">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center text-2xl mx-auto font-bold">
-                  ✓
+                  âœ“
                 </div>
                 <div>
                   <div className="text-xs font-mono font-bold text-[#8C6019] uppercase tracking-widest mb-1">
@@ -1925,7 +2017,7 @@ export default function SafedSheriLandingPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#6E5336]">Amount Due:</span>
-                    <span className="font-bold text-[#2D1F0E]">₹{submittedApplication.amountDue?.toLocaleString()}</span>
+                    <span className="font-bold text-[#2D1F0E]">â‚¹{submittedApplication.amountDue?.toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -1966,7 +2058,7 @@ export default function SafedSheriLandingPage() {
               onClick={() => setIsWalletOpen(false)}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
             >
-              ✕
+              âœ•
             </button>
 
             <div className="space-y-6">
@@ -2013,7 +2105,7 @@ export default function SafedSheriLandingPage() {
                   }}
                   className="text-[11px] text-[#D99427] font-bold hover:underline flex items-center space-x-1"
                 >
-                  <span>↻ Refresh Status</span>
+                  <span>â†» Refresh Status</span>
                 </button>
               )}
 
@@ -2042,12 +2134,12 @@ export default function SafedSheriLandingPage() {
                         <div className="flex justify-between items-start">
                           <div>
                             <span className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-wider block">
-                              {p.passType} PASS • {p.registrationNumber}
+                              {p.passType} PASS â€¢ {p.registrationNumber}
                             </span>
                             <h4 className="text-lg font-serif font-bold text-[#2D1F0E]">{p.attendeeName}</h4>
                             <div className="flex items-center space-x-3 text-xs text-[#6E5336] font-mono mt-0.5">
                               <span>Aadhaar: {p.aadhaarMasked ? p.aadhaarMasked.replace(/(\w{4})/g, '$1 ').trim() : 'XXXX XXXX XXXX'}</span>
-                              <span>•</span>
+                              <span>â€¢</span>
                               <span>Mobile: +91 {formatPhoneNumber(p.phone)}</span>
                             </div>
                           </div>
@@ -2056,7 +2148,7 @@ export default function SafedSheriLandingPage() {
                             {p.hasActivePass ? (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm flex items-center space-x-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                                <span>PASS ACTIVE ✓</span>
+                                <span>PASS ACTIVE âœ“</span>
                               </span>
                             ) : (p.isPaymentPending || p.registrationStatus === 'PAYMENT_PENDING' || p.registrationStatus === 'APPROVED') ? (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 shadow-sm flex items-center space-x-1">
@@ -2065,15 +2157,15 @@ export default function SafedSheriLandingPage() {
                               </span>
                             ) : (p.isUnderReview || p.registrationStatus === 'UNDER_REVIEW' || p.registrationStatus === 'SUBMITTED') ? (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 shadow-sm">
-                                ⏳ UNDER REVIEW
+                                â³ UNDER REVIEW
                               </span>
                             ) : p.hasUsedPass ? (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-gray-100 text-gray-800 border border-gray-300 shadow-sm flex items-center space-x-1">
-                                <span>❌ USED PASS</span>
+                                <span>âŒ USED PASS</span>
                               </span>
                             ) : (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300 shadow-sm flex items-center space-x-1">
-                                <span>✕ RESUBMISSION NEEDED</span>
+                                <span>âœ• RESUBMISSION NEEDED</span>
                               </span>
                             )}
                           </div>
@@ -2086,7 +2178,7 @@ export default function SafedSheriLandingPage() {
                               <LogoSlot size="sm" />
                             </div>
                             <div className="text-[10px] tracking-[0.25em] font-extrabold uppercase text-[#8C6019]">
-                              SAFED SHERI 2026 • OFFICIAL ENTRY PASS
+                              SAFED SHERI 2026 â€¢ OFFICIAL ENTRY PASS
                             </div>
 
                             <div className="flex justify-center py-2">
@@ -2103,7 +2195,7 @@ export default function SafedSheriLandingPage() {
                             </div>
 
                             <div className="text-xs text-[#6E5336] bg-[#FAF6EE] p-2.5 rounded-xl border border-[#EAD9B8]">
-                              Present this digital pass at the Security Gate on <strong>09 October 2026</strong> • The Grand Heritage Arena, Rajkot.
+                              Present this digital pass at the Security Gate on <strong>09 October 2026</strong> â€¢ The Grand Heritage Arena, Rajkot.
                             </div>
                           </div>
                         )}
@@ -2116,7 +2208,7 @@ export default function SafedSheriLandingPage() {
                               <span>KYC Approved! Online Payment Pending</span>
                             </div>
                             <p className="text-[11px] text-[#6E5336] leading-relaxed">
-                              Your document verification is complete. Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.
+                              Your document verification is complete. Complete the online payment of <strong>â‚¹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.
                             </p>
                             
                             {p.paymentLinkId && p.isPrimary && (
@@ -2128,7 +2220,7 @@ export default function SafedSheriLandingPage() {
                                   }}
                                   className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:scale-105 transition shadow-md flex items-center space-x-1.5"
                                 >
-                                  <span>Pay Now & Mint Pass →</span>
+                                  <span>Pay Now & Mint Pass â†’</span>
                                 </button>
                               </div>
                             )}
@@ -2187,7 +2279,7 @@ export default function SafedSheriLandingPage() {
                                 }}
                                 className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-md flex items-center justify-center space-x-1.5 whitespace-nowrap"
                               >
-                                <span>Re-Apply / Upload Clear ID →</span>
+                                <span>Re-Apply / Upload Clear ID â†’</span>
                               </button>
                             </div>
                           </div>
@@ -2228,14 +2320,14 @@ export default function SafedSheriLandingPage() {
               onClick={() => setActivePaymentLink(null)}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
             >
-              ✕
+              âœ•
             </button>
 
             {!paymentSuccessData ? (
               <div className="space-y-5">
                 <div>
                   <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
-                    <span>🔒</span>
+                    <span>ðŸ”’</span>
                     <span>100% SECURE INSTANT CHECKOUT</span>
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Complete Pass Booking</h3>
@@ -2267,7 +2359,7 @@ export default function SafedSheriLandingPage() {
                           {paymentOrder.attendees.map((att: any, idx: number) => (
                             <div key={idx} className="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#EAD9B8] text-[11px]">
                               <span className="font-medium text-[#2D1F0E]">{att.fullName} ({att.gender === 'FEMALE' ? 'F' : 'M'})</span>
-                              <span className="font-mono text-[#8C6019] text-[10px]">Aadhaar Verified ✓</span>
+                              <span className="font-mono text-[#8C6019] text-[10px]">Aadhaar Verified âœ“</span>
                             </div>
                           ))}
                         </div>
@@ -2278,7 +2370,7 @@ export default function SafedSheriLandingPage() {
                     <div className="border-t border-[#EAD9B8] pt-2 space-y-1">
                       <div className="flex justify-between text-[#6E5336] text-[11px]">
                         <span>Event Venue:</span>
-                        <span className="font-medium text-[#2D1F0E]">Grand Arena • Rajkot</span>
+                        <span className="font-medium text-[#2D1F0E]">Grand Arena â€¢ Rajkot</span>
                       </div>
                       <div className="flex justify-between text-[#6E5336] text-[11px]">
                         <span>Dress Code:</span>
@@ -2287,7 +2379,7 @@ export default function SafedSheriLandingPage() {
                       <div className="flex justify-between items-baseline pt-2 border-t border-[#EAD9B8]/70">
                         <span className="font-bold text-[#2D1F0E] text-xs uppercase tracking-wider">Total Payable:</span>
                         <span className="text-xl font-serif font-bold text-[#D99427]">
-                          ₹{paymentOrder.amountDue?.toLocaleString()}
+                          â‚¹{paymentOrder.amountDue?.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -2300,7 +2392,7 @@ export default function SafedSheriLandingPage() {
                     disabled={paymentLoading}
                     className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition disabled:opacity-50 shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2"
                   >
-                    <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (₹${paymentOrder?.amountDue?.toLocaleString() || '3,500'})`}</span>
+                    <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (â‚¹${paymentOrder?.amountDue?.toLocaleString() || '3,500'})`}</span>
                   </button>
                   <p className="text-[10px] text-[#6E5336]">
                     Protected by Razorpay 256-bit encrypted gateway. Digital QR pass minted instantly.
@@ -2311,7 +2403,7 @@ export default function SafedSheriLandingPage() {
               /* PAYMENT CONFIRMED & PASS ISSUED */
               <div className="space-y-6 py-4">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center text-2xl mx-auto font-bold">
-                  ✓
+                  âœ“
                 </div>
                 <div>
                   <div className="text-xs font-mono font-bold text-[#8C6019] uppercase tracking-widest mb-1">
@@ -2319,7 +2411,7 @@ export default function SafedSheriLandingPage() {
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Pass Successfully Issued!</h3>
                   <p className="text-xs text-[#6E5336] mt-1">
-                    Receipt #{paymentSuccessData.receiptNumber} • Transaction #{paymentSuccessData.providerReference}
+                    Receipt #{paymentSuccessData.receiptNumber} â€¢ Transaction #{paymentSuccessData.providerReference}
                   </p>
                 </div>
 
@@ -2363,7 +2455,7 @@ export default function SafedSheriLandingPage() {
               onClick={() => setIsGazeboModalOpen(false)}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
             >
-              ✕
+              âœ•
             </button>
 
             {!gazeboSuccess ? (
@@ -2409,7 +2501,7 @@ export default function SafedSheriLandingPage() {
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Reserve Gazebo Lounge</h3>
                   <p className="text-xs text-[#6E5336] mt-1">
-                    Private viewing lounges for 10–15 guests with dedicated hospitality service. Pricing on request.
+                    Private viewing lounges for 10â€“15 guests with dedicated hospitality service. Pricing on request.
                   </p>
                 </div>
 
@@ -2456,7 +2548,7 @@ export default function SafedSheriLandingPage() {
                         gazeboForm.phone.replace(/\D/g,'').length === 10 ? 'text-emerald-700' : 'text-[#8C6019]'
                       }`}>
                         {gazeboForm.phone.replace(/\D/g,'').length}/10 digits
-                        {gazeboForm.phone.replace(/\D/g,'').length === 10 && ' ✓'}
+                        {gazeboForm.phone.replace(/\D/g,'').length === 10 && ' âœ“'}
                       </div>
                     )}
                   </div>
@@ -2468,9 +2560,9 @@ export default function SafedSheriLandingPage() {
                       onChange={(e) => setGazeboForm({ ...gazeboForm, level: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
                     >
-                      <option value={1}>Level 1 — Gazebo 1</option>
-                      <option value={2}>Level 2 — Gazebo 2</option>
-                      <option value={3}>Level 3 — Gazebo 3</option>
+                      <option value={1}>Level 1 â€” Gazebo 1</option>
+                      <option value={2}>Level 2 â€” Gazebo 2</option>
+                      <option value={3}>Level 3 â€” Gazebo 3</option>
                     </select>
                   </div>
 
@@ -2501,7 +2593,7 @@ export default function SafedSheriLandingPage() {
             ) : (
               <div className="text-center py-6 space-y-4">
                 <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center text-xl mx-auto font-bold">
-                  ✓
+                  âœ“
                 </div>
                 <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Inquiry Received</h3>
                 <p className="text-xs text-[#6E5336] max-w-xs mx-auto">
@@ -2531,7 +2623,7 @@ export default function SafedSheriLandingPage() {
               }}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8] transition"
             >
-              ✕
+              âœ•
             </button>
 
             {!sponsorSuccess ? (
@@ -2565,7 +2657,7 @@ export default function SafedSheriLandingPage() {
                 <div>
                   <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
                     <Crown className="w-3.5 h-3.5 text-[#D99427]" />
-                    <span>CORPORATE ALLIANCE DESK • RAJKOT</span>
+                    <span>CORPORATE ALLIANCE DESK â€¢ RAJKOT</span>
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Partner With Safed Sheri 2026</h3>
                   <p className="text-xs text-[#6E5336] mt-0.5">
@@ -2636,11 +2728,11 @@ export default function SafedSheriLandingPage() {
                       onChange={(e) => setSponsorForm({ ...sponsorForm, sponsorshipType: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none font-medium"
                     >
-                      <option value="Title Presenting Partner (Grand Arena Branding)">👑 Title Presenting Partner (Arena Naming & LED Arches)</option>
-                      <option value="Powered By Partner (Main Stage & Broadcast)">⭐ Powered By Partner (Main Stage & Broadcast Alliances)</option>
-                      <option value="Associate Luxury Sponsor (Acoustic & Fashion)">✨ Associate Luxury Sponsor (Ethnic Fashion / Acoustics / Jewels)</option>
-                      <option value="Official Beverage & Hospitality Partner">☕ Official Beverage & Hospitality Partner</option>
-                      <option value="VIP Experiential Lounge Activation">🏛️ VIP Cabana Experiential Lounge Activation</option>
+                      <option value="Title Presenting Partner (Grand Arena Branding)">ðŸ‘‘ Title Presenting Partner (Arena Naming & LED Arches)</option>
+                      <option value="Powered By Partner (Main Stage & Broadcast)">â­ Powered By Partner (Main Stage & Broadcast Alliances)</option>
+                      <option value="Associate Luxury Sponsor (Acoustic & Fashion)">âœ¨ Associate Luxury Sponsor (Ethnic Fashion / Acoustics / Jewels)</option>
+                      <option value="Official Beverage & Hospitality Partner">â˜• Official Beverage & Hospitality Partner</option>
+                      <option value="VIP Experiential Lounge Activation">ðŸ›ï¸ VIP Cabana Experiential Lounge Activation</option>
                     </select>
                   </div>
 
@@ -2662,7 +2754,7 @@ export default function SafedSheriLandingPage() {
                     disabled={sponsorLoading}
                     className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2"
                   >
-                    <span>{sponsorLoading ? 'Submitting Partnership Dossier...' : 'Submit Partnership Inquiry →'}</span>
+                    <span>{sponsorLoading ? 'Submitting Partnership Dossier...' : 'Submit Partnership Inquiry â†’'}</span>
                   </button>
                   <p className="text-[10px] text-center text-[#6E5336] mt-2">
                     Our Partnership & Alliances Director will contact you within 2-4 business hours on WhatsApp with our official media kit.
@@ -2672,11 +2764,11 @@ export default function SafedSheriLandingPage() {
             ) : (
               <div className="text-center py-6 space-y-4">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 border-2 border-emerald-300 flex items-center justify-center text-2xl mx-auto font-bold shadow-md">
-                  ✓
+                  âœ“
                 </div>
                 <div>
                   <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-widest mb-1">
-                    INQUIRY RECORDED • REF: {sponsorReference}
+                    INQUIRY RECORDED â€¢ REF: {sponsorReference}
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Sponsorship Inquiry Received</h3>
                   <p className="text-xs text-[#6E5336] max-w-sm mx-auto mt-1">
