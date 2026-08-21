@@ -1192,8 +1192,9 @@ export default function SafedSheriLandingPage() {
               </button>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+    </div>
 
       {/* MOBILE FALLBACK (STATIC GRID) */}
       <section className="relative py-24 px-6 z-10 md:hidden border-b border-[#EAD9B8]">
