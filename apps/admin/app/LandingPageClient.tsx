@@ -105,7 +105,7 @@ export default function SafedSheriLandingPage() {
           scrollTrigger: {
             trigger: gazeboSectionRef.current,
             start: "center center",
-            end: "+=250%",
+            end: () => "+=" + (window.innerHeight * 2),
             scrub: 1.2,
             pin: true,
             refreshPriority: 9,
@@ -1075,22 +1075,23 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* CHAPTER 3: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
-      <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10 hidden md:block">
-        
-        <div ref={gazeboHeadingRef} className="text-center max-w-2xl mx-auto space-y-3 relative z-50 pointer-events-none mb-10">
-          <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
-          <p className="text-sm text-[#6E5336] leading-relaxed">
-            Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
-          </p>
-        </div>
-
-        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[600px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
+      <div className="hidden md:block">
+        <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10">
           
-          <div className="relative w-full h-[600px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
+          <div ref={gazeboHeadingRef} className="relative text-center w-full max-w-2xl mx-auto px-6 z-50 pointer-events-none space-y-2 mb-[2vh]">
+            <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
+            <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
+            <p className="text-xs text-[#6E5336] leading-relaxed">
+              Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
+            </p>
+          </div>
+
+          <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[600px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
             
-            {/* LEFT CARD */}
-            <div ref={gazeboLeftRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+            <div className="relative w-full h-[600px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
+              
+              {/* LEFT CARD */}
+              <div ref={gazeboLeftRef} className="absolute w-full max-w-[280px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 1
@@ -1123,7 +1124,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* CENTER CARD */}
-            <div ref={gazeboCenterRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+            <div ref={gazeboCenterRef} className="absolute w-full max-w-[280px] p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
                 Royal Tier
               </div>
@@ -1159,7 +1160,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* RIGHT CARD */}
-            <div ref={gazeboRightRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+            <div ref={gazeboRightRef} className="absolute w-full max-w-[280px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 3
@@ -1191,8 +1192,8 @@ export default function SafedSheriLandingPage() {
               </button>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* MOBILE FALLBACK (STATIC GRID) */}
       <section className="relative py-24 px-6 z-10 md:hidden border-b border-[#EAD9B8]">
