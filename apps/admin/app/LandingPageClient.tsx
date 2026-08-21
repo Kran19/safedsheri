@@ -117,9 +117,9 @@ export default function SafedSheriLandingPage() {
           .to([gazeboLeftRef.current, gazeboRightRef.current], { opacity: 0.5, duration: 1 }, "<+0.2");
 
         // Phase 3 & 4: Spread
-        tl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, opacity: 1, scale: 1, zIndex: 10, duration: 2, ease: "power2.out" }, "spread")
-          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, opacity: 1, scale: 1, zIndex: 10, duration: 2, ease: "power2.out" }, "spread")
-          .to(gazeboCenterRef.current, { z: 50, zIndex: 20, duration: 2, ease: "power2.out" }, "spread");
+        tl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
       }
     });
 
@@ -1088,7 +1088,7 @@ export default function SafedSheriLandingPage() {
           <div className="relative w-full h-[600px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
             
             {/* LEFT CARD */}
-            <div ref={gazeboLeftRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
+            <div ref={gazeboLeftRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 1
@@ -1121,7 +1121,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* CENTER CARD */}
-            <div ref={gazeboCenterRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
+            <div ref={gazeboCenterRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
                 Royal Tier
               </div>
@@ -1157,7 +1157,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* RIGHT CARD */}
-            <div ref={gazeboRightRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}>
+            <div ref={gazeboRightRef} className="absolute w-full max-w-[340px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div>
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                   LEVEL 3
@@ -1275,7 +1275,7 @@ export default function SafedSheriLandingPage() {
       <section id="passes" className="relative py-24 px-6 z-10 bg-[#FFFDF9] border-t border-[#EAD9B8]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter V</span>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">Reserve Your Pass</h2>
             <p className="text-sm text-[#6E5336] leading-relaxed">
               Step into the sacred circle. Passes are limited to preserve acoustic purity, intimacy, and safety.

@@ -164,7 +164,7 @@ export default function TheWomenSection() {
         
         {/* Header (Normal Flow) */}
         <div className="w-full text-center pointer-events-none px-6 mb-[4vh] md:mb-[6vh] space-y-2">
-          <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase block">Chapter III</span>
+          <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase block">Chapter IV</span>
           <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">
             The Women Behind<br/>The Celebration
           </h2>
