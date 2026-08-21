@@ -108,6 +108,8 @@ export default function SafedSheriLandingPage() {
             end: "+=250%",
             scrub: 1.2,
             pin: true,
+            refreshPriority: 9,
+            anticipatePin: 1
           }
         });
 
