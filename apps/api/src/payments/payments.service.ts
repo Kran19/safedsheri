@@ -379,7 +379,29 @@ export class PaymentsService {
     });
   }
 
+  async confirmRazorpayPayment(body: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string; paymentLinkId: string }) {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentLinkId } = body;
+    const secret = process.env.RAZORPAY_KEY_SECRET || 'ongR1rNVsrzSoVyjGx6VY9Zm';
+
+    const generated_signature = crypto
+      .createHmac('sha256', secret)
+      .update(razorpay_order_id + '|' + razorpay_payment_id)
+      .digest('hex');
+
+    if (generated_signature !== razorpay_signature) {
+      throw new BadRequestException('Invalid payment signature');
+    }
+
+    return this.confirmGatewayPayment({
+      paymentLinkId,
+      providerReference: razorpay_payment_id,
+      notes: `Razorpay Order ID: ${razorpay_order_id}`,
+      method: PaymentMethod.ONLINE_GATEWAY,
+    });
+  }
+
   async confirmGatewayPayment(data: {
+
     paymentLinkId: string;
     providerReference?: string;
     notes?: string;

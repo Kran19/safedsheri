@@ -606,30 +606,50 @@ export default function SafedSheriLandingPage() {
   };
 
   const handleSimulatePayment = async () => {
-    if (!activePaymentLink) return;
+    if (!activePaymentLink || !paymentOrder) return;
     garbaAudio.playDhol();
-    setPaymentLoading(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/payments/gateway-confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentLinkId: activePaymentLink,
-          providerReference: `UPI-APP-TXN-${Date.now().toString().slice(-6)}`,
-          notes: 'Customer paid online via dynamic UPI QR checkout modal',
-        }),
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setPaymentSuccessData(json.data);
-        garbaAudio.playGhunghroo();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPaymentLoading(false);
-    }
+    const options = {
+      key: paymentOrder.razorpayKeyId,
+      amount: paymentOrder.amount * 100,
+      currency: 'INR',
+      name: 'Safed Sheri 2026',
+      description: `Pass Booking ${paymentOrder.registrationNumber}`,
+      order_id: paymentOrder.razorpayOrderId,
+      handler: async function (response: any) {
+        setPaymentLoading(true);
+        try {
+          const res = await fetch(`${API_BASE}/payments/razorpay-confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              paymentLinkId: activePaymentLink,
+            }),
+          });
+          const json = await res.json();
+          if (json.success && json.data) {
+            setPaymentSuccessData(json.data);
+            garbaAudio.playGhunghroo();
+          } else {
+            console.error('Payment verification failed', json);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setPaymentLoading(false);
+        }
+      },
+      theme: { color: '#D99427' }
+    };
+    
+    const rzp1 = new (window as any).Razorpay(options);
+    rzp1.on('payment.failed', function (response: any){
+      console.error(response.error.description);
+    });
+    rzp1.open();
   };
 
   return (
@@ -2026,9 +2046,10 @@ export default function SafedSheriLandingPage() {
                               <span>KYC Approved! Online Payment Pending</span>
                             </div>
                             <p className="text-[11px] text-[#6E5336] leading-relaxed">
-                              Your document verification is complete. Complete the online UPI payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.
+                              Your document verification is complete. Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.
                             </p>
-                            {p.paymentLinkId && (
+                            
+                            {p.paymentLinkId && p.isPrimary && (
                               <div className="pt-1 flex justify-end">
                                 <button
                                   onClick={() => {
@@ -2039,6 +2060,14 @@ export default function SafedSheriLandingPage() {
                                 >
                                   <span>Pay Now & Mint Pass →</span>
                                 </button>
+                              </div>
+                            )}
+
+                            {p.paymentLinkId && !p.isPrimary && (
+                              <div className="pt-2">
+                                <div className="text-[10px] font-bold text-amber-700 bg-amber-100/50 p-2 rounded-lg text-center border border-amber-200">
+                                  Waiting for Primary Booker to complete the payment
+                                </div>
                               </div>
                             )}
                           </div>
@@ -2195,34 +2224,16 @@ export default function SafedSheriLandingPage() {
                   </div>
                 )}
 
-                {/* Dynamic UPI QR Container */}
-                <div className="p-4 rounded-2xl bg-white border-2 border-[#EAD9B8] inline-block shadow-md">
-                  <QRCodeSVG
-                    value={`upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${paymentOrder?.amountDue || 3500}&tn=SS26-${paymentOrder?.registrationNumber || 'PassBooking'}&tr=${paymentOrder?.paymentLinkId || 'UPI'}`}
-                    size={140}
-                  />
-                  <div className="text-[10px] font-mono tracking-wider text-[#8C6019] mt-2 uppercase font-bold">
-                    Scan with any UPI App
-                  </div>
-                  <div className="flex justify-center items-center gap-1.5 mt-1.5 text-[9px] font-semibold text-[#6E5336]">
-                    <span className="bg-[#FAF6EE] px-1.5 py-0.5 rounded border border-[#EAD9B8]">GPay</span>
-                    <span className="bg-[#FAF6EE] px-1.5 py-0.5 rounded border border-[#EAD9B8]">PhonePe</span>
-                    <span className="bg-[#FAF6EE] px-1.5 py-0.5 rounded border border-[#EAD9B8]">Paytm</span>
-                    <span className="bg-[#FAF6EE] px-1.5 py-0.5 rounded border border-[#EAD9B8]">BHIM</span>
-                    <span className="bg-[#FAF6EE] px-1.5 py-0.5 rounded border border-[#EAD9B8]">Cred</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 pt-4">
                   <button
                     onClick={handleSimulatePayment}
                     disabled={paymentLoading}
-                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs tracking-widest uppercase hover:opacity-95 transition disabled:opacity-50 shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition disabled:opacity-50 shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2"
                   >
                     <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (₹${paymentOrder?.amountDue?.toLocaleString() || '3,500'})`}</span>
                   </button>
                   <p className="text-[10px] text-[#6E5336]">
-                    Protected by Safed Sheri 256-bit encrypted gateway. Digital QR pass minted instantly.
+                    Protected by Razorpay 256-bit encrypted gateway. Digital QR pass minted instantly.
                   </p>
                 </div>
               </div>

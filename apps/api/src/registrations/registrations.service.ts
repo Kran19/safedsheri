@@ -302,24 +302,43 @@ export class RegistrationsService {
 
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
 
-      // Check duplicate within existing active attendees
-      const existingAttendee = await this.prisma.attendee.findUnique({
+      // Check global DB uniqueness for Aadhaar
+      const existingAadhaarAttendee = await this.prisma.attendee.findFirst({
         where: { aadhaarHmac },
         include: {
-          registrations: {
-            include: { registration: true },
-          },
+          registrations: { include: { registration: true } },
         },
       });
 
-      if (existingAttendee) {
-        const hasActiveRegistration = existingAttendee.registrations.some(
+      if (existingAadhaarAttendee) {
+        const hasActiveRegistration = existingAadhaarAttendee.registrations.some(
           (r) =>
             r.registration.status !== RegistrationStatus.REJECTED &&
-            r.registration.status !== RegistrationStatus.CANCELLED,
+            r.registration.status !== RegistrationStatus.CANCELLED &&
+            r.registration.status !== RegistrationStatus.PAYMENT_FAILED,
         );
         if (hasActiveRegistration) {
-          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking.`);
+          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are strictly not allowed.`);
+        }
+      }
+
+      // Check global DB uniqueness for Phone
+      const existingPhoneAttendee = await this.prisma.attendee.findFirst({
+        where: { phone: att.phone },
+        include: {
+          registrations: { include: { registration: true } },
+        },
+      });
+
+      if (existingPhoneAttendee) {
+        const hasActiveRegistration = existingPhoneAttendee.registrations.some(
+          (r) =>
+            r.registration.status !== RegistrationStatus.REJECTED &&
+            r.registration.status !== RegistrationStatus.CANCELLED &&
+            r.registration.status !== RegistrationStatus.PAYMENT_FAILED,
+        );
+        if (hasActiveRegistration) {
+          throw new BadRequestException(`Phone number ${att.phone} is already registered with an active booking. Duplicate passes are strictly not allowed.`);
         }
       }
     }

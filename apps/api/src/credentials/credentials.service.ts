@@ -242,6 +242,7 @@ export class CredentialsService {
               targetReg.status === RegistrationStatus.UNDER_REVIEW,
             isRejected: false,
             isCancelled: targetReg.status === RegistrationStatus.CANCELLED,
+            isPrimary: activeRegLink?.isPrimary || false,
           });
         }
       } else {

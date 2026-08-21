@@ -104,6 +104,20 @@ export class PaymentsController {
     return this.paymentsService.confirmGatewayPayment(body);
   }
 
+  @Post('razorpay-confirm')
+  @ApiOperation({ summary: 'Verify and confirm Razorpay payment signature' })
+  confirmRazorpayPayment(
+    @Body()
+    body: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+      paymentLinkId: string;
+    },
+  ) {
+    return this.paymentsService.confirmRazorpayPayment(body);
+  }
+
   @Post('webhook')
   @ApiOperation({ summary: 'Payment Gateway Webhook Endpoint' })
   handleWebhook(
