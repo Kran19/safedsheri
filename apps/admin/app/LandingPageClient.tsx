@@ -1116,7 +1116,7 @@ export default function SafedSheriLandingPage() {
               </div>
 
               <button
-                onClick={() => handlePassSelect('GAZEBO')}
+                onClick={() => { setGazeboForm({ ...gazeboForm, level: 1 }); setIsGazeboModalOpen(true); }}
                 className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
               >
                 Inquire Gazebo 1
@@ -1152,7 +1152,7 @@ export default function SafedSheriLandingPage() {
               </div>
 
               <button
-                onClick={() => handlePassSelect('GAZEBO')}
+                onClick={() => { setGazeboForm({ ...gazeboForm, level: 2 }); setIsGazeboModalOpen(true); }}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-[#D99427]/25"
               >
                 Inquire Gazebo 2
@@ -1185,7 +1185,7 @@ export default function SafedSheriLandingPage() {
               </div>
 
               <button
-                onClick={() => handlePassSelect('GAZEBO')}
+                onClick={() => { setGazeboForm({ ...gazeboForm, level: 3 }); setIsGazeboModalOpen(true); }}
                 className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
               >
                 Inquire Gazebo 3
@@ -1223,7 +1223,7 @@ export default function SafedSheriLandingPage() {
                   <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
                 </div>
               </div>
-              <button onClick={() => handlePassSelect('GAZEBO')} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
+              <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 1 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
                 Inquire Gazebo 1
               </button>
             </div>
@@ -1246,7 +1246,7 @@ export default function SafedSheriLandingPage() {
                   <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
                 </div>
               </div>
-              <button onClick={() => handlePassSelect('GAZEBO')} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-lg">
+              <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 2 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-lg">
                 Inquire Gazebo 2
               </button>
             </div>
@@ -1266,7 +1266,7 @@ export default function SafedSheriLandingPage() {
                   <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
                 </div>
               </div>
-              <button onClick={() => handlePassSelect('GAZEBO')} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
+              <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 3 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
                 Inquire Gazebo 3
               </button>
             </div>
