@@ -96,9 +96,9 @@ export default function SafedSheriLandingPage() {
       // 2. 3D Scroll Animation for Chapter IV (Gazebos)
       if (gazeboSectionRef.current && !isMobile) {
         // Initial States
-        gsap.set(gazeboLeftRef.current, { xPercent: 0, z: -800, rotationY: 25, opacity: 0, scale: 0.9 });
-        gsap.set(gazeboRightRef.current, { xPercent: 0, z: -800, rotationY: -25, opacity: 0, scale: 0.9 });
-        gsap.set(gazeboCenterRef.current, { z: -400, rotationX: 10, opacity: 0, scale: 0.95 });
+        gsap.set(gazeboLeftRef.current, { xPercent: 0, z: -800, rotationY: 25, opacity: 0, scale: 0.9, zIndex: 1 });
+        gsap.set(gazeboRightRef.current, { xPercent: 0, z: -800, rotationY: -25, opacity: 0, scale: 0.9, zIndex: 1 });
+        gsap.set(gazeboCenterRef.current, { z: -400, rotationX: 10, opacity: 0, scale: 0.95, zIndex: 10 });
         gsap.set(gazeboHeadingRef.current, { y: 30, opacity: 0 });
 
         const tl = gsap.timeline({
@@ -117,9 +117,9 @@ export default function SafedSheriLandingPage() {
           .to([gazeboLeftRef.current, gazeboRightRef.current], { opacity: 0.5, duration: 1 }, "<+0.2");
 
         // Phase 3 & 4: Spread
-        tl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
-          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
-          .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
+        tl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, opacity: 1, scale: 1, zIndex: 10, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, opacity: 1, scale: 1, zIndex: 10, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboCenterRef.current, { z: 50, zIndex: 20, duration: 2, ease: "power2.out" }, "spread");
       }
     });
 
@@ -128,7 +128,7 @@ export default function SafedSheriLandingPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['call', 'colour', 'the-women', 'passes'];
+      const sections = ['call', 'colour', 'gazebos', 'the-women', 'passes'];
       let current = '';
 
       for (const section of sections) {
@@ -1073,7 +1073,7 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* CHAPTER 3: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
-      <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10 overflow-hidden hidden md:block">
+      <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10 hidden md:block">
         
         <div ref={gazeboHeadingRef} className="text-center max-w-2xl mx-auto space-y-3 relative z-50 pointer-events-none mb-10">
           <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
