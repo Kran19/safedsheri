@@ -18,13 +18,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
-        <script
-          src="https://cdn.sortmyscene.com/embed.js"
-          data-event-id="6a847fcd430e0a792220834f"
-          data-trigger="#buy-btn"
-          data-bg="#b8912e"
-          async
-        ></script>
+
       </head>
       <body className="bg-[#FDFBF7] text-[#2D2319] antialiased font-sans">
         {children}
