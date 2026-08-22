@@ -7,7 +7,7 @@ import { IllusionEngine } from './components/IllusionEngine';
 import LogoSlot from './components/LogoSlot';
 import { garbaAudio } from './components/GarbaAudioEngine';
 import CinematicTigressIntro from './components/CinematicTigressIntro';
-import TheWomenSection from './components/TheWomenSection';
+
 import { Vibe3DOrbit } from './components/Vibe3DOrbit';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -45,6 +45,109 @@ function formatSearchInput(val: string): string {
   return digits;
 }
 
+const TermsAndConditionsContent = () => (
+  <div className="mt-3 opacity-90 leading-relaxed animate-fade-in text-xs max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-4">
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">1. Pass Booking Rules</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>All Safed Sheri passes are subject to availability.</li>
+          <li>Booking is confirmed only after successful payment and receipt of an official confirmation.</li>
+          <li>Each attendee must provide their own valid Aadhaar card details for booking verification.</li>
+          <li>Passes are valid only for the category selected at the time of booking.</li>
+          <li>Incorrect, incomplete, duplicate, or unverifiable booking details may result in cancellation or denial of entry.</li>
+          <li>Passes may not be duplicated, altered, resold, or used fraudulently.</li>
+          <li>No group booking discounts are applicable. Every attendee is valued individually.</li>
+          <li>Early Bird Passes are limited and may sell out without prior notice.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">2. Gazebo Booking Rules</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Gazebos are limited and offered strictly subject to availability.</li>
+          <li>A gazebo booking is considered confirmed only after full payment and official confirmation from Safed Sheri.</li>
+          <li>The permitted guest capacity of the selected gazebo must be followed.</li>
+          <li>Guests exceeding the approved gazebo capacity may require additional valid passes.</li>
+          <li>Gazebo allocation, positioning, layout, or access may be managed by the event organizers according to operational requirements.</li>
+          <li>Gazebo bookings may not be resold or transferred without prior approval from Safed Sheri.</li>
+          <li>Any damage caused to the gazebo, furniture, décor, or venue property by guests may be chargeable to the booking holder.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">3. Entry &amp; Verification Rules</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Every attendee may be required to present their booking confirmation along with a valid government-issued photo ID at the venue.</li>
+          <li>The attendee's booking information should match the submitted identification details.</li>
+          <li>Entry may be denied if a pass cannot be verified or appears duplicated, modified, transferred, or fraudulent.</li>
+          <li>Security screening may be conducted at the entrance for the safety of all attendees.</li>
+          <li>Guests must cooperate with security personnel and event management.</li>
+          <li>Re-entry, if permitted, will be subject to the entry policy followed on the event day.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">4. Offline &amp; Online Booking</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Online bookings should be completed only through the official Safed Sheri booking platform.</li>
+          <li>Offline sales will be available exclusively at Ekasha on 26th August 2026.</li>
+          <li>Availability shown during booking is subject to change until payment is successfully completed.</li>
+          <li>Safed Sheri will not be responsible for payments made through unauthorized sellers, third parties, or unofficial booking links.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">5. Cancellation, Refund &amp; Transfer Policy</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>All confirmed Pass and Gazebo bookings are non-refundable and non-transferable.</li>
+          <li>No refunds will be provided for a change of mind, personal scheduling conflict, late arrival, or failure to attend.</li>
+          <li>Booking charges, transaction charges, or convenience fees, if applicable, are non-refundable.</li>
+          <li>Any refund or adjustment arising from an event cancellation or postponement will be handled according to the official policy announced by Safed Sheri.</li>
+          <li>Any event postponement or cancellation due to natural rains or weather conditions on the day of the event is not subject to refunds.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">6. Event Changes &amp; Force Majeure</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Safed Sheri reserves the right to modify the event schedule, timings, entry procedures, layout, performers, activities, or operational arrangements when reasonably required.</li>
+          <li>Changes may occur due to weather, safety concerns, government regulations, venue requirements, technical issues, or circumstances beyond the organizer's control.</li>
+          <li>Such operational changes will not automatically qualify a booking for a refund unless officially announced otherwise by Safed Sheri.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">7. Venue &amp; Behaviour Guidelines</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Guests must follow all venue rules and instructions issued by event management and security personnel.</li>
+          <li>Safed Sheri reserves the right to refuse entry or remove any attendee involved in abusive, disruptive, dangerous, illegal, or inappropriate behaviour.</li>
+          <li>Prohibited or restricted items may not be carried inside the venue.</li>
+          <li>Outside food, beverages, alcohol, tobacco products, weapons, illegal substances, or other restricted items may be prohibited depending on venue policy.</li>
+          <li>Guests are responsible for their own personal belongings.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">8. Children &amp; Family Attendance</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Children must remain under the supervision of their parent or legal guardian.</li>
+          <li>Parents or guardians are responsible for the safety and conduct of children attending with them.</li>
+          <li>Age-specific passes or identification requirements, if applicable, must be followed at the time of booking and entry.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">9. Photography &amp; Media</h5>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Photography, videography, and event documentation may take place during Safed Sheri.</li>
+          <li>Attendees may appear incidentally in photographs, videos, reels, or other event-related content.</li>
+          <li>Such content may be used for event documentation, social media, publicity, and promotional purposes, subject to applicable law.</li>
+        </ul>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">10. Final Acceptance</h5>
+        <p className="mt-1">
+          By purchasing or using a Safed Sheri Pass or Gazebo booking, the attendee confirms that they have read, understood, and agreed to the applicable booking, entry, event, and venue Terms &amp; Conditions.
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+
 export default function SafedSheriLandingPage() {
   // Audio state
   const [isSoundMuted, setIsSoundMuted] = useState(false);
@@ -70,7 +173,7 @@ export default function SafedSheriLandingPage() {
 
     const ctx = gsap.context(() => {
       // 1. (Removed Horizontal Scroll for Chapter II - Replaced with 3D Orbit)
-      
+
       // 2. 3D Scroll Animation for Chapter IV (Gazebos)
       if (gazeboSectionRef.current && !isMobile) {
         // Initial States
@@ -90,8 +193,8 @@ export default function SafedSheriLandingPage() {
         });
 
         revealTl.to(gazeboHeadingRef.current, { y: 0, opacity: 1, duration: 1 }, "reveal")
-                .to(gazeboCenterRef.current, { y: 0, opacity: 1, scale: 1, z: 0, duration: 1 }, "reveal+=0.2")
-                .to([gazeboLeftRef.current, gazeboRightRef.current], { y: 0, opacity: 1, scale: 0.9, duration: 1 }, "reveal+=0.4");
+          .to(gazeboCenterRef.current, { y: 0, opacity: 1, scale: 1, z: 0, duration: 1 }, "reveal+=0.2")
+          .to([gazeboLeftRef.current, gazeboRightRef.current], { y: 0, opacity: 1, scale: 0.9, duration: 1 }, "reveal+=0.4");
 
         // 2. Pin & Spread Timeline
         const spreadTl = gsap.timeline({
@@ -108,8 +211,8 @@ export default function SafedSheriLandingPage() {
 
         // Spread Phase
         spreadTl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, scale: 1, duration: 2, ease: "power2.out" }, "spread")
-                .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, scale: 1, duration: 2, ease: "power2.out" }, "spread")
-                .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
+          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+          .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
       }
     });
 
@@ -302,7 +405,7 @@ export default function SafedSheriLandingPage() {
 
   // VIP Gazebo Modal State
   const [isGazeboModalOpen, setIsGazeboModalOpen] = useState(false);
-  const [gazeboForm, setGazeboForm] = useState({ fullName: '', phone: '', level: 1, notes: '' });
+  const [gazeboForm, setGazeboForm] = useState({ fullName: '', phone: '', email: '', address: '', level: 1, notes: '' });
   const [gazeboSuccess, setGazeboSuccess] = useState(false);
   const [gazeboLoading, setGazeboLoading] = useState(false);
 
@@ -322,6 +425,9 @@ export default function SafedSheriLandingPage() {
 
   // Gazebo Error State
   const [gazeboError, setGazeboError] = useState<string | null>(null);
+
+  // Added state for Kids Pass main card toggle
+  const [kidsCardTier, setKidsCardTier] = useState<'BELOW_10' | '10_TO_15'>('BELOW_10');
 
   // Review Invariant Modal
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
@@ -496,7 +602,7 @@ export default function SafedSheriLandingPage() {
       setWizardStep('QUANTITY');
       if (attendees.length === 0) {
         setAttendees([
-          { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+          { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: type === 'KIDS' ? kidsCardTier : undefined }
         ]);
       }
     } else if (type === 'COUPLE') {
@@ -625,6 +731,7 @@ export default function SafedSheriLandingPage() {
             aadhaarNumber: a.aadhaarNumber.replace(/\D/g, ''),
             documentKey: a.documentKey,
             originalFilename: a.documentName,
+            kidsAgeGroup: a.kidsAgeGroup,
           })),
         }),
       });
@@ -725,9 +832,9 @@ export default function SafedSheriLandingPage() {
       },
       theme: { color: '#D99427' }
     };
-    
+
     const rzp1 = new (window as any).Razorpay(options);
-    rzp1.on('payment.failed', function (response: any){
+    rzp1.on('payment.failed', function (response: any) {
       console.error(response.error.description);
     });
     rzp1.open();
@@ -764,10 +871,7 @@ export default function SafedSheriLandingPage() {
               Gazebo Lounges
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'gazebos' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
-            <a href="#the-women" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'the-women' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
-              Organizers
-              <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'the-women' ? 'scale-x-100' : 'scale-x-0'}`} />
-            </a>
+
             <a href="#passes" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'passes' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Passes
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'passes' ? 'scale-x-100' : 'scale-x-0'}`} />
@@ -807,7 +911,7 @@ export default function SafedSheriLandingPage() {
       {/* 75% WHITE RULE FLOATING COMPULSORY BANNER */}
       {showDressCode && (
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-30 bg-white/95 backdrop-blur-lg border-2 border-[#D99427] rounded-2xl p-4 shadow-xl shadow-[#D99427]/10 flex items-center space-x-4 animate-fade-in pr-10">
-          <button 
+          <button
             onClick={() => setShowDressCode(false)}
             className="absolute top-2 right-2 p-1 text-[#A3927B] hover:text-[#2D1F0E] hover:bg-[#FAF6EE] rounded-full transition-colors"
           >
@@ -832,7 +936,7 @@ export default function SafedSheriLandingPage() {
         <section id="call" className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-28 pb-16 z-10 overflow-hidden">
           <div className="max-w-4xl mx-auto space-y-6 relative z-10">
             <div className="flex justify-center mb-2">
-              <div 
+              <div
                 className="hero-logo-slot relative p-2 rounded-full bg-gradient-to-b from-[#FFF9EE] via-[#FDFBF7] to-[#F5EFEB] shadow-xl border-2 border-[#EAD9B8] cursor-pointer hover:scale-105 transition"
                 onClick={() => garbaAudio.playGhunghroo()}
               >
@@ -899,7 +1003,7 @@ export default function SafedSheriLandingPage() {
 
       {/* CHAPTER 2: THE COLOUR & 75% WHITE RULE */}
       <section id="colour" ref={colourSectionRef} className="relative w-full min-h-[100dvh] bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#FFFDF9] border-t border-b border-[#EAD9B8] overflow-hidden flex flex-col justify-center z-10 py-16 lg:py-10">
-        
+
         {/* Centered Chapter Header */}
         <div className="w-full text-center max-w-3xl mx-auto px-6 mb-8 lg:mb-12 z-20 relative space-y-3">
           <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter II</span>
@@ -912,7 +1016,7 @@ export default function SafedSheriLandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 w-full flex flex-col md:flex-row items-start justify-between gap-12 lg:gap-24 z-20 relative">
-          
+
           {/* Card 1: 75% White Attire Requirement */}
           <div className="flex-1 flex flex-col justify-start">
             <div className="flex items-center w-full mb-6">
@@ -928,7 +1032,7 @@ export default function SafedSheriLandingPage() {
             <div className="w-12 h-[2px] bg-[#D99427] mb-6"></div>
 
             <p className="text-sm md:text-base text-[#2D1F0E] leading-relaxed mb-8 font-medium max-w-2xl">
-              All guests must be dressed in at least <br className="hidden md:block"/>
+              All guests must be dressed in at least <br className="hidden md:block" />
               <strong>75% white visible attire</strong> (Traditional Chaniya Choli, Kurta, Kediya, or Formal Indian White).
             </p>
 
@@ -937,20 +1041,20 @@ export default function SafedSheriLandingPage() {
                 <span className="text-[#D99427] text-lg font-bold">✓</span>
               </div>
               <p className="text-sm md:text-base text-[#4A3B2C] leading-snug">
-                Pure White, Pearl White,<br className="hidden md:block"/>Ivory & Off-White accepted
+                Pure White, Pearl White,<br className="hidden md:block" />Ivory & Off-White accepted
               </p>
             </div>
-            
+
             <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-6">
-               <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-[8px]">✦</span>
+              <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-[8px]">✦</span>
             </div>
-            
+
             <div className="flex items-center">
               <div className="w-12 h-12 rounded-full border border-[#D99427] bg-[#FFFDF9] flex items-center justify-center flex-shrink-0 mr-4 shadow-sm">
                 <span className="text-red-700 text-lg font-bold">✕</span>
               </div>
               <p className="text-sm md:text-base text-[#4A3B2C] leading-snug">
-                Non-white outfits will be strictly<br className="hidden md:block"/>denied entry at the gate
+                Non-white outfits will be strictly<br className="hidden md:block" />denied entry at the gate
               </p>
             </div>
           </div>
@@ -972,7 +1076,7 @@ export default function SafedSheriLandingPage() {
             </p>
 
             <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-10 flex justify-center items-center">
-                <span className="absolute text-[#D99427] text-[8px]">✦</span>
+              <span className="absolute text-[#D99427] text-[8px]">✦</span>
             </div>
 
             <div className="flex items-stretch">
@@ -989,7 +1093,7 @@ export default function SafedSheriLandingPage() {
                   ENCRYPTED AADHAAR STORAGE
                 </span>
                 <p className="text-sm md:text-base text-[#4A3B2C] leading-relaxed">
-                  Protected by 256-bit server<br className="hidden md:block"/>HMAC hashing and<br className="hidden md:block"/>private storage.
+                  Protected by 256-bit server<br className="hidden md:block" />HMAC hashing and<br className="hidden md:block" />private storage.
                 </p>
               </div>
             </div>
@@ -1062,7 +1166,7 @@ export default function SafedSheriLandingPage() {
       {/* CHAPTER 4: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
       <div className="hidden md:block">
         <section id="gazebos" ref={gazeboSectionRef} className="relative pt-16 pb-24 px-6 z-10">
-          
+
           <div ref={gazeboHeadingRef} className="relative text-center w-full max-w-2xl mx-auto px-6 z-50 pointer-events-none space-y-2 mb-16">
             <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
             <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
@@ -1071,178 +1175,178 @@ export default function SafedSheriLandingPage() {
             </p>
           </div>
 
-          <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[500px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
-            
-            <div className="relative w-full h-[500px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
-              
+          <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[500px] pointer-events-none" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
+
+            <div className="relative w-full h-[500px] flex items-center justify-center pointer-events-none" style={{ transformStyle: 'preserve-3d' }}>
+
               {/* LEFT CARD */}
-              <div ref={gazeboLeftRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                    LEVEL 1
-                  </span>
-                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
-                </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 1</h3>
-                
-                <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img 
-                    src="/images/gazebos/dhol.png" 
-                    alt="Gazebo 1" 
-                    className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                      Price on Request
+              <div ref={gazeboLeftRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition group pointer-events-auto" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                      LEVEL 1
                     </span>
+                    <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
                   </div>
-                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                    VIP INQUIRY ONLY
+                  <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Chowk</h3>
+
+                  <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                    <img
+                      src="/images/gazebos/dhol.png"
+                      alt="Sheri Chowk"
+                      className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                        Price on Request
+                      </span>
+                    </div>
+                    <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                      VIP INQUIRY ONLY
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Elevated viewing lounge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Dedicated concierge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Butler hospitality</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Elevated viewing lounge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Dedicated concierge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Butler hospitality</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => { setGazeboForm({ ...gazeboForm, level: 1 }); setIsGazeboModalOpen(true); }}
+                  className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+                >
+                  Inquire Sheri Chowk
+                </button>
               </div>
 
-              <button
-                onClick={() => { setGazeboForm({ ...gazeboForm, level: 1 }); setIsGazeboModalOpen(true); }}
-                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
-              >
-                Inquire Gazebo 1
-              </button>
-            </div>
-
-            {/* CENTER CARD */}
-            <div ref={gazeboCenterRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between hover:shadow-2xl transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
-              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
-                Royal Tier
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
-                    LEVEL 2
-                  </span>
-                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+              {/* CENTER CARD */}
+              <div ref={gazeboCenterRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between hover:shadow-2xl transition group pointer-events-auto" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+                <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
+                  Royal Tier
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 2</h3>
-                
-                <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img 
-                    src="/images/gazebos/garba.png" 
-                    alt="Gazebo 2" 
-                    className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                      Price on Request
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
+                      LEVEL 2
                     </span>
+                    <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
                   </div>
-                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                    VIP INQUIRY ONLY
+                  <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">The Royal Sheri Pavillion</h3>
+
+                  <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                    <img
+                      src="/images/gazebos/garba.png"
+                      alt="The Royal Sheri Pavillion"
+                      className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                        Price on Request
+                      </span>
+                    </div>
+                    <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                      VIP INQUIRY ONLY
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Elevated viewing lounge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Dedicated concierge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Butler hospitality</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Elevated viewing lounge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Dedicated concierge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Butler hospitality</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => { setGazeboForm({ ...gazeboForm, level: 2 }); setIsGazeboModalOpen(true); }}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-[#D99427]/25"
+                >
+                  Inquire The Royal Sheri Pavillion
+                </button>
               </div>
 
-              <button
-                onClick={() => { setGazeboForm({ ...gazeboForm, level: 2 }); setIsGazeboModalOpen(true); }}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-[#D99427]/25"
-              >
-                Inquire Gazebo 2
-              </button>
-            </div>
-
-            {/* RIGHT CARD */}
-            <div ref={gazeboRightRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                    LEVEL 3
-                  </span>
-                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
-                </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 3</h3>
-                
-                <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img 
-                    src="/images/gazebos/dandiya.png" 
-                    alt="Gazebo 3" 
-                    className="object-cover h-full w-full rounded-lg group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                      Price on Request
+              {/* RIGHT CARD */}
+              <div ref={gazeboRightRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition group pointer-events-auto" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                      LEVEL 3
                     </span>
+                    <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
                   </div>
-                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                    VIP INQUIRY ONLY
+                  <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Rass</h3>
+
+                  <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                    <img
+                      src="/images/gazebos/dandiya.png"
+                      alt="Sheri Rass"
+                      className="object-cover h-full w-full rounded-lg group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                        Price on Request
+                      </span>
+                    </div>
+                    <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                      VIP INQUIRY ONLY
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Elevated viewing lounge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Dedicated concierge</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[#D99427] font-bold">✓</span>
+                      <span>Butler hospitality</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Elevated viewing lounge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Dedicated concierge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#D99427] font-bold">✓</span>
-                    <span>Butler hospitality</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => { setGazeboForm({ ...gazeboForm, level: 3 }); setIsGazeboModalOpen(true); }}
+                  className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+                >
+                  Inquire Sheri Rass
+                </button>
               </div>
-
-              <button
-                onClick={() => { setGazeboForm({ ...gazeboForm, level: 3 }); setIsGazeboModalOpen(true); }}
-                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
-              >
-                Inquire Gazebo 3
-              </button>
             </div>
           </div>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
 
       {/* MOBILE FALLBACK (STATIC GRID) */}
       <section className="relative py-24 px-6 z-10 md:hidden border-b border-[#EAD9B8]">
@@ -1264,9 +1368,9 @@ export default function SafedSheriLandingPage() {
                   </span>
                   <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 1</h3>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Chowk</h3>
                 <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img src="/images/gazebos/dhol.png" alt="Gazebo 1" className="object-contain h-full w-full" />
+                  <img src="/images/gazebos/dhol.png" alt="Sheri Chowk" className="object-contain h-full w-full" />
                 </div>
                 <div className="mb-6">
                   <div className="flex items-baseline space-x-2">
@@ -1294,7 +1398,7 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
               <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 1 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
-                Inquire Gazebo 1
+                Inquire Sheri Chowk
               </button>
             </div>
 
@@ -1309,9 +1413,9 @@ export default function SafedSheriLandingPage() {
                   </span>
                   <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 2</h3>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">The Royal Sheri Pavillion</h3>
                 <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img src="/images/gazebos/garba.png" alt="Gazebo 2" className="object-contain h-full w-full" />
+                  <img src="/images/gazebos/garba.png" alt="The Royal Sheri Pavillion" className="object-contain h-full w-full" />
                 </div>
                 <div className="mb-6">
                   <div className="flex items-baseline space-x-2">
@@ -1339,7 +1443,7 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
               <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 2 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-lg">
-                Inquire Gazebo 2
+                Inquire The Royal Sheri Pavillion
               </button>
             </div>
 
@@ -1351,9 +1455,9 @@ export default function SafedSheriLandingPage() {
                   </span>
                   <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 3</h3>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Rass</h3>
                 <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img src="/images/gazebos/dandiya.png" alt="Gazebo 3" className="object-cover h-full w-full rounded-lg" />
+                  <img src="/images/gazebos/dandiya.png" alt="Sheri Rass" className="object-cover h-full w-full rounded-lg" />
                 </div>
                 <div className="mb-6">
                   <div className="flex items-baseline space-x-2">
@@ -1381,19 +1485,33 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
               <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 3 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
-                Inquire Gazebo 3
+                Inquire Sheri Rass
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      <TheWomenSection />
-      {/* CHAPTER 6: PASS SELECTION & BOOKING */}
+
+
+      {/* WORKFLOW SECTION */}
+      <section id="workflow" className="relative w-full py-20 px-4 md:px-6 z-10 border-t border-[#EAD9B8] bg-[#FFFDF9]">
+        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center">
+          <a
+            href="#passes"
+            onClick={() => garbaAudio.playDhol()}
+            className="block max-w-6xl mx-auto rounded-3xl overflow-hidden shadow-2xl border border-[#EAD9B8] transform hover:-translate-y-2 transition duration-500 bg-[#FAF6EE]"
+          >
+            <img src="/images/workflow-new.png" alt="Pass Workflow" className="w-full h-auto object-contain hover:opacity-95 transition" />
+          </a>
+        </div>
+      </section>
+
+      {/* CHAPTER 5: PASS SELECTION & BOOKING */}
       <section id="passes" className="relative py-24 px-6 z-10 bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE] border-t border-[#EAD9B8]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center w-full max-w-2xl mx-auto mb-16 space-y-4">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter VI</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter V</span>
             <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#2D1F0E]">
               Pass Selection
             </h2>
@@ -1404,7 +1522,7 @@ export default function SafedSheriLandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* SINGLE PASS (FEMALE ONLY) */}
-            <div 
+            <div
               className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition"
               onMouseEnter={() => garbaAudio.playDandiya(0.1)}
             >
@@ -1474,7 +1592,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* COUPLE PASS */}
-            <div 
+            <div
               className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl relative flex flex-col justify-between hover:shadow-2xl transition"
               onMouseEnter={() => garbaAudio.playDhol(0.15)}
             >
@@ -1547,7 +1665,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* KIDS PASS */}
-            <div 
+            <div
               className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition"
               onMouseEnter={() => garbaAudio.playGhunghroo(0.1)}
             >
@@ -1622,24 +1740,116 @@ export default function SafedSheriLandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-[#EAD9B8] py-10 px-6 bg-[#FAF6EE] z-10 relative">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[#6E5336]">
-          <div className="flex items-center space-x-3">
-            <LogoSlot size="sm" showText={true} showDate={false} />
+      <footer className="py-8 px-6 bg-[#FAF6EE] z-10 relative bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/footer-upscaled.png')" }}>
+        <div className="max-w-6xl mx-auto flex flex-col gap-6 text-[#4A3B2C]">
+          
+          {/* Top Section */}
+          <div className="flex flex-col md:flex-row items-center justify-between w-full gap-8">
+            <div className="flex items-center space-x-3">
+              <LogoSlot size="sm" showText={true} showDate={false} />
+            </div>
+
+            <div className="flex flex-wrap justify-center items-center gap-3 md:gap-5 text-sm md:text-base font-medium">
+              <a href="#call" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>The Concept</a>
+              <span className="text-[#D99427] text-xs">✦</span>
+              <a href="#colour" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Dress Code</a>
+              <span className="text-[#D99427] text-xs">✦</span>
+              <a href="#gallery" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gallery</a>
+              <span className="text-[#D99427] text-xs">✦</span>
+              <a href="#gazebos" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gazebo Lounges</a>
+              <span className="text-[#D99427] text-xs">✦</span>
+              <a href="#passes" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Pass Privilege</a>
+            </div>
           </div>
 
-          <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-semibold">
-            <a href="#call" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>The Concept</a>
-            <a href="#colour" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>75% White Rule</a>
-            <a href="#gazebos" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gazebo Lounges</a>
-            <a href="#the-women" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Organizers</a>
-            <a href="#passes" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Pass Privilege</a>
+          {/* Horizontal Divider 1 */}
+          <div className="relative flex items-center justify-center w-full mt-2 mb-2">
+            <div className="absolute w-full h-[1px] bg-gradient-to-r from-transparent via-[#D99427]/40 to-transparent"></div>
+            <div className="relative bg-[#FAF6EE] px-4 text-[#D99427]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" />
+              </svg>
+            </div>
           </div>
 
-          <div className="text-center md:text-right">
-            <div className="font-semibold text-[#2D1F0E]">The Grand Heritage Arena • Kalawad Road, Rajkot, Gujarat</div>
-            <div className="text-[11px] text-[#8C6019] mt-0.5">© 2026 Safed Sheri Cultural Gala. All rights reserved.</div>
+          {/* Middle Section - 3 Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-12 md:gap-0 md:divide-x md:divide-[#D99427]/30">
+            
+            {/* Column 1: Brand */}
+            <div className="flex flex-col items-center px-4">
+              <h4 className="font-serif font-bold text-[#1A1A1A] text-lg md:text-xl mb-1 tracking-wide">Safed Sheri 2026</h4>
+              <div className="flex items-center justify-center w-full my-3">
+                <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
+                <span className="text-[#D99427] text-[8px] mx-2">✦</span>
+                <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
+              </div>
+              <p className="max-w-[240px] text-[15px] leading-relaxed text-center font-medium">
+                Rajkot's grandest Navratri celebration — tradition, culture & festivity.
+              </p>
+            </div>
+
+            {/* Column 2: Contact Us */}
+            <div className="flex flex-col items-center px-4">
+              <h4 className="font-serif font-bold text-[#1A1A1A] text-lg md:text-xl mb-1 tracking-wide">Contact Us</h4>
+              <div className="flex items-center justify-center w-full my-3">
+                <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
+                <span className="text-[#D99427] text-[8px] mx-2">✦</span>
+                <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
+              </div>
+              <div className="flex flex-col gap-5 mt-2 w-[240px]">
+                <a href="tel:+917016977518" className="flex items-center gap-4 hover:text-[#D99427] transition group">
+                  <div className="w-10 h-10 rounded-full border border-[#D99427]/60 group-hover:border-[#D99427] flex items-center justify-center text-[#D99427] bg-[#FAF6EE] shrink-0 shadow-[0_0_10px_rgba(217,148,39,0.1)]">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
+                    </svg>
+                  </div>
+                  <span className="text-[15px] font-medium">+91 70169 77518</span>
+                </a>
+                <a href="mailto:Safedsheri@gmail.com" className="flex items-center gap-4 hover:text-[#D99427] transition group">
+                  <div className="w-10 h-10 rounded-full border border-[#D99427]/60 group-hover:border-[#D99427] flex items-center justify-center text-[#D99427] bg-[#FAF6EE] shrink-0 shadow-[0_0_10px_rgba(217,148,39,0.1)]">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                    </svg>
+                  </div>
+                  <span className="text-[15px] font-medium">Safedsheri@gmail.com</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Column 3: Office */}
+            <div className="flex flex-col items-center justify-center px-4 h-full">
+              <div className="flex items-start gap-4 mt-2 md:mt-0 w-[240px]">
+                <div className="w-10 h-10 rounded-full border border-[#D99427]/60 flex items-center justify-center text-[#D99427] bg-[#FAF6EE] shrink-0 shadow-[0_0_10px_rgba(217,148,39,0.1)]">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                  </svg>
+                </div>
+                <address className="not-italic text-[15px] font-medium leading-relaxed text-left">
+                  Icon World Trade,<br />
+                  Patidar Chowk,<br />
+                  Sadhuvaswani Road,<br />
+                  Rajkot — 360005
+                </address>
+              </div>
+            </div>
+
           </div>
+
+          {/* Horizontal Divider 2 */}
+          <div className="relative flex items-center justify-center w-full mt-4 mb-2">
+            <div className="absolute w-full h-[1px] bg-gradient-to-r from-transparent via-[#D99427]/40 to-transparent"></div>
+            <div className="relative bg-[#FAF6EE] px-4 text-[#D99427]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Bottom text */}
+          <div className="text-center">
+            <div className="text-[15px] font-medium">© 2026 Safed Sheri Cultural Gala. All rights reserved.</div>
+          </div>
+
         </div>
       </footer>
 
@@ -1649,7 +1859,7 @@ export default function SafedSheriLandingPage() {
       {isBookingOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
           <div data-lenis-prevent="true" className="bg-[#FFFCF7] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-3xl max-h-[95vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xl relative text-[#2D1F0E] p-6 sm:p-10">
-            
+
             {/* Header Actions */}
             <div className="flex items-center justify-between border-b border-[#EAD9B8] pb-4 mb-6">
               <div className="flex items-center space-x-2">
@@ -1689,17 +1899,16 @@ export default function SafedSheriLandingPage() {
                 {/* STEP INDICATOR BREADCRUMB */}
                 <div className="flex items-center justify-between bg-[#F8F3E8] p-3 sm:p-4 rounded-2xl border border-[#EAD9B8]">
                   <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto text-xs font-semibold">
-                    
+
                     {/* Step 1: Pass Quantity (for Single & Kids) */}
                     {(selectedPass === 'SINGLE' || selectedPass === 'KIDS') && (
                       <button
                         type="button"
                         onClick={() => { garbaAudio.playDandiya(); setWizardStep('QUANTITY'); }}
-                        className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${
-                          wizardStep === 'QUANTITY'
-                            ? 'bg-[#D99427] text-white font-bold shadow-sm'
-                            : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
-                        }`}
+                        className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${wizardStep === 'QUANTITY'
+                          ? 'bg-[#D99427] text-white font-bold shadow-sm'
+                          : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
+                          }`}
                       >
                         <Users className="w-3.5 h-3.5" />
                         <span>Passes ({attendees.length})</span>
@@ -1718,13 +1927,12 @@ export default function SafedSheriLandingPage() {
                           garbaAudio.playDandiya();
                           setCurrentAttendeeIndex(idx);
                         }}
-                        className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${
-                          wizardStep === 'ATTENDEE' && currentAttendeeIndex === idx
-                            ? 'bg-[#D99427] text-white font-bold shadow-sm'
-                            : att.fullName && att.aadhaarNumber && att.documentKey
+                        className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${wizardStep === 'ATTENDEE' && currentAttendeeIndex === idx
+                          ? 'bg-[#D99427] text-white font-bold shadow-sm'
+                          : att.fullName && att.aadhaarNumber && att.documentKey
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold'
                             : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
-                        }`}
+                          }`}
                       >
                         <span>#{idx + 1} {att.fullName ? att.fullName.split(' ')[0] : `Guest ${idx + 1}`}</span>
                         {att.fullName && att.aadhaarNumber && att.documentKey && (
@@ -1751,11 +1959,10 @@ export default function SafedSheriLandingPage() {
                           setWizardStep('SUMMARY');
                         }
                       }}
-                      className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${
-                        wizardStep === 'SUMMARY'
-                          ? 'bg-[#D99427] text-white font-bold shadow-sm'
-                          : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
-                      }`}
+                      className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${wizardStep === 'SUMMARY'
+                        ? 'bg-[#D99427] text-white font-bold shadow-sm'
+                        : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
+                        }`}
                     >
                       <span>Review & Submit</span>
                     </button>
@@ -1879,12 +2086,7 @@ export default function SafedSheriLandingPage() {
                             </button>
 
                             {showTerms && (
-                              <ul className="list-disc pl-4 mt-3 space-y-2 opacity-90 leading-snug animate-fade-in">
-                                <li><strong>MANDATORY 75% WHITE RULE:</strong> Entry is strictly conditional on adherence. You will be denied entry without refund if this is violated.</li>
-                                <li><strong>NO REFUNDS:</strong> Passes are strictly non-refundable and non-transferable under any circumstances.</li>
-                                <li><strong>RIGHT OF ADMISSION:</strong> Management reserves the right to refuse admission or remove anyone failing to comply with rules or causing a disturbance.</li>
-                                <li><strong>VALID ID:</strong> Original Government ID matching the pass name is mandatory at the gate. No digital copies accepted.</li>
-                              </ul>
+                              <TermsAndConditionsContent />
                             )}
                             {termsError && (
                               <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠️ You must accept the Terms & Conditions to continue.</p>
@@ -1987,20 +2189,64 @@ export default function SafedSheriLandingPage() {
                         </div>
 
                         {selectedPass === 'KIDS' && (
-                          <div>
-                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Age Group *</label>
-                            <select
-                              value={attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10'}
-                              onChange={(e) => {
+                          <div className="space-y-3 mb-6 mt-2 col-span-1 sm:col-span-2">
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-2 hidden">Select Age Group *</label>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                garbaAudio.playDandiya();
                                 const updated = [...attendees];
-                                updated[currentAttendeeIndex].kidsAgeGroup = e.target.value as 'BELOW_10' | '10_TO_15';
+                                updated[currentAttendeeIndex].kidsAgeGroup = 'BELOW_10';
                                 setAttendees(updated);
                               }}
-                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                              className={`w-full flex items-center p-4 rounded-2xl border transition-all ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === 'BELOW_10'
+                                ? 'bg-[#FAF6EE] border-[#D99427] shadow-sm scale-[1.01]'
+                                : 'bg-white border-[#EAD9B8] hover:border-[#D99427]/50'
+                                }`}
                             >
-                              <option value="BELOW_10">Below 10 Yrs (₹999)</option>
-                              <option value="10_TO_15">10 to 15 Yrs (₹1,250)</option>
-                            </select>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === 'BELOW_10'
+                                ? 'border-[#D99427]'
+                                : 'border-[#EAD9B8]'
+                                }`}>
+                                {(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === 'BELOW_10' && (
+                                  <div className="w-2.5 h-2.5 bg-[#D99427] rounded-full" />
+                                )}
+                              </div>
+                              <div className="text-left flex-grow">
+                                <div className="text-xs font-bold text-[#8C6019] tracking-widest uppercase mb-0.5">BELOW 10 YRS</div>
+                                <div className="text-[10px] text-[#6E5336]">Phase Pricing</div>
+                              </div>
+                              <div className="text-2xl font-serif font-bold text-[#2D1F0E]">₹999</div>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                garbaAudio.playDandiya();
+                                const updated = [...attendees];
+                                updated[currentAttendeeIndex].kidsAgeGroup = '10_TO_15';
+                                setAttendees(updated);
+                              }}
+                              className={`w-full flex items-center p-4 rounded-2xl border transition-all ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === '10_TO_15'
+                                ? 'bg-[#FAF6EE] border-[#D99427] shadow-sm scale-[1.01]'
+                                : 'bg-white border-[#EAD9B8] hover:border-[#D99427]/50'
+                                }`}
+                            >
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === '10_TO_15'
+                                ? 'border-[#D99427]'
+                                : 'border-[#EAD9B8]'
+                                }`}>
+                                {(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === '10_TO_15' && (
+                                  <div className="w-2.5 h-2.5 bg-[#D99427] rounded-full" />
+                                )}
+                              </div>
+                              <div className="text-left flex-grow">
+                                <div className="text-xs font-bold text-[#8C6019] tracking-widest uppercase mb-0.5">10 TO 15 YRS</div>
+                                <div className="text-[10px] text-[#6E5336]">Phase Pricing</div>
+                              </div>
+                              <div className="text-2xl font-serif font-bold text-[#2D1F0E]">₹1,250</div>
+                            </button>
                           </div>
                         )}
 
@@ -2134,12 +2380,7 @@ export default function SafedSheriLandingPage() {
                             </button>
 
                             {showTerms && (
-                              <ul className="list-disc pl-4 mt-3 space-y-2 opacity-90 leading-snug animate-fade-in">
-                                <li><strong>MANDATORY 75% WHITE RULE:</strong> Entry is strictly conditional on adherence. You will be denied entry without refund if this is violated.</li>
-                                <li><strong>NO REFUNDS:</strong> Passes are strictly non-refundable and non-transferable under any circumstances.</li>
-                                <li><strong>RIGHT OF ADMISSION:</strong> Management reserves the right to refuse admission or remove anyone failing to comply with rules or causing a disturbance.</li>
-                                <li><strong>VALID ID:</strong> Original Government ID matching the pass name is mandatory at the gate. No digital copies accepted.</li>
-                              </ul>
+                              <TermsAndConditionsContent />
                             )}
                             {termsError && (
                               <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">âš  You must accept the Terms &amp; Conditions to continue.</p>
@@ -2504,7 +2745,7 @@ export default function SafedSheriLandingPage() {
                             <p className="text-[11px] text-[#6E5336] leading-relaxed">
                               Your document verification is complete. Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.
                             </p>
-                            
+
                             {p.paymentLinkId && p.isPrimary && (
                               <div className="pt-1 flex justify-end">
                                 <button
@@ -2639,7 +2880,7 @@ export default function SafedSheriLandingPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-[#6E5336] block text-[10px] uppercase font-bold tracking-wider">Tier</span>
-                        <span className="font-bold text-[#D99427] text-xs">{paymentOrder.passType === 'SINGLE' ? 'Female' : paymentOrder.passType} Pass</span>
+                        <span className="font-bold text-[#D99427] text-xs">{paymentOrder.passType === 'SINGLE' ? 'Female' : paymentOrder.passType === 'KIDS' ? 'Kids' : paymentOrder.passType} Pass</span>
                       </div>
                     </div>
 
@@ -2762,6 +3003,10 @@ export default function SafedSheriLandingPage() {
                     setGazeboError('Please enter your full legal name (minimum 2 characters).');
                     return;
                   }
+                  if (!gazeboForm.address || gazeboForm.address.trim().length < 5) {
+                    setGazeboError('Please enter your full residential address.');
+                    return;
+                  }
                   if (phoneVal.length !== 10) {
                     setGazeboError('Please enter a valid 10-digit WhatsApp mobile number.');
                     return;
@@ -2769,20 +3014,17 @@ export default function SafedSheriLandingPage() {
                   garbaAudio.playDhol();
                   setGazeboLoading(true);
                   try {
-                    const res = await fetch(`${API_BASE}/gazebo-inquiries`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ ...gazeboForm, phone: phoneVal }),
-                    });
-                    const json = await res.json();
-                    if (json.success) {
-                      setGazeboSuccess(true);
-                      garbaAudio.playGhunghroo();
-                    } else {
-                      setGazeboError(json.message || json.error?.message || 'Submission failed. Please try again.');
-                    }
+                    // Redirect to WhatsApp
+                    const levelName = gazeboForm.level === 1 ? 'Sheri Chowk' : gazeboForm.level === 2 ? 'The Royal Sheri Pavillion' : 'Sheri Rass';
+                    const message = `*New Gazebo Inquiry*\n\n*Name:* ${gazeboForm.fullName}\n*Phone:* ${phoneVal}\n*Email:* ${gazeboForm.email}\n*Address:* ${gazeboForm.address}\n*Level:* ${levelName}\n*Requests:* ${gazeboForm.notes}`;
+                    const waUrl = `https://wa.me/917016977518?text=${encodeURIComponent(message)}`;
+
+                    window.open(waUrl, '_blank');
+
+                    setGazeboSuccess(true);
+                    garbaAudio.playGhunghroo();
                   } catch (err: any) {
-                    setGazeboError('Network error. Please check your connection and try again.');
+                    setGazeboError('Failed to open WhatsApp. Please try again.');
                   } finally {
                     setGazeboLoading(false);
                   }
@@ -2815,9 +3057,8 @@ export default function SafedSheriLandingPage() {
                       value={gazeboForm.fullName}
                       onChange={(e) => { setGazeboError(null); setGazeboForm({ ...gazeboForm, fullName: e.target.value }); }}
                       placeholder="Full Name (as on ID)"
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none transition ${
-                        gazeboError && !gazeboForm.fullName.trim() ? 'border-rose-400' : 'border-[#EAD9B8]'
-                      }`}
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none transition ${gazeboError && !gazeboForm.fullName.trim() ? 'border-rose-400' : 'border-[#EAD9B8]'
+                        }`}
                     />
                   </div>
 
@@ -2833,18 +3074,39 @@ export default function SafedSheriLandingPage() {
                       }}
                       placeholder="10-digit mobile number"
                       maxLength={10}
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs font-mono focus:border-[#D99427] outline-none transition ${
-                        gazeboError && gazeboForm.phone.replace(/\D/g,'').length !== 10 ? 'border-rose-400' : 'border-[#EAD9B8]'
-                      }`}
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs font-mono focus:border-[#D99427] outline-none transition ${gazeboError && gazeboForm.phone.replace(/\D/g, '').length !== 10 ? 'border-rose-400' : 'border-[#EAD9B8]'
+                        }`}
                     />
                     {gazeboForm.phone.length > 0 && (
-                      <div className={`text-[10px] mt-1 font-mono ${
-                        gazeboForm.phone.replace(/\D/g,'').length === 10 ? 'text-emerald-700' : 'text-[#8C6019]'
-                      }`}>
-                        {gazeboForm.phone.replace(/\D/g,'').length}/10 digits
-                        {gazeboForm.phone.replace(/\D/g,'').length === 10 && ' ✓'}
+                      <div className={`text-[10px] mt-1 font-mono ${gazeboForm.phone.replace(/\D/g, '').length === 10 ? 'text-emerald-700' : 'text-[#8C6019]'
+                        }`}>
+                        {gazeboForm.phone.replace(/\D/g, '').length}/10 digits
+                        {gazeboForm.phone.replace(/\D/g, '').length === 10 && ' ✓'}
                       </div>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={gazeboForm.email}
+                      onChange={(e) => setGazeboForm({ ...gazeboForm, email: e.target.value })}
+                      placeholder="your.email@example.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Residential Address *</label>
+                    <textarea
+                      rows={2}
+                      value={gazeboForm.address}
+                      onChange={(e) => { setGazeboError(null); setGazeboForm({ ...gazeboForm, address: e.target.value }); }}
+                      placeholder="Full residential address"
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none resize-none transition ${gazeboError && !gazeboForm.address.trim() ? 'border-rose-400' : 'border-[#EAD9B8]'
+                        }`}
+                    />
                   </div>
 
                   <div>
@@ -2854,9 +3116,9 @@ export default function SafedSheriLandingPage() {
                       onChange={(e) => setGazeboForm({ ...gazeboForm, level: Number(e.target.value) })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
                     >
-                      <option value={1}>Level 1 — Gazebo 1</option>
-                      <option value={2}>Level 2 — Gazebo 2</option>
-                      <option value={3}>Level 3 — Gazebo 3</option>
+                      <option value={1}>Level 1 — Sheri Chowk</option>
+                      <option value={2}>Level 2 — The Royal Sheri Pavillion</option>
+                      <option value={3}>Level 3 — Sheri Rass</option>
                     </select>
                   </div>
 
@@ -3099,7 +3361,6 @@ export default function SafedSheriLandingPage() {
           </div>
         </div>
       )}
-
 
     </div>
   );
