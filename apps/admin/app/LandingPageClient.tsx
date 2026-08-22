@@ -253,7 +253,7 @@ export default function SafedSheriLandingPage() {
   const [pricing, setPricing] = useState<any>({
     singlePrice: 3500,
     couplePrice: 6500,
-    kidsPrice: 999,
+    kidsPrice: 1200,
     nextSinglePrice: 6500,
     nextCouplePrice: 12000,
     nextKidsPrice: 1999,
@@ -286,7 +286,7 @@ export default function SafedSheriLandingPage() {
         if (json.success && json.data) {
           setPricing({
             ...json.data,
-            kidsPrice: json.data.kidsPrice || 999,
+            kidsPrice: json.data.kidsPrice || 1200,
             nextKidsPrice: json.data.nextKidsPrice || 1999,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
           });
@@ -334,7 +334,10 @@ export default function SafedSheriLandingPage() {
     aadhaarNumber: string;
     documentKey: string;
     documentName: string;
-    uploading?: boolean;
+    documentBackKey?: string;
+    documentBackName?: string;
+    uploadingFront?: boolean;
+    uploadingBack?: boolean;
     kidsAgeGroup?: 'BELOW_10' | '10_TO_15';
   }>>([
     { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: 'BELOW_10' }
@@ -488,7 +491,7 @@ export default function SafedSheriLandingPage() {
     if (selectedPass === 'COUPLE') return pricing.couplePrice || 0;
     if (selectedPass === 'SINGLE') return (pricing.singlePrice || 0) * attendees.length;
     if (selectedPass === 'KIDS') {
-      return attendees.reduce((sum, att) => sum + (att.kidsAgeGroup === '10_TO_15' ? 1250 : 999), 0);
+      return attendees.length * 1200;
     }
     return 0;
   };
@@ -543,8 +546,8 @@ export default function SafedSheriLandingPage() {
       }
     }
 
-    if (!att.documentKey) {
-      setBookingError(`Please upload Aadhaar document for Attendee #${idx + 1} (${att.fullName})`);
+    if (!att.documentKey || !att.documentBackKey) {
+      setBookingError(`Please upload both front and back sides of the Aadhaar document for Attendee #${idx + 1} (${att.fullName})`);
       return false;
     }
 
@@ -620,7 +623,7 @@ export default function SafedSheriLandingPage() {
     setTermsError(false);
   };
 
-  const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (index: number, side: 'front' | 'back', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -631,7 +634,10 @@ export default function SafedSheriLandingPage() {
 
     setAttendees((prev) => {
       const copy = [...prev];
-      if (copy[index]) copy[index] = { ...copy[index], uploading: true };
+      if (copy[index]) {
+        if (side === 'front') copy[index] = { ...copy[index], uploadingFront: true };
+        else copy[index] = { ...copy[index], uploadingBack: true };
+      }
       return copy;
     });
 
@@ -649,12 +655,21 @@ export default function SafedSheriLandingPage() {
         setAttendees((prev) => {
           const copy = [...prev];
           if (copy[index]) {
-            copy[index] = {
-              ...copy[index],
-              documentKey: json.data.storageKey,
-              documentName: json.data.originalFilename,
-              uploading: false,
-            };
+            if (side === 'front') {
+              copy[index] = {
+                ...copy[index],
+                documentKey: json.data.storageKey,
+                documentName: json.data.originalFilename,
+                uploadingFront: false,
+              };
+            } else {
+              copy[index] = {
+                ...copy[index],
+                documentBackKey: json.data.storageKey,
+                documentBackName: json.data.originalFilename,
+                uploadingBack: false,
+              };
+            }
           }
           return copy;
         });
@@ -666,7 +681,10 @@ export default function SafedSheriLandingPage() {
     } catch (err: any) {
       setAttendees((prev) => {
         const copy = [...prev];
-        if (copy[index]) copy[index] = { ...copy[index], uploading: false };
+        if (copy[index]) {
+          if (side === 'front') copy[index] = { ...copy[index], uploadingFront: false };
+          else copy[index] = { ...copy[index], uploadingBack: false };
+        }
         return copy;
       });
       setBookingError(`File upload error: ${err.message}`);
@@ -678,8 +696,6 @@ export default function SafedSheriLandingPage() {
     garbaAudio.playDhol();
     setBookingLoading(true);
     setBookingError(null);
-
-    // Removed Single Pass Female rule to allow any gender to book
 
     // Validate in-batch unique Aadhaar and required fields
     const batchAadhaarSet = new Set<string>();
@@ -710,8 +726,8 @@ export default function SafedSheriLandingPage() {
       }
       batchAadhaarSet.add(cleanAadhaar);
 
-      if (!att.documentKey) {
-        setBookingError(`Aadhaar document upload is mandatory for attendee #${i + 1} (${att.fullName})`);
+      if (!att.documentKey || !att.documentBackKey) {
+        setBookingError(`Aadhaar document (front and back) upload is mandatory for attendee #${i + 1} (${att.fullName})`);
         setBookingLoading(false);
         return;
       }
@@ -730,7 +746,10 @@ export default function SafedSheriLandingPage() {
             gender: a.gender,
             aadhaarNumber: a.aadhaarNumber.replace(/\D/g, ''),
             documentKey: a.documentKey,
+            documentName: a.documentName,
             originalFilename: a.documentName,
+            documentBackKey: a.documentBackKey,
+            documentBackName: a.documentBackName,
             kidsAgeGroup: a.kidsAgeGroup,
           })),
         }),
@@ -1054,7 +1073,7 @@ export default function SafedSheriLandingPage() {
                 <span className="text-red-700 text-lg font-bold">✕</span>
               </div>
               <p className="text-sm md:text-base text-[#4A3B2C] leading-snug">
-                Non-white outfits will be strictly<br className="hidden md:block" />denied entry at the gate
+                Non-white outfits will be strictly <br className="hidden md:block" />denied entry at the gate
               </p>
             </div>
           </div>
@@ -1510,14 +1529,35 @@ export default function SafedSheriLandingPage() {
       {/* CHAPTER 5: PASS SELECTION & BOOKING */}
       <section id="passes" className="relative py-24 px-6 z-10 bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE] border-t border-[#EAD9B8]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center w-full max-w-2xl mx-auto mb-16 space-y-4">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter V</span>
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#2D1F0E]">
-              Pass Selection
-            </h2>
-            <p className="text-sm md:text-base text-[#6E5336] leading-relaxed">
-              Select your category below. Each pass requires individual Aadhaar authentication.
-            </p>
+          <div className="relative flex flex-col items-center mb-16 gap-8">
+            <div className="text-center w-full max-w-2xl space-y-4">
+              <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter V</span>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#2D1F0E]">
+                Pass Selection
+              </h2>
+              <p className="text-sm md:text-base text-[#6E5336] leading-relaxed">
+                Select your category below. Each pass requires individual Aadhaar authentication.
+              </p>
+            </div>
+
+            <div className="md:absolute md:right-0 md:top-0 flex flex-col items-center justify-center space-y-2 bg-white/60 border border-[#EAD9B8] rounded-xl p-4 shadow-sm backdrop-blur-sm w-full md:w-auto shrink-0 z-10">
+              <div className="flex items-center space-x-6 text-sm text-[#2D1F0E]">
+                <div className="flex flex-col items-center">
+                  <span className="font-bold text-[#D99427] text-base">7:00 - 9:00 PM</span>
+                  <span className="font-medium">Dinner</span>
+                </div>
+                <div className="w-px h-8 bg-[#EAD9B8]"></div>
+                <div className="flex flex-col items-center">
+                  <span className="font-bold text-[#D99427] text-base">9:00 PM Onwards</span>
+                  <span className="font-medium">Garba</span>
+                </div>
+              </div>
+              <div className="h-px w-3/4 bg-[#EAD9B8]/60 mt-3 mb-2"></div>
+              <p className="text-xs text-[#6E5336] text-center leading-relaxed">
+                <span className="font-bold text-[#8C6019]">Venue: </span>
+                Icon World Trade, Patidar Chowk,<br />Sadhuvaswani Road, Rajkot — 360005
+              </p>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -1529,13 +1569,13 @@ export default function SafedSheriLandingPage() {
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF0F5] text-purple-800 border border-purple-200">
-                    Female Only
+                    Single Female Only
                   </span>
                   <span className="text-xs text-[#8C6019] font-mono">1-7 Passes</span>
                 </div>
-                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Female Pass</h3>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Single Female Pass</h3>
                 <p className="text-xs text-[#6E5336] leading-relaxed mb-6">
-                  Individual entry pass exclusively reserved for female attendees.
+                  Individual entry pass exclusively reserved for single female attendees.
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
@@ -1580,6 +1620,10 @@ export default function SafedSheriLandingPage() {
                     <span className="text-[#D99427] font-bold">✓</span>
                     <span>75% White Attire Compulsory</span>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Full Course Dinner</span>
+                  </div>
                 </div>
               </div>
 
@@ -1587,7 +1631,7 @@ export default function SafedSheriLandingPage() {
                 onClick={() => handlePassSelect('SINGLE')}
                 className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md"
               >
-                Apply for Female Pass
+                Apply for Single Female Pass
               </button>
             </div>
 
@@ -1608,7 +1652,7 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Couple Pass</h3>
                 <p className="text-xs text-[#6E5336] leading-relaxed mb-6">
-                  Verified entry for two attendees (1 Female + 1 Male or 2 Females).
+                  Verified entry for two attendees (1 Female + 1 Male).
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
@@ -1653,6 +1697,10 @@ export default function SafedSheriLandingPage() {
                     <span className="text-[#D99427] font-bold">✓</span>
                     <span>75% White Attire Compulsory</span>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Full Course Dinner</span>
+                  </div>
                 </div>
               </div>
 
@@ -1678,25 +1726,18 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Kids Pass</h3>
                 <p className="text-xs text-[#6E5336] leading-relaxed mb-6">
-                  Individual entry pass exclusively reserved for children (up to 12 years).
+                  Individual entry pass exclusively reserved for children (up to 15 years). Below 10 Yrs Entry is Free.
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
                 {pricing.showKidsPrice !== false && pricing.showSinglePrice ? (
                   <div className="mb-6 space-y-3">
-                    <div className="flex justify-between items-center bg-[#FAF6EE] p-3 rounded-xl border border-[#EAD9B8]">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Below 10 Yrs</span>
-                        <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
-                      </div>
-                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">₹999</span>
-                    </div>
                     <div className="flex justify-between items-center bg-[#FFFDF9] p-3 rounded-xl border border-[#EAD9B8]">
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">10 to 15 Yrs</span>
+                        <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Kids Pass (10 to 15 Yrs)</span>
                         <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
                       </div>
-                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">₹1,250</span>
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">₹1,200</span>
                     </div>
                   </div>
                 ) : (
@@ -1725,6 +1766,10 @@ export default function SafedSheriLandingPage() {
                     <span className="text-[#D99427] font-bold">✓</span>
                     <span>75% White Attire Compulsory</span>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Full Course Dinner</span>
+                  </div>
                 </div>
               </div>
 
@@ -1742,7 +1787,7 @@ export default function SafedSheriLandingPage() {
       {/* FOOTER */}
       <footer className="py-8 px-6 bg-[#FAF6EE] z-10 relative bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/footer-upscaled.png')" }}>
         <div className="max-w-6xl mx-auto flex flex-col gap-6 text-[#4A3B2C]">
-          
+
           {/* Top Section */}
           <div className="flex flex-col md:flex-row items-center justify-between w-full gap-5 md:gap-8">
             <div className="flex items-center space-x-3">
@@ -1774,7 +1819,7 @@ export default function SafedSheriLandingPage() {
 
           {/* Middle Section - 3 Columns */}
           <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-8 md:gap-0 md:divide-x md:divide-[#D99427]/30">
-            
+
             {/* Column 1: Brand */}
             <div className="flex flex-col items-center px-4">
               <h4 className="font-serif font-bold text-[#1A1A1A] text-lg md:text-xl mb-1 tracking-wide">Safed Sheri 2026</h4>
@@ -1805,13 +1850,13 @@ export default function SafedSheriLandingPage() {
                   </div>
                   <span className="text-[15px] font-medium">+91 70169 77518</span>
                 </a>
-                <a href="mailto:Safedsheri@gmail.com" className="flex items-center gap-4 hover:text-[#D99427] transition group">
+                <a href="mailto:safedsheri9@gmail.com" className="flex items-center gap-4 hover:text-[#D99427] transition group">
                   <div className="w-10 h-10 rounded-full border border-[#D99427]/60 group-hover:border-[#D99427] flex items-center justify-center text-[#D99427] bg-[#FAF6EE] shrink-0 shadow-[0_0_10px_rgba(217,148,39,0.1)]">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                     </svg>
                   </div>
-                  <span className="text-[15px] font-medium">Safedsheri@gmail.com</span>
+                  <span className="text-[15px] font-medium">safedsheri9@gmail.com</span>
                 </a>
               </div>
             </div>
@@ -2046,7 +2091,7 @@ export default function SafedSheriLandingPage() {
                         {pricing.showSinglePrice ? (
                           <>
                             {selectedPass === 'KIDS' ? (
-                              <div className="text-[#6E5336]">Phase Pricing: ₹999 - ₹1,250 based on age</div>
+                              <div className="text-[#6E5336]">Phase Pricing: ₹1,200 per pass</div>
                             ) : (
                               <div className="text-[#6E5336]">Phase Pricing: ₹{pricing.singlePrice?.toLocaleString()} per pass</div>
                             )}
@@ -2188,67 +2233,7 @@ export default function SafedSheriLandingPage() {
                           </select>
                         </div>
 
-                        {selectedPass === 'KIDS' && (
-                          <div className="space-y-3 mb-6 mt-2 col-span-1 sm:col-span-2">
-                            <label className="block text-[11px] font-bold text-[#6E5336] mb-2 hidden">Select Age Group *</label>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                garbaAudio.playDandiya();
-                                const updated = [...attendees];
-                                updated[currentAttendeeIndex].kidsAgeGroup = 'BELOW_10';
-                                setAttendees(updated);
-                              }}
-                              className={`w-full flex items-center p-4 rounded-2xl border transition-all ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === 'BELOW_10'
-                                ? 'bg-[#FAF6EE] border-[#D99427] shadow-sm scale-[1.01]'
-                                : 'bg-white border-[#EAD9B8] hover:border-[#D99427]/50'
-                                }`}
-                            >
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === 'BELOW_10'
-                                ? 'border-[#D99427]'
-                                : 'border-[#EAD9B8]'
-                                }`}>
-                                {(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === 'BELOW_10' && (
-                                  <div className="w-2.5 h-2.5 bg-[#D99427] rounded-full" />
-                                )}
-                              </div>
-                              <div className="text-left flex-grow">
-                                <div className="text-xs font-bold text-[#8C6019] tracking-widest uppercase mb-0.5">BELOW 10 YRS</div>
-                                <div className="text-[10px] text-[#6E5336]">Phase Pricing</div>
-                              </div>
-                              <div className="text-2xl font-serif font-bold text-[#2D1F0E]">₹999</div>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                garbaAudio.playDandiya();
-                                const updated = [...attendees];
-                                updated[currentAttendeeIndex].kidsAgeGroup = '10_TO_15';
-                                setAttendees(updated);
-                              }}
-                              className={`w-full flex items-center p-4 rounded-2xl border transition-all ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === '10_TO_15'
-                                ? 'bg-[#FAF6EE] border-[#D99427] shadow-sm scale-[1.01]'
-                                : 'bg-white border-[#EAD9B8] hover:border-[#D99427]/50'
-                                }`}
-                            >
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === '10_TO_15'
-                                ? 'border-[#D99427]'
-                                : 'border-[#EAD9B8]'
-                                }`}>
-                                {(attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10') === '10_TO_15' && (
-                                  <div className="w-2.5 h-2.5 bg-[#D99427] rounded-full" />
-                                )}
-                              </div>
-                              <div className="text-left flex-grow">
-                                <div className="text-xs font-bold text-[#8C6019] tracking-widest uppercase mb-0.5">10 TO 15 YRS</div>
-                                <div className="text-[10px] text-[#6E5336]">Phase Pricing</div>
-                              </div>
-                              <div className="text-2xl font-serif font-bold text-[#2D1F0E]">₹1,250</div>
-                            </button>
-                          </div>
-                        )}
 
                         <div>
                           <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
@@ -2309,32 +2294,65 @@ export default function SafedSheriLandingPage() {
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
-                            {selectedPass === 'KIDS' ? 'Mandatory Child Aadhaar Document *' : 'Mandatory Aadhaar Document *'}
-                          </label>
-                          <div className="relative">
-                            <input
-                              key={`aadhaar-upload-key-${currentAttendeeIndex}`}
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp,application/pdf"
-                              onChange={(e) => handleFileUpload(currentAttendeeIndex, e)}
-                              className="hidden"
-                              id={`aadhaar-upload-${currentAttendeeIndex}`}
-                            />
-                            <label
-                              htmlFor={`aadhaar-upload-${currentAttendeeIndex}`}
-                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition"
-                            >
-                              <span className="truncate">
-                                {attendees[currentAttendeeIndex]?.uploading
-                                  ? 'Encrypting & uploading...'
-                                  : attendees[currentAttendeeIndex]?.documentName || (selectedPass === 'KIDS' ? 'Upload Child Aadhaar (<5MB)' : 'Upload Aadhaar (<5MB)')}
-                              </span>
-                              <span className="text-[10px] px-3 py-1 rounded bg-white font-bold text-[#8C6019] border border-[#EAD9B8]">
-                                Browse
-                              </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Front Side */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
+                              {selectedPass === 'KIDS' ? 'Child Aadhaar Front *' : 'Aadhaar Front *'}
                             </label>
+                            <div className="relative">
+                              <input
+                                key={`aadhaar-upload-front-key-${currentAttendeeIndex}`}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,application/pdf"
+                                onChange={(e) => handleFileUpload(currentAttendeeIndex, 'front', e)}
+                                className="hidden"
+                                id={`aadhaar-upload-front-${currentAttendeeIndex}`}
+                              />
+                              <label
+                                htmlFor={`aadhaar-upload-front-${currentAttendeeIndex}`}
+                                className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition"
+                              >
+                                <span className="truncate">
+                                  {attendees[currentAttendeeIndex]?.uploadingFront
+                                    ? 'Uploading...'
+                                    : attendees[currentAttendeeIndex]?.documentName || 'Upload Front'}
+                                </span>
+                                <span className="text-[10px] px-3 py-1 rounded bg-white font-bold text-[#8C6019] border border-[#EAD9B8]">
+                                  Browse
+                                </span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Back Side */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
+                              {selectedPass === 'KIDS' ? 'Child Aadhaar Back *' : 'Aadhaar Back *'}
+                            </label>
+                            <div className="relative">
+                              <input
+                                key={`aadhaar-upload-back-key-${currentAttendeeIndex}`}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,application/pdf"
+                                onChange={(e) => handleFileUpload(currentAttendeeIndex, 'back', e)}
+                                className="hidden"
+                                id={`aadhaar-upload-back-${currentAttendeeIndex}`}
+                              />
+                              <label
+                                htmlFor={`aadhaar-upload-back-${currentAttendeeIndex}`}
+                                className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition"
+                              >
+                                <span className="truncate">
+                                  {attendees[currentAttendeeIndex]?.uploadingBack
+                                    ? 'Uploading...'
+                                    : attendees[currentAttendeeIndex]?.documentBackName || 'Upload Back'}
+                                </span>
+                                <span className="text-[10px] px-3 py-1 rounded bg-white font-bold text-[#8C6019] border border-[#EAD9B8]">
+                                  Browse
+                                </span>
+                              </label>
+                            </div>
                           </div>
                         </div>
                       </div>

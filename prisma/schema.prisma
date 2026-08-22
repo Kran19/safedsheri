@@ -198,6 +198,11 @@ model AadhaarDocument {
   mimeType         String   // image/jpeg, image/png, image/webp, application/pdf
   sizeBytes        Int
   checksum         String   // SHA-256 hash of file content
+  storageKeyBack       String?
+  originalFilenameBack String?
+  mimeTypeBack         String?
+  sizeBytesBack        Int?
+  checksumBack         String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

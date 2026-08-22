@@ -235,6 +235,11 @@ export class RegistrationsService {
       sizeBytes?: number;
       checksum?: string;
       kidsAgeGroup?: string;
+      documentBackKey?: string;
+      documentBackName?: string;
+      documentBackMimeType?: string;
+      documentBackSizeBytes?: number;
+      documentBackChecksum?: string;
     }>;
   }) {
     const activeEvent = await this.prisma.event.findFirst({
@@ -297,8 +302,8 @@ export class RegistrationsService {
       }
       batchAadhaarSet.add(cleanAadhaar);
 
-      if (!att.documentKey) {
-        throw new BadRequestException(`Mandatory Aadhaar document image/PDF upload missing for attendee #${i + 1} (${att.fullName})`);
+      if (!att.documentKey || !att.documentBackKey) {
+        throw new BadRequestException(`Mandatory Aadhaar document image/PDF upload (Front and Back) missing for attendee #${i + 1} (${att.fullName})`);
       }
 
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
@@ -351,7 +356,7 @@ export class RegistrationsService {
         : data.passType === PassType.GAZEBO
         ? 85000
         : data.passType === PassType.KIDS
-        ? data.attendees.reduce((sum, att) => sum + (att.kidsAgeGroup === '10_TO_15' ? 1250 : 999), 0)
+        ? data.attendees.length * 1200
         : Number(activePhase.singlePrice) * data.attendees.length;
 
     const adminUser = await this.prisma.user.findFirst({
@@ -414,6 +419,11 @@ export class RegistrationsService {
             mimeType: attData.mimeType || 'image/jpeg',
             sizeBytes: attData.sizeBytes || 1024,
             checksum: attData.checksum || 'sha256_checksum',
+            storageKeyBack: attData.documentBackKey || null,
+            originalFilenameBack: attData.documentBackName || null,
+            mimeTypeBack: attData.documentBackMimeType || null,
+            sizeBytesBack: attData.documentBackSizeBytes || null,
+            checksumBack: attData.documentBackChecksum || null,
           },
           create: {
             attendeeId: attendee.id,
@@ -422,6 +432,11 @@ export class RegistrationsService {
             mimeType: attData.mimeType || 'image/jpeg',
             sizeBytes: attData.sizeBytes || 1024,
             checksum: attData.checksum || 'sha256_checksum',
+            storageKeyBack: attData.documentBackKey || null,
+            originalFilenameBack: attData.documentBackName || null,
+            mimeTypeBack: attData.documentBackMimeType || null,
+            sizeBytesBack: attData.documentBackSizeBytes || null,
+            checksumBack: attData.documentBackChecksum || null,
           },
         });
 
@@ -566,7 +581,7 @@ export class RegistrationsService {
         recalculatedAmount = Number(reg.pricingPhase.couplePrice);
       } else if (reg.passType === PassType.KIDS) {
         recalculatedAmount = approvedAttendees.reduce((sum, ra) => {
-          return sum + (ra.attendee.kidsAgeGroup === '10_TO_15' ? 1250 : 999);
+          return sum + 1200;
         }, 0);
       } else {
         recalculatedAmount = Number(reg.pricingPhase.singlePrice) * approvedCount;

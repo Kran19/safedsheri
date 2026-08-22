@@ -7,8 +7,10 @@ interface AadhaarDocumentPreviewProps {
   document: {
     id: string;
     originalFilename: string;
+    originalFilenameBack?: string;
     mimeType?: string;
     sizeBytes?: number;
+    storageKeyBack?: string; // Presence indicates back image exists
   };
   token?: string;
 }
@@ -16,16 +18,18 @@ interface AadhaarDocumentPreviewProps {
 export function AadhaarDocumentPreview({ document, token }: AadhaarDocumentPreviewProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
-  const [imageError, setImageError] = useState(false);
-  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState({ front: false, back: false });
+  const [imageLoading, setImageLoading] = useState({ front: true, back: true });
 
   if (!document || !document.id) {
     return null;
   }
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-  const docUrl = `${apiBase}/uploads/document/${document.id}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  const docFrontUrl = `${apiBase}/uploads/document/${document.id}?side=front${token ? `&token=${encodeURIComponent(token)}` : ''}`;
+  const docBackUrl = `${apiBase}/uploads/document/${document.id}?side=back${token ? `&token=${encodeURIComponent(token)}` : ''}`;
   const isPdf = document.mimeType?.includes('pdf') || document.originalFilename?.toLowerCase().endsWith('.pdf');
+  const hasBackImage = !!document.storageKeyBack;
 
   return (
     <div className="mt-3 p-3.5 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm space-y-3">
@@ -47,13 +51,22 @@ export function AadhaarDocumentPreview({ document, token }: AadhaarDocumentPrevi
             <span>Enlarge</span>
           </button>
           <a
-            href={docUrl}
+            href={docFrontUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="px-2.5 py-1 rounded-lg bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#6E5336] text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm"
           >
             <ExternalLink className="w-3 h-3 text-[#8C6019]" />
-            <span>Open Tab</span>
+            <span>Open Front</span>
+          </a>
+          <a
+            href={docBackUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 rounded-lg bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#6E5336] text-[11px] font-semibold flex items-center space-x-1 transition shadow-sm"
+          >
+            <ExternalLink className="w-3 h-3 text-[#8C6019]" />
+            <span>Open Back</span>
           </a>
         </div>
       </div>
@@ -68,51 +81,91 @@ export function AadhaarDocumentPreview({ document, token }: AadhaarDocumentPrevi
               <p className="text-[10px] text-[#8C6019]">PDF Document Upload</p>
             </div>
             <a
-              href={docUrl}
+              href={docFrontUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs shadow-sm hover:opacity-95 transition"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs shadow-sm hover:opacity-95 transition mb-2"
             >
-              <span>View PDF Document in Secure Viewer</span>
+              <span>View Front PDF</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            <a
+              href={docBackUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs shadow-sm hover:opacity-95 transition ml-2 mb-2"
+            >
+              <span>View Back PDF</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         ) : (
-          <>
-            {imageLoading && !imageError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#FAF6EE]">
-                <div className="w-6 h-6 border-2 border-[#D99427] border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
+            <div className="relative">
+              {imageLoading.front && !imageError.front && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#FAF6EE]">
+                  <div className="w-6 h-6 border-2 border-[#D99427] border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
 
-            {imageError ? (
-              <div className="p-6 text-center space-y-2">
-                <FileText className="w-8 h-8 text-amber-600 mx-auto" />
-                <p className="text-xs font-semibold text-[#2D1F0E]">Preview Unavailable</p>
-                <a
-                  href={docUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#D99427] underline font-bold"
-                >
-                  Click to open document directly
-                </a>
-              </div>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={docUrl}
-                alt={`Aadhaar Document - ${document.originalFilename}`}
-                onLoad={() => setImageLoading(false)}
-                onError={() => {
-                  setImageLoading(false);
-                  setImageError(true);
-                }}
-                onClick={() => setIsZoomed(true)}
-                className="w-full h-auto max-h-[280px] object-contain rounded-xl cursor-zoom-in hover:scale-[1.01] transition-transform duration-200"
-              />
-            )}
-          </>
+              {imageError.front ? (
+                <div className="p-6 text-center space-y-2">
+                  <FileText className="w-8 h-8 text-amber-600 mx-auto" />
+                  <p className="text-xs font-semibold text-[#2D1F0E]">Front Preview Unavailable</p>
+                  <a
+                    href={docFrontUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-[#D99427] underline font-bold"
+                  >
+                    Click to open front directly
+                  </a>
+                </div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={docFrontUrl}
+                  alt={`Aadhaar Front - ${document.originalFilename}`}
+                  onLoad={() => setImageLoading(p => ({ ...p, front: false }))}
+                  onError={() => {
+                    setImageLoading(p => ({ ...p, front: false }));
+                    setImageError(p => ({ ...p, front: true }));
+                  }}
+                  onClick={() => setIsZoomed(true)}
+                  className="w-full h-auto max-h-[280px] object-contain rounded-xl cursor-zoom-in hover:scale-[1.01] transition-transform duration-200"
+                />
+              )}
+            </div>
+
+            <div className="relative">
+              {imageLoading.back && !imageError.back && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#FAF6EE]">
+                  <div className="w-6 h-6 border-2 border-[#D99427] border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+
+              {imageError.back ? (
+                <div className="p-6 text-center space-y-2">
+                  <FileText className="w-8 h-8 text-amber-600 mx-auto" />
+                  <p className="text-xs font-semibold text-[#2D1F0E]">Back Preview Unavailable</p>
+                  <p className="text-[10px] text-amber-700/80">Not provided or failed to load.</p>
+                </div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={docBackUrl}
+                  alt={`Aadhaar Back - ${document.originalFilenameBack || 'back'}`}
+                  onLoad={() => setImageLoading(p => ({ ...p, back: false }))}
+                  onError={() => {
+                    setImageLoading(p => ({ ...p, back: false }));
+                    setImageError(p => ({ ...p, back: true }));
+                  }}
+                  onClick={() => setIsZoomed(true)}
+                  className="w-full h-auto max-h-[280px] object-contain rounded-xl cursor-zoom-in hover:scale-[1.01] transition-transform duration-200"
+                />
+              )}
+            </div>
+          </div>
         )}
       </div>
 
@@ -168,14 +221,29 @@ export function AadhaarDocumentPreview({ document, token }: AadhaarDocumentPrevi
           </div>
 
           {/* Modal Image Box */}
-          <div className="relative max-w-4xl max-h-[80vh] w-full flex items-center justify-center overflow-auto p-4 bg-white/10 rounded-3xl border border-white/20">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={docUrl}
-              alt="High Resolution Aadhaar Document"
-              style={{ transform: `scale(${zoomScale})` }}
-              className="max-h-[70vh] max-w-full object-contain rounded-2xl shadow-2xl transition-transform duration-150"
-            />
+          <div className="relative max-w-5xl max-h-[85vh] w-full flex items-center justify-center overflow-auto p-4 bg-white/10 rounded-3xl border border-white/20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="text-center">
+                <h4 className="text-white mb-2 font-bold text-sm">Front</h4>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={docFrontUrl}
+                  alt="High Resolution Aadhaar Front"
+                  style={{ transform: `scale(${zoomScale})`, transformOrigin: 'center top' }}
+                  className="max-h-[70vh] max-w-full object-contain rounded-2xl shadow-2xl transition-transform duration-150"
+                />
+              </div>
+              <div className="text-center">
+                <h4 className="text-white mb-2 font-bold text-sm">Back</h4>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={docBackUrl}
+                  alt="High Resolution Aadhaar Back"
+                  style={{ transform: `scale(${zoomScale})`, transformOrigin: 'center top' }}
+                  className="max-h-[70vh] max-w-full object-contain rounded-2xl shadow-2xl transition-transform duration-150"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

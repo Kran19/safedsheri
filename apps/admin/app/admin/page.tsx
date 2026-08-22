@@ -383,7 +383,9 @@ export default function SuperAdminDashboard() {
         return (
           <div>
             <div className="font-semibold text-[#2D1F0E]">{primary?.fullName || '—'}</div>
-            <div className="text-[10px] text-[#6E5336]">{primary?.gender}</div>
+            <div className="text-[10px] text-[#6E5336]">
+              {row.passType === 'SINGLE' && primary?.gender === 'FEMALE' ? 'SINGLE FEMALE' : primary?.gender}
+            </div>
           </div>
         );
       },
@@ -1333,7 +1335,7 @@ export default function SuperAdminDashboard() {
                             {att.fullName}
                           </span>
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#FAF6EE] text-[#8C6019] border border-[#EAD9B8]">
-                            {att.gender}
+                            {selectedApp.passType === 'SINGLE' && att.gender === 'FEMALE' ? 'SINGLE FEMALE' : att.gender}
                           </span>
                           {regAtt.isPrimary && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300">
@@ -1463,7 +1465,7 @@ export default function SuperAdminDashboard() {
                   : selectedApp.passType === 'KIDS'
                   ? (selectedApp.attendees as any[]).reduce((sum: number, attWrapper: any) => {
                       if (attendeeDecisions[attWrapper.attendee.id]?.status === 'APPROVED') {
-                        return sum + (attWrapper.attendee.kidsAgeGroup === '10_TO_15' ? 1250 : 999);
+                        return sum + 1200;
                       }
                       return sum;
                     }, 0)

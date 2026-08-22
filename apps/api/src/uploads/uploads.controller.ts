@@ -3,9 +3,11 @@ import {
   Post,
   Get,
   Param,
+  Query,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UnauthorizedException,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -43,10 +45,16 @@ export class UploadsController {
   @Get('document/:documentId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
-  async viewDocument(
+  async getDocument(
     @Param('documentId') documentId: string,
+    @Query('token') token: string,
+    @Query('side') side: string,
     @Res() res: Response,
   ) {
+    if (!token || token !== process.env.ADMIN_SECRET) {
+      throw new UnauthorizedException('Invalid or missing secure viewing token');
+    }
+
     const doc = await this.prisma.aadhaarDocument.findUnique({
       where: { id: documentId },
     });
@@ -55,10 +63,19 @@ export class UploadsController {
       throw new BadRequestException('Aadhaar document record not found');
     }
 
-    const { stream } = await this.uploadsService.getDocumentFile(doc.storageKey);
+    const isBack = side === 'back';
+    const storageKey = isBack ? doc.storageKeyBack : doc.storageKey;
+    const mimeType = isBack ? doc.mimeTypeBack : doc.mimeType;
+    const originalFilename = isBack ? doc.originalFilenameBack : doc.originalFilename;
 
-    res.setHeader('Content-Type', doc.mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${doc.originalFilename}"`);
+    if (!storageKey) {
+      throw new BadRequestException('Requested document side not found');
+    }
+
+    const { stream } = await this.uploadsService.getDocumentFile(storageKey);
+
+    res.setHeader('Content-Type', mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${originalFilename || 'document'}"`);
     stream.pipe(res);
   }
 }
