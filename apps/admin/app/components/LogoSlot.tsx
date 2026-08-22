@@ -10,6 +10,7 @@ interface LogoSlotProps {
   showText?: boolean;
   showDate?: boolean;
   subtitle?: string;
+  hideTextOnMobile?: boolean;
 }
 
 export default function LogoSlot({
@@ -18,6 +19,7 @@ export default function LogoSlot({
   showText = false,
   showDate = false,
   subtitle,
+  hideTextOnMobile = false,
 }: LogoSlotProps) {
   const [hasError, setHasError] = useState(false);
 
@@ -49,7 +51,7 @@ export default function LogoSlot({
       </div>
 
       {showText && (
-        <div className="flex flex-col text-left">
+        <div className={`flex flex-col text-left ${hideTextOnMobile ? 'hidden sm:flex' : ''}`}>
           <span className="font-serif font-bold text-[#2D1F0E] tracking-[0.16em] text-xs sm:text-sm leading-tight whitespace-nowrap">
             SAFED <span className="text-[#D99427]">SHERI</span>
           </span>

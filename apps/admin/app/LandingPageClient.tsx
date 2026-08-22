@@ -851,7 +851,7 @@ export default function SafedSheriLandingPage() {
       <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#EAD9B8] px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2" onClick={() => garbaAudio.playDandiya()}>
-            <LogoSlot size="sm" showText={true} showDate={false} />
+            <LogoSlot size="sm" showText={true} showDate={false} hideTextOnMobile={true} />
           </Link>
 
           <div className="hidden md:flex items-center space-x-8 text-xs tracking-[0.2em] uppercase font-semibold text-[#6E5336]">
@@ -882,7 +882,7 @@ export default function SafedSheriLandingPage() {
             {/* Interactive Sound FX Toggle */}
             <button
               onClick={handleToggleSound}
-              className="p-1.5 sm:p-2 rounded-full bg-[#FAF6EE] border border-[#EAD9B8] hover:bg-[#F3ECE0] text-[#8C6019] transition shadow-sm"
+              className="hidden sm:block p-1.5 sm:p-2 rounded-full bg-[#FAF6EE] border border-[#EAD9B8] hover:bg-[#F3ECE0] text-[#8C6019] transition shadow-sm"
               title={isSoundMuted ? 'Unmute Festive Audio' : 'Mute Festive Audio'}
             >
               {isSoundMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D99427] animate-pulse" />}
