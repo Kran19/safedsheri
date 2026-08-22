@@ -5,10 +5,10 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronDown } from "lucide-react";
 
-const TOTAL_FRAMES = 119;
+const TOTAL_FRAMES = 300;
 const getFrameUrl = (index: number) => {
   const padded = String(index + 1).padStart(4, "0");
-  return `/frames/parallax/frame_${padded}.webp`;
+  return `/frames/tigress/frame_${padded}.jpg`;
 };
 
 export default function CinematicTigressIntro({ children }: { children: React.ReactNode }) {

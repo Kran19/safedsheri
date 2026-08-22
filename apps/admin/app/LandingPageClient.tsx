@@ -8,9 +8,10 @@ import LogoSlot from './components/LogoSlot';
 import { garbaAudio } from './components/GarbaAudioEngine';
 import CinematicTigressIntro from './components/CinematicTigressIntro';
 import TheWomenSection from './components/TheWomenSection';
+import { Vibe3DOrbit } from './components/Vibe3DOrbit';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
@@ -68,44 +69,36 @@ export default function SafedSheriLandingPage() {
     const isMobile = window.innerWidth < 768;
 
     const ctx = gsap.context(() => {
-      // 1. Horizontal Scroll for Chapter II
-      const getScrollAmount = () => {
-        let trackWidth = colourTrackRef.current?.scrollWidth || 0;
-        let diff = trackWidth - window.innerWidth;
-        return diff > 0 ? -diff : 0;
-      };
-
-      const tween = gsap.to(colourTrackRef.current, {
-        x: getScrollAmount,
-        ease: "none"
-      });
-
-      ScrollTrigger.create({
-        trigger: colourSectionRef.current,
-        start: "top top",
-        end: () => `+=${colourTrackRef.current?.scrollWidth}`,
-        pin: true,
-        pinSpacing: true,
-        animation: tween,
-        scrub: isMobile ? 0.5 : 1,
-        invalidateOnRefresh: true,
-        refreshPriority: 10,
-        anticipatePin: 1,
-      });
-
+      // 1. (Removed Horizontal Scroll for Chapter II - Replaced with 3D Orbit)
+      
       // 2. 3D Scroll Animation for Chapter IV (Gazebos)
       if (gazeboSectionRef.current && !isMobile) {
         // Initial States
-        gsap.set(gazeboLeftRef.current, { xPercent: 0, z: -800, rotationY: 25, opacity: 0, scale: 0.9, zIndex: 1 });
-        gsap.set(gazeboRightRef.current, { xPercent: 0, z: -800, rotationY: -25, opacity: 0, scale: 0.9, zIndex: 1 });
-        gsap.set(gazeboCenterRef.current, { z: -400, rotationX: 10, opacity: 0, scale: 0.95, zIndex: 10 });
-        gsap.set(gazeboHeadingRef.current, { y: 30, opacity: 0 });
+        gsap.set(gazeboHeadingRef.current, { y: 60, opacity: 0 });
+        gsap.set(gazeboLeftRef.current, { xPercent: 0, z: -800, rotationY: 25, opacity: 0, scale: 0.8, y: 150, zIndex: 1 });
+        gsap.set(gazeboRightRef.current, { xPercent: 0, z: -800, rotationY: -25, opacity: 0, scale: 0.8, y: 150, zIndex: 1 });
+        gsap.set(gazeboCenterRef.current, { z: -100, rotationX: 0, opacity: 0, scale: 0.85, y: 150, zIndex: 10 });
 
-        const tl = gsap.timeline({
+        // 1. Reveal Timeline
+        const revealTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: gazeboSectionRef.current,
+            start: "top 80%", // Reveal begins when section is near the bottom
+            end: "center center", // Reveal ends exactly as it pins
+            scrub: 1
+          }
+        });
+
+        revealTl.to(gazeboHeadingRef.current, { y: 0, opacity: 1, duration: 1 }, "reveal")
+                .to(gazeboCenterRef.current, { y: 0, opacity: 1, scale: 1, z: 0, duration: 1 }, "reveal+=0.2")
+                .to([gazeboLeftRef.current, gazeboRightRef.current], { y: 0, opacity: 1, scale: 0.9, duration: 1 }, "reveal+=0.4");
+
+        // 2. Pin & Spread Timeline
+        const spreadTl = gsap.timeline({
           scrollTrigger: {
             trigger: gazeboSectionRef.current,
             start: "center center",
-            end: () => "+=" + (window.innerHeight * 2),
+            end: () => "+=" + (window.innerHeight * 1.5),
             scrub: 1.2,
             pin: true,
             refreshPriority: 9,
@@ -113,15 +106,10 @@ export default function SafedSheriLandingPage() {
           }
         });
 
-        // Phase 2: Enter
-        tl.to(gazeboHeadingRef.current, { y: 0, opacity: 1, duration: 1 })
-          .to(gazeboCenterRef.current, { z: -100, rotationX: 0, opacity: 1, scale: 1, duration: 1 }, "<")
-          .to([gazeboLeftRef.current, gazeboRightRef.current], { opacity: 0.5, duration: 1 }, "<+0.2");
-
-        // Phase 3 & 4: Spread
-        tl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
-          .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, opacity: 1, scale: 1, duration: 2, ease: "power2.out" }, "spread")
-          .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
+        // Spread Phase
+        spreadTl.to(gazeboLeftRef.current, { xPercent: -115, z: 0, rotationY: 0, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+                .to(gazeboRightRef.current, { xPercent: 115, z: 0, rotationY: 0, scale: 1, duration: 2, ease: "power2.out" }, "spread")
+                .to(gazeboCenterRef.current, { z: 50, duration: 2, ease: "power2.out" }, "spread");
       }
     });
 
@@ -130,7 +118,7 @@ export default function SafedSheriLandingPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['call', 'colour', 'gazebos', 'the-women', 'passes'];
+      const sections = ['call', 'colour', 'gallery', 'gazebos', 'the-women', 'passes'];
       let current = '';
 
       for (const section of sections) {
@@ -244,8 +232,9 @@ export default function SafedSheriLandingPage() {
     documentKey: string;
     documentName: string;
     uploading?: boolean;
+    kidsAgeGroup?: 'BELOW_10' | '10_TO_15';
   }>>([
-    { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+    { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: 'BELOW_10' }
   ]);
 
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -377,6 +366,7 @@ export default function SafedSheriLandingPage() {
           aadhaarNumber: '',
           documentKey: '',
           documentName: '',
+          kidsAgeGroup: 'BELOW_10'
         });
       }
       setAttendees(newAttendees);
@@ -386,6 +376,15 @@ export default function SafedSheriLandingPage() {
         setCurrentAttendeeIndex(count - 1);
       }
     }
+  };
+
+  const calculateTotalAmount = () => {
+    if (selectedPass === 'COUPLE') return pricing.couplePrice || 0;
+    if (selectedPass === 'SINGLE') return (pricing.singlePrice || 0) * attendees.length;
+    if (selectedPass === 'KIDS') {
+      return attendees.reduce((sum, att) => sum + (att.kidsAgeGroup === '10_TO_15' ? 1250 : 999), 0);
+    }
+    return 0;
   };
 
   const handlePassQuantityIncrement = () => {
@@ -757,6 +756,10 @@ export default function SafedSheriLandingPage() {
               Dress Code
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'colour' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
+            <a href="#gallery" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gallery' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+              Gallery
+              <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'gallery' ? 'scale-x-100' : 'scale-x-0'}`} />
+            </a>
             <a href="#gazebos" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gazebos' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Gazebo Lounges
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'gazebos' ? 'scale-x-100' : 'scale-x-0'}`} />
@@ -895,137 +898,119 @@ export default function SafedSheriLandingPage() {
       </CinematicTigressIntro>
 
       {/* CHAPTER 2: THE COLOUR & 75% WHITE RULE */}
-      <section id="colour" ref={colourSectionRef} className="relative w-full h-[100dvh] bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#FFFDF9] border-t border-b border-[#EAD9B8] overflow-hidden flex flex-col justify-center z-10 pt-20">
+      <section id="colour" ref={colourSectionRef} className="relative w-full min-h-[100dvh] bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#FFFDF9] border-t border-b border-[#EAD9B8] overflow-hidden flex flex-col justify-center z-10 py-16 lg:py-10">
         
-        <div className="relative text-center w-full max-w-2xl mx-auto px-6 z-20 flex-shrink-0 space-y-2 mb-[2vh]">
-          <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter II</span>
-          <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">
+        {/* Centered Chapter Header */}
+        <div className="w-full text-center max-w-3xl mx-auto px-6 mb-8 lg:mb-12 z-20 relative space-y-3">
+          <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter II</span>
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#2D1F0E]">
             The Identity of White
           </h2>
-          <p className="text-xs text-[#6E5336] leading-relaxed">
+          <p className="text-sm md:text-base text-[#6E5336] leading-relaxed max-w-2xl mx-auto">
             White is the soul of Safed Sheri. Under the golden sunburst and starlit sky, an entire arena moves as one.
           </p>
         </div>
 
-        {/* The Horizontal Track */}
-        <div ref={colourTrackRef} className="flex flex-row items-center space-x-12 md:space-x-16 px-12 md:px-24 h-[55vh] md:h-[60vh] w-max mt-[6vh] mb-[8vh]">
+        <div className="max-w-7xl mx-auto px-6 w-full flex flex-col md:flex-row items-start justify-between gap-12 lg:gap-24 z-20 relative">
+          
           {/* Card 1: 75% White Attire Requirement */}
-          <div className="w-[320px] md:w-[480px] h-full flex-shrink-0 relative flex flex-col justify-center bg-transparent px-2 md:px-4">
-            
-            {/* Top Label & Line */}
-            <div className="flex items-center w-full mb-4">
+          <div className="flex-1 flex flex-col justify-start">
+            <div className="flex items-center w-full mb-6">
               <span className="text-[10px] font-bold text-[#8C6019] uppercase tracking-[0.2em] whitespace-nowrap mr-4">MANDATORY RULE</span>
               <div className="h-[1px] bg-[#D99427] flex-grow relative">
-                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-xs">âœ¦</span>
+                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-[10px]">✦</span>
               </div>
             </div>
 
-            {/* Title */}
-            <h3 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E] leading-[1.1] mb-4">
-              <span className="whitespace-nowrap">75% White Attire</span><br />Requirement
+            <h3 className="text-4xl md:text-5xl font-serif font-bold text-[#2D1F0E] leading-tight mb-6">
+              75% White Attire<br />Requirement
             </h3>
+            <div className="w-12 h-[2px] bg-[#D99427] mb-6"></div>
 
-            {/* Separator */}
-            <div className="w-10 h-[2px] bg-[#D99427] mb-4"></div>
-
-            {/* Description */}
-            <p className="text-[13px] md:text-sm text-[#2D1F0E] leading-relaxed mb-4 pr-4 font-medium">
-              All guests must be dressed in at least <br/>
+            <p className="text-sm md:text-base text-[#2D1F0E] leading-relaxed mb-8 font-medium max-w-2xl">
+              All guests must be dressed in at least <br className="hidden md:block"/>
               <strong>75% white visible attire</strong> (Traditional Chaniya Choli, Kurta, Kediya, or Formal Indian White).
             </p>
 
-            {/* Accepted items */}
-            <div className="flex items-center mb-4">
-              <div className="w-11 h-11 rounded-full border border-[#D99427] flex items-center justify-center flex-shrink-0 mr-5">
+            <div className="flex items-center mb-6">
+              <div className="w-12 h-12 rounded-full border border-[#D99427] bg-[#FFFDF9] flex items-center justify-center flex-shrink-0 mr-4 shadow-sm">
                 <span className="text-[#D99427] text-lg font-bold">✓</span>
               </div>
-              <p className="text-[13px] md:text-sm text-[#4A3B2C] leading-snug">
-                Pure White, Pearl White,<br />Ivory & Off-White accepted
+              <p className="text-sm md:text-base text-[#4A3B2C] leading-snug">
+                Pure White, Pearl White,<br className="hidden md:block"/>Ivory & Off-White accepted
               </p>
             </div>
-
-            {/* Thin line */}
-            <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-4">
-               <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#D99427] rotate-45 transform origin-center"></span>
+            
+            <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-6">
+               <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-[8px]">✦</span>
             </div>
             
-            {/* Rejected items */}
             <div className="flex items-center">
-              <div className="w-11 h-11 rounded-full border border-[#D99427] flex items-center justify-center flex-shrink-0 mr-5">
+              <div className="w-12 h-12 rounded-full border border-[#D99427] bg-[#FFFDF9] flex items-center justify-center flex-shrink-0 mr-4 shadow-sm">
                 <span className="text-red-700 text-lg font-bold">✕</span>
               </div>
-              <p className="text-[13px] md:text-sm text-[#4A3B2C] leading-snug">
-                Non-white outfits will be strictly<br />denied entry at the gate
+              <p className="text-sm md:text-base text-[#4A3B2C] leading-snug">
+                Non-white outfits will be strictly<br className="hidden md:block"/>denied entry at the gate
               </p>
             </div>
-
           </div>
 
-          {/* Vibe Images */}
-          <img src="/images/04/C9342T01.JPG" alt="Safed Sheri Vibe 1" className="h-full w-[350px] md:w-[750px] object-cover rounded-2xl shadow-lg border border-[#EAD9B8] flex-shrink-0" />
-          <img src="/images/04/C9370T01.JPG" alt="Safed Sheri Vibe 2" className="h-full w-[350px] md:w-[750px] object-cover rounded-2xl shadow-lg border border-[#EAD9B8] flex-shrink-0" />
-          <img src="/images/04/C9374T01.JPG" alt="Safed Sheri Vibe 3" className="h-full w-[350px] md:w-[750px] object-cover rounded-2xl shadow-lg border border-[#EAD9B8] flex-shrink-0" />
-          <img src="/images/04/C9382T01.JPG" alt="Safed Sheri Vibe 4" className="h-full w-[350px] md:w-[750px] object-cover rounded-2xl shadow-lg border border-[#EAD9B8] flex-shrink-0" />
-          <img src="/images/04/C9698T01.JPG" alt="Safed Sheri Vibe 5" className="h-full w-[350px] md:w-[750px] object-cover rounded-2xl shadow-lg border border-[#EAD9B8] flex-shrink-0" />
-
           {/* Card 2: Government ID Authentication */}
-          <div className="w-[320px] md:w-[480px] h-full flex-shrink-0 relative flex flex-col justify-center bg-transparent px-2 md:px-4 mr-24">
-            
-            {/* Top Label & Line */}
-            <div className="flex items-center w-full mb-4">
+          <div className="flex-1 flex flex-col justify-start md:mt-0">
+            <div className="flex items-center w-full mb-6">
               <span className="text-[10px] font-bold text-[#8C6019] uppercase tracking-[0.2em] whitespace-nowrap mr-4">VERIFIED IDENTITY</span>
               <div className="h-[1px] bg-[#D99427] flex-grow relative">
-                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-xs">âœ¦</span>
+                <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-[#D99427] text-[10px]">✦</span>
               </div>
             </div>
 
-            {/* Title */}
-            <h3 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E] leading-[1.1] mb-4">
+            <h3 className="text-4xl md:text-5xl font-serif font-bold text-[#2D1F0E] leading-tight mb-6">
               Government ID<br />Authentication
             </h3>
-
-            {/* Description */}
-            <p className="text-[13px] md:text-sm text-[#4A3B2C] leading-relaxed mb-6 pr-4 font-medium">
+            <p className="text-sm md:text-base text-[#4A3B2C] leading-relaxed mb-8 font-medium max-w-2xl">
               To guarantee security and an exclusive cultural atmosphere, every pass is individually authenticated with mandatory Aadhaar verification.
             </p>
 
-            {/* Center Separator with diamond */}
-            <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-6 flex justify-center items-center">
-               <span className="absolute text-[#D99427] text-[10px]">âœ¦</span>
+            <div className="w-full h-[1px] bg-[#EAD9B8] relative mb-10 flex justify-center items-center">
+                <span className="absolute text-[#D99427] text-[8px]">✦</span>
             </div>
 
-            {/* Bottom Content */}
-            <div className="flex items-stretch mb-4">
-              {/* Left Column */}
-              <div className="flex flex-col items-center justify-start mr-8">
+            <div className="flex items-stretch">
+              <div className="flex flex-col items-center justify-start mr-6">
                 <span className="text-4xl font-serif font-bold text-[#C79C54] leading-none mb-3">01</span>
-                {/* Shield Icon with a lock */}
                 <div className="relative flex items-center justify-center">
-                  <Shield className="w-10 h-10 text-[#C79C54]" strokeWidth={1.5} />
-                  <div className="absolute w-[10px] h-3 bg-[#C79C54] rounded-[2px] mt-1.5 flex flex-col items-center">
-                     <div className="absolute -top-[5px] w-[6px] h-[6px] rounded-t-full border-[1.5px] border-[#C79C54]"></div>
-                     <div className="w-[3px] h-[4px] bg-white rounded-full mt-[3px]"></div>
-                  </div>
+                  <Shield className="w-8 h-8 text-[#C79C54]" strokeWidth={1.5} />
+                  <Lock className="w-3 h-3 text-[#C79C54] absolute" strokeWidth={2.5} />
                 </div>
               </div>
-              
-              {/* Vertical Line */}
-              <div className="w-[1px] bg-[#EAD9B8] mr-8"></div>
-              
-              {/* Right Column */}
+              <div className="w-[1px] bg-[#EAD9B8] mr-6"></div>
               <div className="flex flex-col pt-1">
                 <span className="text-[10px] font-bold text-[#8C6019] uppercase tracking-[0.2em] mb-4">
                   ENCRYPTED AADHAAR STORAGE
                 </span>
-                <p className="text-[13px] md:text-sm text-[#4A3B2C] leading-relaxed">
-                  Protected by 256-bit server<br />HMAC hashing and<br />private storage.
+                <p className="text-sm md:text-base text-[#4A3B2C] leading-relaxed">
+                  Protected by 256-bit server<br className="hidden md:block"/>HMAC hashing and<br className="hidden md:block"/>private storage.
                 </p>
               </div>
             </div>
-            
-      {/* Bottom Separator */}
-            <div className="w-full h-[1px] bg-[#EAD9B8]"></div>
           </div>
+
+        </div>
+      </section>
+
+      {/* CHAPTER 3: PREVIOUS EXPERIENCE (GALLERY) */}
+      <section id="gallery" className="relative w-full pt-12 pb-16 bg-[#FFFDF9] z-10 border-b border-[#EAD9B8]">
+        <div className="w-full text-center max-w-3xl mx-auto px-6 mb-8 z-20 relative space-y-3">
+          <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-[#2D1F0E]">
+            The Legacy of White
+          </h2>
+          <p className="text-sm md:text-base text-[#6E5336] leading-relaxed max-w-2xl mx-auto">
+            Relive the magic of our previous chapters. A visual tapestry of nights where pure white meets boundless energy, capturing the spirit and soul of Safed Sheri.
+          </p>
+        </div>
+        <div className="w-full max-w-7xl mx-auto">
+          <Vibe3DOrbit />
         </div>
       </section>
 
@@ -1074,32 +1059,34 @@ export default function SafedSheriLandingPage() {
         </div>
       )}
 
-      {/* CHAPTER 3: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
+      {/* CHAPTER 4: VIP GAZEBO CABANAS (PRIVATE PRICING / INQUIRY ONLY) */}
       <div className="hidden md:block">
-        <section id="gazebos" ref={gazeboSectionRef} className="relative py-24 px-6 z-10">
+        <section id="gazebos" ref={gazeboSectionRef} className="relative pt-16 pb-24 px-6 z-10">
           
-          <div ref={gazeboHeadingRef} className="relative text-center w-full max-w-2xl mx-auto px-6 z-50 pointer-events-none space-y-2 mb-[2vh]">
-            <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
+          <div ref={gazeboHeadingRef} className="relative text-center w-full max-w-2xl mx-auto px-6 z-50 pointer-events-none space-y-2 mb-16">
+            <span className="text-[10px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
             <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
             <p className="text-xs text-[#6E5336] leading-relaxed">
               Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
             </p>
           </div>
 
-          <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[600px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
+          <div className="max-w-6xl mx-auto flex flex-col items-center justify-center min-h-[500px]" style={{ perspective: '2000px', transformStyle: 'preserve-3d' }}>
             
-            <div className="relative w-full h-[600px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
+            <div className="relative w-full h-[500px] flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
               
               {/* LEFT CARD */}
-              <div ref={gazeboLeftRef} className="absolute w-full max-w-[280px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+              <div ref={gazeboLeftRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                  LEVEL 1
-                </span>
-                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 1</h3>
-                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                    LEVEL 1
+                  </span>
+                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 1</h3>
                 
-                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
                   <img 
                     src="/images/gazebos/dhol.png" 
                     alt="Gazebo 1" 
@@ -1107,10 +1094,29 @@ export default function SafedSheriLandingPage() {
                   />
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
-                  <div className="text-lg font-serif font-bold text-[#D99427] italic">
-                    Price on Request • VIP Inquiry Only
+                <div className="mb-4">
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                      Price on Request
+                    </span>
+                  </div>
+                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                    VIP INQUIRY ONLY
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Elevated viewing lounge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Dedicated concierge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Butler hospitality</span>
                   </div>
                 </div>
               </div>
@@ -1124,18 +1130,20 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* CENTER CARD */}
-            <div ref={gazeboCenterRef} className="absolute w-full max-w-[280px] p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
-              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
+            <div ref={gazeboCenterRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between hover:shadow-2xl transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
                 Royal Tier
               </div>
               <div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
-                  LEVEL 2
-                </span>
-                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 2</h3>
-                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
+                    LEVEL 2
+                  </span>
+                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 2</h3>
                 
-                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
                   <img 
                     src="/images/gazebos/garba.png" 
                     alt="Gazebo 2" 
@@ -1143,10 +1151,29 @@ export default function SafedSheriLandingPage() {
                   />
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
-                  <div className="text-lg font-serif font-bold text-[#D99427] italic">
-                    Price on Request • VIP Inquiry Only
+                <div className="mb-4">
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                      Price on Request
+                    </span>
+                  </div>
+                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                    VIP INQUIRY ONLY
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Elevated viewing lounge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Dedicated concierge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Butler hospitality</span>
                   </div>
                 </div>
               </div>
@@ -1160,15 +1187,17 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* RIGHT CARD */}
-            <div ref={gazeboRightRef} className="absolute w-full max-w-[280px] p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6 hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
+            <div ref={gazeboRightRef} className="absolute w-full max-w-[320px] p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition group" style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', willChange: 'transform, opacity' }}>
               <div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                  LEVEL 3
-                </span>
-                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 3</h3>
-                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                    LEVEL 3
+                  </span>
+                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 3</h3>
                 
-                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
                   <img 
                     src="/images/gazebos/dandiya.png" 
                     alt="Gazebo 3" 
@@ -1176,10 +1205,29 @@ export default function SafedSheriLandingPage() {
                   />
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
-                  <div className="text-lg font-serif font-bold text-[#D99427] italic">
-                    Price on Request • VIP Inquiry Only
+                <div className="mb-4">
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                      Price on Request
+                    </span>
+                  </div>
+                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                    VIP INQUIRY ONLY
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-[#6E5336] mb-6 border-t border-[#EAD9B8] pt-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Elevated viewing lounge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Dedicated concierge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Butler hospitality</span>
                   </div>
                 </div>
               </div>
@@ -1200,7 +1248,7 @@ export default function SafedSheriLandingPage() {
       <section className="relative py-24 px-6 z-10 md:hidden border-b border-[#EAD9B8]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter III</span>
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter IV</span>
             <h2 className="text-3xl font-serif font-bold text-[#2D1F0E]">VIP Gazebo Cabanas</h2>
             <p className="text-sm text-[#6E5336] leading-relaxed">
               Elevated private viewing lounges overlooking the sacred garba circle. Dedicated concierge and butler hospitality.
@@ -1208,19 +1256,41 @@ export default function SafedSheriLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-8">
-            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6">
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition">
               <div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                  LEVEL 1
-                </span>
-                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 1</h3>
-                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
-                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                    LEVEL 1
+                  </span>
+                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 1</h3>
+                <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
                   <img src="/images/gazebos/dhol.png" alt="Gazebo 1" className="object-contain h-full w-full" />
                 </div>
-                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
-                  <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
+                <div className="mb-6">
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                      Price on Request
+                    </span>
+                  </div>
+                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                    VIP INQUIRY ONLY
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-xs text-[#6E5336] mb-8 border-t border-[#EAD9B8] pt-6">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Elevated viewing lounge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Dedicated concierge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Butler hospitality</span>
+                  </div>
                 </div>
               </div>
               <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 1 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
@@ -1228,22 +1298,44 @@ export default function SafedSheriLandingPage() {
               </button>
             </div>
 
-            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between space-y-6 relative">
-              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
+            <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFF9EE] to-white border-2 border-[#D99427] shadow-xl flex flex-col justify-between hover:shadow-2xl transition relative">
+              <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] text-[10px] font-extrabold tracking-widest uppercase shadow-md">
                 Royal Tier
               </div>
               <div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
-                  LEVEL 2
-                </span>
-                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 2</h3>
-                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
-                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
+                    LEVEL 2
+                  </span>
+                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 2</h3>
+                <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
                   <img src="/images/gazebos/garba.png" alt="Gazebo 2" className="object-contain h-full w-full" />
                 </div>
-                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
-                  <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
+                <div className="mb-6">
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                      Price on Request
+                    </span>
+                  </div>
+                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                    VIP INQUIRY ONLY
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-xs text-[#6E5336] mb-8 border-t border-[#EAD9B8] pt-6">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Elevated viewing lounge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Dedicated concierge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Butler hospitality</span>
+                  </div>
                 </div>
               </div>
               <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 2 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-lg">
@@ -1251,19 +1343,41 @@ export default function SafedSheriLandingPage() {
               </button>
             </div>
 
-            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-md flex flex-col justify-between space-y-6">
+            <div className="p-8 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg flex flex-col justify-between hover:border-[#D99427] transition">
               <div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                  LEVEL 3
-                </span>
-                <h3 className="text-3xl font-serif font-bold text-[#2D1F0E] mt-3">Gazebo 3</h3>
-                <p className="text-xs text-[#6E5336] mt-1 font-medium">14 Seats</p>
-                <div className="relative w-full h-48 mt-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                    LEVEL 3
+                  </span>
+                  <span className="text-xs text-[#8C6019] font-mono">14 Seats</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Gazebo 3</h3>
+                <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
                   <img src="/images/gazebos/dandiya.png" alt="Gazebo 3" className="object-cover h-full w-full rounded-lg" />
                 </div>
-                <div className="mt-6 pt-4 border-t border-[#EAD9B8]">
-                  <div className="text-[10px] uppercase tracking-wider text-[#6E5336] mb-1">Hospitality Pricing:</div>
-                  <div className="text-lg font-serif font-bold text-[#D99427] italic">Price on Request</div>
+                <div className="mb-6">
+                  <div className="flex items-baseline space-x-2">
+                    <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                      Price on Request
+                    </span>
+                  </div>
+                  <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
+                    VIP INQUIRY ONLY
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-xs text-[#6E5336] mb-8 border-t border-[#EAD9B8] pt-6">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Elevated viewing lounge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Dedicated concierge</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#D99427] font-bold">✓</span>
+                    <span>Butler hospitality</span>
+                  </div>
                 </div>
               </div>
               <button onClick={() => { setGazeboForm({ ...gazeboForm, level: 3 }); setIsGazeboModalOpen(true); }} className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs uppercase tracking-wider shadow-md">
@@ -1275,14 +1389,16 @@ export default function SafedSheriLandingPage() {
       </section>
 
       <TheWomenSection />
-      {/* CHAPTER 4: PASS SELECTION & BOOKING */}
-      <section id="passes" className="relative py-24 px-6 z-10 bg-[#FFFDF9] border-t border-[#EAD9B8]">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
-            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter V</span>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#2D1F0E]">Reserve Your Pass</h2>
-            <p className="text-sm text-[#6E5336] leading-relaxed">
-              Step into the sacred circle. Passes are limited to preserve acoustic purity, intimacy, and safety.
+      {/* CHAPTER 6: PASS SELECTION & BOOKING */}
+      <section id="passes" className="relative py-24 px-6 z-10 bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE] border-t border-[#EAD9B8]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center w-full max-w-2xl mx-auto mb-16 space-y-4">
+            <span className="text-[11px] font-bold tracking-[0.3em] text-[#8C6019] uppercase">Chapter VI</span>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold text-[#2D1F0E]">
+              Pass Selection
+            </h2>
+            <p className="text-sm md:text-base text-[#6E5336] leading-relaxed">
+              Select your category below. Each pass requires individual Aadhaar authentication.
             </p>
           </div>
 
@@ -1449,14 +1565,20 @@ export default function SafedSheriLandingPage() {
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
                 {pricing.showKidsPrice !== false && pricing.showSinglePrice ? (
-                  <div className="mb-6">
-                    <div className="flex items-baseline space-x-2">
-                      <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString() : '999'}
-                      </span>
+                  <div className="mb-6 space-y-3">
+                    <div className="flex justify-between items-center bg-[#FAF6EE] p-3 rounded-xl border border-[#EAD9B8]">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Below 10 Yrs</span>
+                        <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
+                      </div>
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">₹999</span>
                     </div>
-                    <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                      {pricing.phaseName} PHASE
+                    <div className="flex justify-between items-center bg-[#FFFDF9] p-3 rounded-xl border border-[#EAD9B8]">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">10 to 15 Yrs</span>
+                        <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
+                      </div>
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">₹1,250</span>
                     </div>
                   </div>
                 ) : (
@@ -1525,8 +1647,8 @@ export default function SafedSheriLandingPage() {
       {/* MODAL 1: GUEST REGISTRATION APPLICATION CAROUSEL WIZARD (UP TO 7 PASSES) */}
       {/* ========================================================================= */}
       {isBookingOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-md flex justify-center items-center py-6 px-3 sm:px-6 animate-fade-in">
-          <div className="bg-[#FFFCF7] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-3xl shadow-2xl relative text-[#2D1F0E] p-6 sm:p-10 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+          <div data-lenis-prevent="true" className="bg-[#FFFCF7] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-3xl max-h-[95vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shadow-2xl relative text-[#2D1F0E] p-6 sm:p-10">
             
             {/* Header Actions */}
             <div className="flex items-center justify-between border-b border-[#EAD9B8] pb-4 mb-6">
@@ -1646,7 +1768,7 @@ export default function SafedSheriLandingPage() {
 
                 {bookingError && (
                   <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center space-x-3 shadow-sm">
-                    <span className="text-base">âš ï¸</span>
+                    <span className="text-base">⚠️</span>
                     <span className="font-medium">{bookingError}</span>
                   </div>
                 )}
@@ -1706,7 +1828,7 @@ export default function SafedSheriLandingPage() {
                             key={i}
                             className="px-3 py-1 rounded-full bg-white border border-[#EAD9B8] text-[11px] font-bold text-[#8C6019] shadow-sm flex items-center space-x-1"
                           >
-                            <span>{selectedPass === 'KIDS' ? 'ðŸ‘¶' : 'ðŸ‘¸'}</span>
+                            <span>{selectedPass === 'KIDS' ? '👶' : '👧'}</span>
                             <span>{i === 0 ? 'Primary Contact' : `Guest #${i + 1}`}</span>
                           </span>
                         ))}
@@ -1716,9 +1838,13 @@ export default function SafedSheriLandingPage() {
                       <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] text-xs text-[#2D1F0E] space-y-1 shadow-sm">
                         {pricing.showSinglePrice ? (
                           <>
-                            <div className="text-[#6E5336]">Phase Pricing: ₹{(selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice)?.toLocaleString()} per pass</div>
+                            {selectedPass === 'KIDS' ? (
+                              <div className="text-[#6E5336]">Phase Pricing: ₹999 - ₹1,250 based on age</div>
+                            ) : (
+                              <div className="text-[#6E5336]">Phase Pricing: ₹{pricing.singlePrice?.toLocaleString()} per pass</div>
+                            )}
                             <div className="text-xl font-serif font-bold text-[#D99427]">
-                              Total: ₹{((selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice) * attendees.length).toLocaleString()}
+                              Total: ₹{calculateTotalAmount().toLocaleString()}
                             </div>
                           </>
                         ) : (
@@ -1761,7 +1887,7 @@ export default function SafedSheriLandingPage() {
                               </ul>
                             )}
                             {termsError && (
-                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">âš  You must accept the Terms & Conditions to continue.</p>
+                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠️ You must accept the Terms & Conditions to continue.</p>
                             )}
                           </div>
                         </div>
@@ -1818,7 +1944,7 @@ export default function SafedSheriLandingPage() {
                       {/* KIDS SPECIFIC MANDATORY AADHAAR NOTICE */}
                       {selectedPass === 'KIDS' && (
                         <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2.5">
-                          <span className="text-base">ðŸ‘¶</span>
+                          <span className="text-base">👶</span>
                           <span className="font-semibold">
                             Child Aadhaar Card is mandatory for every kid pass. Original ID must be presented at the gate.
                           </span>
@@ -1859,6 +1985,24 @@ export default function SafedSheriLandingPage() {
                             {selectedPass !== 'SINGLE' && <option value="MALE">Male</option>}
                           </select>
                         </div>
+
+                        {selectedPass === 'KIDS' && (
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Age Group *</label>
+                            <select
+                              value={attendees[currentAttendeeIndex]?.kidsAgeGroup || 'BELOW_10'}
+                              onChange={(e) => {
+                                const updated = [...attendees];
+                                updated[currentAttendeeIndex].kidsAgeGroup = e.target.value as 'BELOW_10' | '10_TO_15';
+                                setAttendees(updated);
+                              }}
+                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                            >
+                              <option value="BELOW_10">Below 10 Yrs (₹999)</option>
+                              <option value="10_TO_15">10 to 15 Yrs (₹1,250)</option>
+                            </select>
+                          </div>
+                        )}
 
                         <div>
                           <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
@@ -1939,7 +2083,7 @@ export default function SafedSheriLandingPage() {
                               <span className="truncate">
                                 {attendees[currentAttendeeIndex]?.uploading
                                   ? 'Encrypting & uploading...'
-                                  : attendees[currentAttendeeIndex]?.documentName || 'Upload Child Aadhaar (<5MB)'}
+                                  : attendees[currentAttendeeIndex]?.documentName || (selectedPass === 'KIDS' ? 'Upload Child Aadhaar (<5MB)' : 'Upload Aadhaar (<5MB)')}
                               </span>
                               <span className="text-[10px] px-3 py-1 rounded bg-white font-bold text-[#8C6019] border border-[#EAD9B8]">
                                 Browse
@@ -2104,7 +2248,7 @@ export default function SafedSheriLandingPage() {
                       </div>
                       {(selectedPass === 'COUPLE' ? pricing.showCouplePrice : pricing.showSinglePrice) ? (
                         <div className="text-2xl font-serif font-bold text-[#D99427]">
-                          ₹{(selectedPass === 'COUPLE' ? pricing.couplePrice : (selectedPass === 'KIDS' && pricing.kidsPrice ? pricing.kidsPrice : pricing.singlePrice) * attendees.length).toLocaleString()}
+                          ₹{calculateTotalAmount().toLocaleString()}
                         </div>
                       ) : (
                         <div className="text-xs font-bold text-[#8C6019] bg-[#FAF6EE] px-4 py-2 rounded-xl border border-[#EAD9B8] flex items-center space-x-1.5">
@@ -2203,7 +2347,7 @@ export default function SafedSheriLandingPage() {
       {/* ========================================================================= */}
       {isWalletOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
+          <div data-lenis-prevent="true" className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
             <button
               onClick={() => setIsWalletOpen(false)}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
@@ -2465,7 +2609,7 @@ export default function SafedSheriLandingPage() {
       {/* ========================================================================= */}
       {activePaymentLink && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl relative text-center text-[#2D1F0E]">
+          <div data-lenis-prevent="true" className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-md max-h-[95vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6 md:p-8 shadow-2xl relative text-center text-[#2D1F0E]">
             <button
               onClick={() => setActivePaymentLink(null)}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
@@ -2600,7 +2744,7 @@ export default function SafedSheriLandingPage() {
       {/* ========================================================================= */}
       {isGazeboModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
+          <div data-lenis-prevent="true" className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-lg max-h-[95vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
             <button
               onClick={() => setIsGazeboModalOpen(false)}
               className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
@@ -2764,8 +2908,8 @@ export default function SafedSheriLandingPage() {
       {/* MODAL 5: OFFICIAL BRAND ALLIANCE & SPONSORSHIP INQUIRY MODAL */}
       {/* ========================================================================= */}
       {isSponsorModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="bg-[#FFFDF9] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-xl p-6 md:p-8 shadow-2xl relative text-[#2D1F0E] my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div data-lenis-prevent="true" className="bg-[#FFFDF9] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-xl max-h-[95vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
             <button
               onClick={() => {
                 setIsSponsorModalOpen(false);
