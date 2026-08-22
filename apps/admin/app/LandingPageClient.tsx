@@ -1744,7 +1744,7 @@ export default function SafedSheriLandingPage() {
         <div className="max-w-6xl mx-auto flex flex-col gap-6 text-[#4A3B2C]">
           
           {/* Top Section */}
-          <div className="flex flex-col md:flex-row items-center justify-between w-full gap-8">
+          <div className="flex flex-col md:flex-row items-center justify-between w-full gap-5 md:gap-8">
             <div className="flex items-center space-x-3">
               <LogoSlot size="sm" showText={true} showDate={false} />
             </div>
@@ -1773,12 +1773,12 @@ export default function SafedSheriLandingPage() {
           </div>
 
           {/* Middle Section - 3 Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-12 md:gap-0 md:divide-x md:divide-[#D99427]/30">
+          <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-8 md:gap-0 md:divide-x md:divide-[#D99427]/30">
             
             {/* Column 1: Brand */}
             <div className="flex flex-col items-center px-4">
               <h4 className="font-serif font-bold text-[#1A1A1A] text-lg md:text-xl mb-1 tracking-wide">Safed Sheri 2026</h4>
-              <div className="flex items-center justify-center w-full my-3">
+              <div className="flex items-center justify-center w-full my-2">
                 <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
                 <span className="text-[#D99427] text-[8px] mx-2">✦</span>
                 <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
@@ -1791,12 +1791,12 @@ export default function SafedSheriLandingPage() {
             {/* Column 2: Contact Us */}
             <div className="flex flex-col items-center px-4">
               <h4 className="font-serif font-bold text-[#1A1A1A] text-lg md:text-xl mb-1 tracking-wide">Contact Us</h4>
-              <div className="flex items-center justify-center w-full my-3">
+              <div className="flex items-center justify-center w-full my-2">
                 <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
                 <span className="text-[#D99427] text-[8px] mx-2">✦</span>
                 <div className="h-[1px] w-12 bg-[#D99427]/50"></div>
               </div>
-              <div className="flex flex-col gap-5 mt-2 w-[240px]">
+              <div className="flex flex-col gap-4 mt-2 w-[240px]">
                 <a href="tel:+917016977518" className="flex items-center gap-4 hover:text-[#D99427] transition group">
                   <div className="w-10 h-10 rounded-full border border-[#D99427]/60 group-hover:border-[#D99427] flex items-center justify-center text-[#D99427] bg-[#FAF6EE] shrink-0 shadow-[0_0_10px_rgba(217,148,39,0.1)]">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
