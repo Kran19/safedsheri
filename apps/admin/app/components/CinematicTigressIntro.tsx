@@ -5,7 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronDown } from "lucide-react";
 
-const TOTAL_FRAMES = 300;
+const TOTAL_FRAMES = 240;
 const getFrameUrl = (index: number) => {
   const padded = String(index + 1).padStart(4, "0");
   return `/frames/tigress/frame_${padded}.jpg`;
@@ -53,8 +53,8 @@ export default function CinematicTigressIntro({ children }: { children: React.Re
     const images: HTMLImageElement[] = [];
 
     // Fixed internal resolution for the frame sequence
-    const CANVAS_WIDTH = 1920;
-    const CANVAS_HEIGHT = 1080;
+    const CANVAS_WIDTH = 2560;
+    const CANVAS_HEIGHT = 1440;
 
     // Simple renderer - CSS object-fit handles the responsive cropping
     const renderFrame = (img: HTMLImageElement) => {

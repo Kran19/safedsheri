@@ -234,6 +234,7 @@ export class RegistrationsService {
       mimeType?: string;
       sizeBytes?: number;
       checksum?: string;
+      kidsAgeGroup?: string;
     }>;
   }) {
     const activeEvent = await this.prisma.event.findFirst({
@@ -349,6 +350,8 @@ export class RegistrationsService {
         ? Number(activePhase.couplePrice) * Math.ceil(data.attendees.length / 2)
         : data.passType === PassType.GAZEBO
         ? 85000
+        : data.passType === PassType.KIDS
+        ? data.attendees.reduce((sum, att) => sum + (att.kidsAgeGroup === '10_TO_15' ? 1250 : 999), 0)
         : Number(activePhase.singlePrice) * data.attendees.length;
 
     const adminUser = await this.prisma.user.findFirst({
@@ -388,6 +391,7 @@ export class RegistrationsService {
             gender: attData.gender,
             aadhaarMasked,
             aadhaarEncrypted,
+            kidsAgeGroup: attData.kidsAgeGroup || null,
           },
           create: {
             fullName: attData.fullName,
@@ -397,6 +401,7 @@ export class RegistrationsService {
             aadhaarHmac,
             aadhaarMasked,
             aadhaarEncrypted,
+            kidsAgeGroup: attData.kidsAgeGroup || null,
           },
         });
 
@@ -559,6 +564,10 @@ export class RegistrationsService {
       let recalculatedAmount = 0;
       if (reg.passType === PassType.COUPLE) {
         recalculatedAmount = Number(reg.pricingPhase.couplePrice);
+      } else if (reg.passType === PassType.KIDS) {
+        recalculatedAmount = approvedAttendees.reduce((sum, ra) => {
+          return sum + (ra.attendee.kidsAgeGroup === '10_TO_15' ? 1250 : 999);
+        }, 0);
       } else {
         recalculatedAmount = Number(reg.pricingPhase.singlePrice) * approvedCount;
       }

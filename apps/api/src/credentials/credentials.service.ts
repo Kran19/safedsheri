@@ -69,6 +69,8 @@ export class CredentialsService {
       ? 'SS26-SINGLE'
       : registration.passType === PassType.COUPLE
       ? 'SS26-COUPLE'
+      : registration.passType === PassType.KIDS
+      ? 'SS26-KIDS'
       : 'SS26-GAZEBO';
 
     // Filter attendees who are NOT rejected

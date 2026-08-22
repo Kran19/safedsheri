@@ -1460,6 +1460,13 @@ export default function SuperAdminDashboard() {
               const recalculatedAmount =
                 selectedApp.passType === 'COUPLE'
                   ? Number(selectedApp.amountDue)
+                  : selectedApp.passType === 'KIDS'
+                  ? (selectedApp.attendees as any[]).reduce((sum: number, attWrapper: any) => {
+                      if (attendeeDecisions[attWrapper.attendee.id]?.status === 'APPROVED') {
+                        return sum + (attWrapper.attendee.kidsAgeGroup === '10_TO_15' ? 1250 : 999);
+                      }
+                      return sum;
+                    }, 0)
                   : singlePrice * approvedCount;
 
               return (
