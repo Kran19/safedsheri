@@ -9,6 +9,7 @@ import { garbaAudio } from './components/GarbaAudioEngine';
 import CinematicTigressIntro from './components/CinematicTigressIntro';
 
 import { Vibe3DOrbit } from './components/Vibe3DOrbit';
+import { PremiumDatePicker } from './components/PremiumDatePicker';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X } from 'lucide-react';
@@ -74,7 +75,31 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">3. Entry &amp; Verification Rules</h5>
+        <h5 className="font-bold text-[#2D1F0E]">3. Gazebo Occupancy</h5>
+        <p className="mt-1">
+          If a child is below 10 years of age, they will not be counted in the 14-member capacity. Children 10 years and above will be counted as part of the 14 members. Please book accordingly.
+        </p>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">4. Terms &amp; Conditions</h5>
+        <p className="mt-1">
+          There will be no modifications to the terms and conditions. No two different terms and conditions can be mixed or matched.
+        </p>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">5. Gazebo Layout &amp; Position</h5>
+        <p className="mt-1">
+          Changes to the layout and positions are subject to practicality. However, rest assured, your gazebo position will remain intact.
+        </p>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">6. Gazebo Facilities &amp; Benefits</h5>
+        <p className="mt-1">
+          The facilities and benefits of the gazebos will be sent personally. The organizers reserve the right to make modifications considering the practicality of the situation at any given point in time. Everything will be pre-informed and clearly defined.
+        </p>
+      </div>
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">7. Entry &amp; Verification Rules</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>Every attendee may be required to present their booking confirmation along with a valid government-issued photo ID at the venue.</li>
           <li>The attendee's booking information should match the submitted identification details.</li>
@@ -85,7 +110,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">4. Offline &amp; Online Booking</h5>
+        <h5 className="font-bold text-[#2D1F0E]">8. Offline &amp; Online Booking</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>Online bookings should be completed only through the official Safed Sheri booking platform.</li>
           <li>Offline sales will be available exclusively at Ekasha on 26th August 2026.</li>
@@ -94,7 +119,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">5. Cancellation, Refund &amp; Transfer Policy</h5>
+        <h5 className="font-bold text-[#2D1F0E]">9. Cancellation, Refund &amp; Transfer Policy</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>All confirmed Pass and Gazebo bookings are non-refundable and non-transferable.</li>
           <li>No refunds will be provided for a change of mind, personal scheduling conflict, late arrival, or failure to attend.</li>
@@ -104,7 +129,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">6. Event Changes &amp; Force Majeure</h5>
+        <h5 className="font-bold text-[#2D1F0E]">10. Event Changes &amp; Force Majeure</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>Safed Sheri reserves the right to modify the event schedule, timings, entry procedures, layout, performers, activities, or operational arrangements when reasonably required.</li>
           <li>Changes may occur due to weather, safety concerns, government regulations, venue requirements, technical issues, or circumstances beyond the organizer's control.</li>
@@ -112,7 +137,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">7. Venue &amp; Behaviour Guidelines</h5>
+        <h5 className="font-bold text-[#2D1F0E]">11. Venue &amp; Behaviour Guidelines</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>Guests must follow all venue rules and instructions issued by event management and security personnel.</li>
           <li>Safed Sheri reserves the right to refuse entry or remove any attendee involved in abusive, disruptive, dangerous, illegal, or inappropriate behaviour.</li>
@@ -122,7 +147,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">8. Children &amp; Family Attendance</h5>
+        <h5 className="font-bold text-[#2D1F0E]">12. Children &amp; Family Attendance</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>Children must remain under the supervision of their parent or legal guardian.</li>
           <li>Parents or guardians are responsible for the safety and conduct of children attending with them.</li>
@@ -130,7 +155,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">9. Photography &amp; Media</h5>
+        <h5 className="font-bold text-[#2D1F0E]">13. Photography &amp; Media</h5>
         <ul className="list-disc pl-4 space-y-1">
           <li>Photography, videography, and event documentation may take place during Safed Sheri.</li>
           <li>Attendees may appear incidentally in photographs, videos, reels, or other event-related content.</li>
@@ -138,7 +163,7 @@ const TermsAndConditionsContent = () => (
         </ul>
       </div>
       <div>
-        <h5 className="font-bold text-[#2D1F0E]">10. Final Acceptance</h5>
+        <h5 className="font-bold text-[#2D1F0E]">14. Final Acceptance</h5>
         <p className="mt-1">
           By purchasing or using a Safed Sheri Pass or Gazebo booking, the attendee confirms that they have read, understood, and agreed to the applicable booking, entry, event, and venue Terms &amp; Conditions.
         </p>
@@ -339,6 +364,7 @@ export default function SafedSheriLandingPage() {
     uploadingFront?: boolean;
     uploadingBack?: boolean;
     kidsAgeGroup?: 'BELOW_10' | '10_TO_15';
+    dob?: string;
   }>>([
     { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: 'BELOW_10' }
   ]);
@@ -428,6 +454,8 @@ export default function SafedSheriLandingPage() {
 
   // Gazebo Error State
   const [gazeboError, setGazeboError] = useState<string | null>(null);
+  const [gazeboTermsAccepted, setGazeboTermsAccepted] = useState(false);
+  const [gazeboTermsError, setGazeboTermsError] = useState(false);
 
   // Added state for Kids Pass main card toggle
   const [kidsCardTier, setKidsCardTier] = useState<'BELOW_10' | '10_TO_15'>('BELOW_10');
@@ -491,7 +519,16 @@ export default function SafedSheriLandingPage() {
     if (selectedPass === 'COUPLE') return pricing.couplePrice || 0;
     if (selectedPass === 'SINGLE') return (pricing.singlePrice || 0) * attendees.length;
     if (selectedPass === 'KIDS') {
-      return attendees.length * 1200;
+      return attendees.reduce((total, att) => {
+        if (!att.dob) return total;
+        const dobDate = new Date(att.dob);
+        if (isNaN(dobDate.getTime())) return total;
+        const diffMs = Date.now() - dobDate.getTime();
+        const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+        if (age < 10) return total; // Free
+        if (age >= 10 && age <= 15) return total + 1200;
+        return total;
+      }, 0);
     }
     return 0;
   };
@@ -549,6 +586,24 @@ export default function SafedSheriLandingPage() {
     if (!att.documentKey || !att.documentBackKey) {
       setBookingError(`Please upload both front and back sides of the Aadhaar document for Attendee #${idx + 1} (${att.fullName})`);
       return false;
+    }
+
+    if (selectedPass === 'KIDS') {
+      if (!att.dob) {
+        setBookingError(`Please enter Date of Birth for Attendee #${idx + 1}`);
+        return false;
+      }
+      const dobDate = new Date(att.dob);
+      if (isNaN(dobDate.getTime())) {
+        setBookingError(`Please enter a valid Date of Birth for Attendee #${idx + 1}`);
+        return false;
+      }
+      const diffMs = Date.now() - dobDate.getTime();
+      const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+      if (age > 15) {
+        setBookingError(`Attendee #${idx + 1} is ${age} years old. Kids pass is only valid for ages 15 and under.`);
+        return false;
+      }
     }
 
     setBookingError(null);
@@ -751,6 +806,7 @@ export default function SafedSheriLandingPage() {
             documentBackKey: a.documentBackKey,
             documentBackName: a.documentBackName,
             kidsAgeGroup: a.kidsAgeGroup,
+            dob: a.dob,
           })),
         }),
       });
@@ -950,7 +1006,8 @@ export default function SafedSheriLandingPage() {
         </div>
       )}
 
-      {/* CINEMATIC FIGMA PARALLAX SCROLL INTRO & HERO SECTION */}
+
+      {/* HERO SECTION WITH TIGRESS INTRO */}
       <CinematicTigressIntro>
         <section id="call" className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-28 pb-16 z-10 overflow-hidden">
           <div className="max-w-4xl mx-auto space-y-6 relative z-10">
@@ -1019,6 +1076,7 @@ export default function SafedSheriLandingPage() {
           </div>
         </section>
       </CinematicTigressIntro>
+
 
       {/* CHAPTER 2: THE COLOUR & 75% WHITE RULE */}
       <section id="colour" ref={colourSectionRef} className="relative w-full min-h-[100dvh] bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#FFFDF9] border-t border-b border-[#EAD9B8] overflow-hidden flex flex-col justify-center z-10 py-16 lg:py-10">
@@ -1112,7 +1170,7 @@ export default function SafedSheriLandingPage() {
                   ENCRYPTED AADHAAR STORAGE
                 </span>
                 <p className="text-sm md:text-base text-[#4A3B2C] leading-relaxed">
-                  Protected by 256-bit server<br className="hidden md:block" />HMAC hashing and<br className="hidden md:block" />private storage.
+                  Protected by 256-bit server <br className="hidden md:block" />HMAC hashing and <br className="hidden md:block" />private storage.
                 </p>
               </div>
             </div>
@@ -1555,7 +1613,7 @@ export default function SafedSheriLandingPage() {
               <div className="h-px w-3/4 bg-[#EAD9B8]/60 mt-3 mb-2"></div>
               <p className="text-xs text-[#6E5336] text-center leading-relaxed">
                 <span className="font-bold text-[#8C6019]">Venue: </span>
-                Icon World Trade, Patidar Chowk,<br />Sadhuvaswani Road, Rajkot — 360005
+                Regency Lagoon Resort, Nyari Dam Rd,<br />off Kalavad Road, Rajkot, Vajdi, Gujarat 360005
               </p>
             </div>
           </div>
@@ -1870,10 +1928,10 @@ export default function SafedSheriLandingPage() {
                   </svg>
                 </div>
                 <address className="not-italic text-[15px] font-medium leading-relaxed text-left">
-                  Icon World Trade,<br />
-                  Patidar Chowk,<br />
-                  Sadhuvaswani Road,<br />
-                  Rajkot — 360005
+                  Regency Lagoon Resort,<br />
+                  Nyari Dam Rd, off Kalavad Road,<br />
+                  Rajkot, Vajdi,<br />
+                  Gujarat 360005
                 </address>
               </div>
             </div>
@@ -1892,7 +1950,7 @@ export default function SafedSheriLandingPage() {
 
           {/* Bottom text */}
           <div className="text-center">
-            <div className="text-[15px] font-medium">© 2026 Safed Sheri Cultural Gala. All rights reserved.</div>
+            <div className="text-[15px] font-medium">© 2026 Safed Sheri. All rights reserved.</div>
           </div>
 
         </div>
@@ -2233,8 +2291,19 @@ export default function SafedSheriLandingPage() {
                           </select>
                         </div>
 
-
-
+                        {selectedPass === 'KIDS' && (
+                          <PremiumDatePicker
+                            value={attendees[currentAttendeeIndex]?.dob || ''}
+                            onChange={(val) => {
+                              const updated = [...attendees];
+                              updated[currentAttendeeIndex].dob = val;
+                              setAttendees(updated);
+                            }}
+                            label="Date of Birth *"
+                            error={bookingError?.includes('Date of Birth')}
+                          />
+                        )}
+                        
                         <div>
                           <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
                             {selectedPass === 'KIDS' ? 'Parent / Guardian WhatsApp (+91) *' : 'WhatsApp Mobile (+91) *'}
@@ -3016,6 +3085,11 @@ export default function SafedSheriLandingPage() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setGazeboError(null);
+                  if (!gazeboTermsAccepted) {
+                    setGazeboTermsError(true);
+                    return;
+                  }
+                  setGazeboTermsError(false);
                   const phoneVal = gazeboForm.phone.replace(/\D/g, '');
                   if (!gazeboForm.fullName || gazeboForm.fullName.trim().length < 2) {
                     setGazeboError('Please enter your full legal name (minimum 2 characters).');
@@ -3149,6 +3223,33 @@ export default function SafedSheriLandingPage() {
                       placeholder="Guest count, dietary preferences, custom branding, AV requirements..."
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none resize-none"
                     />
+                  </div>
+                </div>
+
+                <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 mb-6 text-left shadow-sm animate-fade-in">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        id="terms-checkbox-gazebo"
+                        checked={gazeboTermsAccepted}
+                        onChange={(e) => setGazeboTermsAccepted(e.target.checked)}
+                        className="w-5 h-5 text-[#D99427] bg-white border-[#D99427] rounded focus:ring-[#D99427] cursor-pointer accent-[#D99427]"
+                      />
+                    </div>
+                    <div className="text-xs text-[#6E5336] w-full">
+                      <label htmlFor="terms-checkbox-gazebo" className="font-bold text-[#2D1F0E] text-sm cursor-pointer block">I agree to the Safed Sheri 2026 Terms &amp; Conditions</label>
+                      <button type="button" onClick={() => setShowTerms(!showTerms)} className="text-[#D99427] font-bold mt-1 hover:underline outline-none">
+                        {showTerms ? 'Hide Details' : 'Read More'}
+                      </button>
+
+                      {showTerms && (
+                        <TermsAndConditionsContent />
+                      )}
+                      {gazeboTermsError && (
+                        <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠️ You must accept the Terms &amp; Conditions to continue.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 

@@ -5,11 +5,11 @@ import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { garbaAudio } from './GarbaAudioEngine';
 
 const VIBE_IMAGES = [
-  "/images/04/C9342T01.JPG",
-  "/images/04/C9370T01.JPG",
-  "/images/04/C9374T01.JPG",
-  "/images/04/C9382T01.JPG",
-  "/images/04/C9698T01.JPG",
+  "/images/galleryimg/DSC01645.JPG.jpeg",
+  "/images/galleryimg/DSC01653.JPG.jpeg",
+  "/images/galleryimg/DSC01674.JPG.jpeg",
+  "/images/galleryimg/DSC02121.JPG.jpeg",
+  "/images/galleryimg/DSC02129.JPG.jpeg",
 ];
 
 export function Vibe3DOrbit() {
@@ -116,6 +116,11 @@ export function Vibe3DOrbit() {
             const cardAngle = idx * angleStep;
             const isCurrent = activeIndex === idx;
 
+            // Calculate the absolute angle of this card in 3D space
+            // Using Math.cos gives us the Z-depth (-1 for back, 1 for front)
+            const currentAngle = (cardAngle + rotation) % 360;
+            const zIndex = Math.round(Math.cos(currentAngle * (Math.PI / 180)) * 100) + 100;
+
             return (
               <div
                 key={idx}
@@ -129,6 +134,7 @@ export function Vibe3DOrbit() {
                     : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
                   opacity: isCurrent ? 1 : 0.4,
                   filter: isCurrent ? 'grayscale(0%)' : 'grayscale(30%)',
+                  zIndex: zIndex,
                 }}
               >
                 <img src={src} alt={`Safed Sheri Vibe ${idx + 1}`} className="w-full h-full object-cover pointer-events-none" />

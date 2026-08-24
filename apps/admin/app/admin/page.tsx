@@ -1465,7 +1465,13 @@ export default function SuperAdminDashboard() {
                   : selectedApp.passType === 'KIDS'
                   ? (selectedApp.attendees as any[]).reduce((sum: number, attWrapper: any) => {
                       if (attendeeDecisions[attWrapper.attendee.id]?.status === 'APPROVED') {
-                        return sum + 1200;
+                        if (attWrapper.attendee.dob) {
+                          const diffMs = Date.now() - new Date(attWrapper.attendee.dob).getTime();
+                          const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+                          if (age >= 10 && age <= 15) return sum + 1200;
+                          return sum; // Free below 10
+                        }
+                        return sum; // Fallback
                       }
                       return sum;
                     }, 0)

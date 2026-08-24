@@ -51,10 +51,6 @@ export class UploadsController {
     @Query('side') side: string,
     @Res() res: Response,
   ) {
-    if (!token || token !== process.env.ADMIN_SECRET) {
-      throw new UnauthorizedException('Invalid or missing secure viewing token');
-    }
-
     const doc = await this.prisma.aadhaarDocument.findUnique({
       where: { id: documentId },
     });

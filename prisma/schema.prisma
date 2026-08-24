@@ -176,6 +176,7 @@ model Attendee {
   aadhaarMasked    String   // MANDATORY: XXXX XXXX 1234
   aadhaarEncrypted String   // MANDATORY: AES-256-GCM encrypted hex
   kidsAgeGroup     String?  // Optional: 'UNDER_10' or '10_TO_15'
+  dob              DateTime? // Date of birth
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

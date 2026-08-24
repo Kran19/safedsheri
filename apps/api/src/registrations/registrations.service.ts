@@ -235,6 +235,7 @@ export class RegistrationsService {
       sizeBytes?: number;
       checksum?: string;
       kidsAgeGroup?: string;
+      dob?: string;
       documentBackKey?: string;
       documentBackName?: string;
       documentBackMimeType?: string;
@@ -350,14 +351,36 @@ export class RegistrationsService {
     }
 
     // Amount due computation
-    const amountDue =
-      data.passType === PassType.COUPLE
-        ? Number(activePhase.couplePrice) * Math.ceil(data.attendees.length / 2)
-        : data.passType === PassType.GAZEBO
-        ? 85000
-        : data.passType === PassType.KIDS
-        ? data.attendees.length * 1200
-        : Number(activePhase.singlePrice) * data.attendees.length;
+    let amountDue = 0;
+    if (data.passType === PassType.COUPLE) {
+      amountDue = Number(activePhase.couplePrice) * Math.ceil(data.attendees.length / 2);
+    } else if (data.passType === PassType.GAZEBO) {
+      amountDue = 85000;
+    } else if (data.passType === PassType.KIDS) {
+      for (let i = 0; i < data.attendees.length; i++) {
+        const att = data.attendees[i];
+        if (!att.dob) {
+          throw new BadRequestException(`Date of Birth is required for Kids pass for attendee #${i + 1} (${att.fullName})`);
+        }
+        const dobDate = new Date(att.dob);
+        if (isNaN(dobDate.getTime())) {
+          throw new BadRequestException(`Invalid Date of Birth for attendee #${i + 1} (${att.fullName})`);
+        }
+        const diffMs = Date.now() - dobDate.getTime();
+        const ageDate = new Date(diffMs);
+        const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+        
+        if (age > 15) {
+          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is ${age} years old and not eligible for a Kids pass (must be 15 or under).`);
+        } else if (age >= 10 && age <= 15) {
+          amountDue += 1200;
+        } else {
+          amountDue += 0;
+        }
+      }
+    } else {
+      amountDue = Number(activePhase.singlePrice) * data.attendees.length;
+    }
 
     const adminUser = await this.prisma.user.findFirst({
       where: { role: 'SUPER_ADMIN' },
@@ -397,6 +420,7 @@ export class RegistrationsService {
             aadhaarMasked,
             aadhaarEncrypted,
             kidsAgeGroup: attData.kidsAgeGroup || null,
+            dob: attData.dob ? new Date(attData.dob) : null,
           },
           create: {
             fullName: attData.fullName,
@@ -407,6 +431,7 @@ export class RegistrationsService {
             aadhaarMasked,
             aadhaarEncrypted,
             kidsAgeGroup: attData.kidsAgeGroup || null,
+            dob: attData.dob ? new Date(attData.dob) : null,
           },
         });
 
@@ -581,7 +606,14 @@ export class RegistrationsService {
         recalculatedAmount = Number(reg.pricingPhase.couplePrice);
       } else if (reg.passType === PassType.KIDS) {
         recalculatedAmount = approvedAttendees.reduce((sum, ra) => {
-          return sum + 1200;
+          if (ra.attendee.dob) {
+            const diffMs = Date.now() - new Date(ra.attendee.dob).getTime();
+            const ageDate = new Date(diffMs);
+            const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+            if (age >= 10 && age <= 15) return sum + 1200;
+            return sum;
+          }
+          return sum; // Should not happen, but default to 0 if dob missing on approved kids pass
         }, 0);
       } else {
         recalculatedAmount = Number(reg.pricingPhase.singlePrice) * approvedCount;
