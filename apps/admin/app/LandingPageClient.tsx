@@ -2497,7 +2497,7 @@ export default function SafedSheriLandingPage() {
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address (Optional)</label>
+                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address *</label>
                           <input
                             type="email"
                             value={attendees[currentAttendeeIndex]?.email || ''}
@@ -2506,7 +2506,7 @@ export default function SafedSheriLandingPage() {
                               updated[currentAttendeeIndex].email = e.target.value;
                               setAttendees(updated);
                             }}
-                            placeholder="parent@example.com"
+                            placeholder="you@example.com"
                             className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
                           />
                         </div>
