@@ -172,6 +172,114 @@ const TermsAndConditionsContent = () => (
   </div>
 );
 
+const PrivacyPolicyContent = () => (
+  <div className="mt-3 opacity-90 leading-relaxed animate-fade-in text-xs max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+    <div className="space-y-4">
+      <p>Safed Sheri ("we," "us," or "our") operates the Safed Sheri service (the "Service"). This Privacy Policy outlines how we collect, use, and share your information through the services we provide.</p>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Information Collection</h5>
+        <p className="mt-1">When you use our Service, we may collect the following types of information:</p>
+        <p className="mt-2 font-bold">Personal Information</p>
+        <ul className="list-disc pl-4 mt-1 space-y-1">
+          <li><strong>Contact Information:</strong> Includes your name, email address, phone number, and business details.</li>
+          <li><strong>Account Information:</strong> Username, password, and account preferences.</li>
+          <li><strong>Communication Data:</strong> Messages sent and received through the Service, including metadata.</li>
+          <li><strong>Usage Data:</strong> Information about how you interact with our Service, including features used and time spent.</li>
+        </ul>
+        <p className="mt-2 font-bold">Automatically Collected Information</p>
+        <ul className="list-disc pl-4 mt-1 space-y-1">
+          <li>Device information (device type, operating system, browser type)</li>
+          <li>IP address and approximate location</li>
+          <li>Cookies and similar tracking technologies</li>
+          <li>Log data and analytics information</li>
+        </ul>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">How We Use Your Information</h5>
+        <p className="mt-1">We use the information we collect for the following purposes:</p>
+        <ul className="list-disc pl-4 mt-1 space-y-1">
+          <li>To provide, maintain, and improve our Service</li>
+          <li>To process transactions and send related information</li>
+          <li>To send you technical notices, updates, and support messages</li>
+          <li>To respond to your comments, questions, and customer service requests</li>
+          <li>To communicate with you about products, services, and events</li>
+          <li>To monitor and analyze trends, usage, and activities</li>
+          <li>To detect, investigate, and prevent fraudulent transactions and other illegal activities</li>
+          <li>To comply with legal obligations</li>
+        </ul>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Information Sharing</h5>
+        <p className="mt-1">We may share your information in the following circumstances:</p>
+        <ul className="list-disc pl-4 mt-1 space-y-1">
+          <li><strong>With Service Providers:</strong> Third parties that help us operate the Service</li>
+          <li><strong>For Legal Reasons:</strong> When required by law or to protect our rights</li>
+          <li><strong>Business Transfers:</strong> In connection with mergers, acquisitions, or asset sales</li>
+          <li><strong>With Your Consent:</strong> When you have given us permission to share</li>
+        </ul>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Data Security</h5>
+        <p className="mt-1">We implement appropriate technical and organizational security measures to protect against unauthorized access, alteration, disclosure, or destruction of personal data. This includes encryption, secure servers, and regular security audits. However, no system can guarantee 100% security, and we cannot ensure absolute security of your data.</p>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">International Transfers</h5>
+        <p className="mt-1">Your data may be transferred to and maintained on servers located outside of your region where data protection laws may differ from your jurisdiction. By using our Service, you consent to such transfers. We take steps to ensure your data receives adequate protection in accordance with this Privacy Policy.</p>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Data Retention</h5>
+        <p className="mt-1">We retain your personal information for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required or permitted by law. When we no longer need your data, we will securely delete or anonymize it.</p>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Your Rights</h5>
+        <p className="mt-1">Depending on your location, you may have certain rights regarding your personal information:</p>
+        <ul className="list-disc pl-4 mt-1 space-y-1">
+          <li><strong>Access:</strong> Request a copy of your personal data</li>
+          <li><strong>Correction:</strong> Request correction of inaccurate data</li>
+          <li><strong>Deletion:</strong> Request deletion of your personal data</li>
+          <li><strong>Portability:</strong> Request transfer of your data to another service</li>
+          <li><strong>Objection:</strong> Object to certain processing of your data</li>
+          <li><strong>Withdrawal:</strong> Withdraw consent where processing is based on consent</li>
+        </ul>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Cookies and Tracking</h5>
+        <p className="mt-1">We use cookies and similar tracking technologies to track activity on our Service and hold certain information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our Service.</p>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Children's Privacy</h5>
+        <p className="mt-1">Our Service is not directed to anyone under the age of 18. We do not knowingly collect personal information from children under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us.</p>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Changes to This Privacy Policy</h5>
+        <p className="mt-1">We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.</p>
+      </div>
+
+      <div>
+        <h5 className="font-bold text-[#2D1F0E]">Contact Us</h5>
+        <p className="mt-1">If you have any questions about this Privacy Policy, please contact us:</p>
+        <ul className="list-none mt-2 space-y-1 font-medium bg-[#FAF6EE] p-3 rounded-lg border border-[#EAD9B8]">
+          <li><strong>Legal Name:</strong> SONDARVA HARISH</li>
+          <li><strong>Registration No:</strong> UDYAM-GJ-10-0079582</li>
+          <li><strong>Address:</strong> HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, JAMNAGAR, JAMNAGAR, Pin 361006, JAMNAGAR, Gujarat</li>
+          <li><strong>Phone:</strong> +91 70169 77518</li>
+          <li><strong>Email:</strong> safedsheri9@gmail.com</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+);
+
 
 export default function SafedSheriLandingPage() {
   // Audio state
@@ -380,6 +488,7 @@ export default function SafedSheriLandingPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showFooterTerms, setShowFooterTerms] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [termsError, setTermsError] = useState(false);
   const [showDressCode, setShowDressCode] = useState(true);
 
@@ -1878,8 +1987,6 @@ export default function SafedSheriLandingPage() {
               <a href="#gazebos" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gazebo Lounges</a>
               <span className="text-[#D99427] text-xs">✦</span>
               <a href="#passes" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Pass Privilege</a>
-              <span className="text-[#D99427] text-xs">✦</span>
-              <button onClick={() => { setShowFooterTerms(true); garbaAudio.playDandiya(); }} className="hover:text-[#D99427] transition">Terms &amp; Conditions</button>
             </div>
           </div>
 
@@ -1967,8 +2074,23 @@ export default function SafedSheriLandingPage() {
           </div>
 
           {/* Bottom text */}
-          <div className="text-center">
-            <div className="text-[15px] font-medium">© 2026 Safed Sheri. All rights reserved.</div>
+          <div className="text-center flex flex-col items-center">
+            <div className="text-[12px] md:text-[13px] font-medium leading-relaxed text-[#4A3B2C] mb-5 space-y-2 max-w-4xl px-4">
+              <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1">
+                <span>Registration no: UDYAM-GJ-10-0079582</span>
+                <span className="text-[#D99427]/70 hidden md:inline">|</span>
+                <span>Legal name: SONDARVA HARISH</span>
+              </div>
+              <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-center">
+                <span>Address: HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, JAMNAGAR, JAMNAGAR, Pin 361006, JAMNAGAR, Gujarat</span>
+              </div>
+            </div>
+            <div className="text-[14px] md:text-[15px] font-medium">© 2026 Safed Sheri is owned and operated by Sondarva Harish</div>
+            <div className="mt-2 text-xs flex items-center justify-center space-x-3 text-[#D99427] font-medium">
+              <button onClick={() => { setShowFooterTerms(true); garbaAudio.playDandiya(); }} className="hover:underline transition cursor-pointer z-20 relative">Terms &amp; Conditions</button>
+              <span>|</span>
+              <button onClick={() => { setShowPrivacyPolicy(true); garbaAudio.playDandiya(); }} className="hover:underline transition cursor-pointer z-20 relative">Privacy Policy</button>
+            </div>
           </div>
 
         </div>
@@ -1984,7 +2106,24 @@ export default function SafedSheriLandingPage() {
             <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
               <TermsAndConditionsContent />
             </div>
-            <button onClick={() => setShowFooterTerms(false)} className="w-full mt-6 py-3 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg">
+            <button onClick={() => setShowFooterTerms(false)} className="w-full mt-6 py-3 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg cursor-pointer">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showPrivacyPolicy && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => setShowPrivacyPolicy(false)}>
+          <div className="bg-[#FFFCF7] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-2xl shadow-2xl relative text-[#2D1F0E] p-6 sm:p-8" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowPrivacyPolicy(false)} className="absolute top-4 right-4 p-2 bg-[#FAF6EE] text-[#D99427] rounded-full hover:bg-[#F6C85F] hover:text-[#2D1F0E] transition border border-[#EAD9B8] cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-serif font-bold text-[#2D1F0E] mb-4 text-center">Privacy Policy</h3>
+            <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              <PrivacyPolicyContent />
+            </div>
+            <button onClick={() => setShowPrivacyPolicy(false)} className="w-full mt-6 py-3 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg cursor-pointer">
               Close
             </button>
           </div>
