@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as crypto from 'crypto';
-
+import { Twilio } from 'twilio';
 // In-memory OTP storage for internal WhatsApp service
 const otpStore = new Map<string, { code: string; expiresAt: number }>();
 
@@ -88,6 +88,29 @@ export class AuthService {
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes TTL
 
     otpStore.set(cleanPhone, { code, expiresAt });
+
+    // Send via Twilio if configured
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886';
+
+    if (accountSid && authToken && accountSid.trim() !== '') {
+      try {
+        const client = new Twilio(accountSid, authToken);
+        const toPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone}`;
+        await client.messages.create({
+          body: `Your Safed Sheri OTP is: ${code}. It is valid for 10 minutes.`,
+          from: twilioNumber,
+          to: `whatsapp:${toPhone}`,
+        });
+        console.log(`Twilio WhatsApp OTP dispatched to ${toPhone}`);
+      } catch (error) {
+        console.error('Failed to send WhatsApp OTP via Twilio:', error);
+        // We can throw here if we want strict failure, or proceed
+      }
+    } else {
+      console.warn('Twilio credentials missing. OTP generated but not dispatched via WhatsApp.');
+    }
 
     return {
       success: true,
