@@ -879,6 +879,10 @@ export default function SafedSheriLandingPage() {
       name: 'Safed Sheri 2026',
       description: `Pass Booking ${paymentOrder.registrationNumber}`,
       order_id: paymentOrder.razorpayOrderId,
+      prefill: {
+        name: paymentOrder.attendees?.[0]?.fullName || '',
+        contact: paymentOrder.attendees?.[0]?.phone || '',
+      },
       handler: async function (response: any) {
         setPaymentLoading(true);
         try {
