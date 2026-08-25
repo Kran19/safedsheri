@@ -4,6 +4,7 @@ import { RegistrationStatus, PassType, Gender, Role } from '@prisma/client';
 import { EncryptionService } from '../common/encryption.service';
 import { PaymentGatewayService } from '../payments/payment-gateway.service';
 import { EmailService } from '../common/email.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class RegistrationsService {
@@ -15,6 +16,42 @@ export class RegistrationsService {
     private paymentGatewayService: PaymentGatewayService,
     private emailService: EmailService,
   ) {}
+
+  async generateUniqueRegistrationNumber(tx?: any): Promise<string> {
+    const db = tx || this.prisma;
+    const count = await db.registration.count();
+    let baseSeq = count + 101;
+
+    const latest = await db.registration.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { registrationNumber: true },
+    });
+
+    if (latest && latest.registrationNumber) {
+      const match = latest.registrationNumber.match(/\d+$/);
+      if (match) {
+        const num = parseInt(match[0], 10);
+        if (!isNaN(num) && num >= baseSeq) {
+          baseSeq = num + 1;
+        }
+      }
+    }
+
+    for (let offset = 0; offset < 100; offset++) {
+      const seqStr = (baseSeq + offset).toString().padStart(6, '0');
+      const candidate = `SS-2026-${seqStr}`;
+      const exists = await db.registration.findUnique({
+        where: { registrationNumber: candidate },
+        select: { id: true },
+      });
+      if (!exists) {
+        return candidate;
+      }
+    }
+
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    return `SS-2026-${randomHex}`;
+  }
 
   async getActivePhase() {
     let phase = await this.prisma.pricingPhase.findFirst({
@@ -428,11 +465,8 @@ export class RegistrationsService {
       });
     }
 
-    const count = await this.prisma.registration.count();
-    const seq = (count + 101).toString().padStart(6, '0');
-    const registrationNumber = `SS-2026-${seq}`;
-
     const registration = await this.prisma.$transaction(async (tx) => {
+      const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
       const createdReg = await tx.registration.create({
         data: {
           registrationNumber,
@@ -536,7 +570,7 @@ export class RegistrationsService {
 
     // Send Email Notification
     if (data.attendees[0].email) {
-      this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registrationNumber).catch(e => console.error(e));
+      this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registration.registrationNumber).catch(e => console.error(e));
     }
 
     return {

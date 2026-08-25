@@ -17,6 +17,42 @@ export class PaymentsService {
     private emailService: EmailService,
   ) {}
 
+  async generateUniqueRegistrationNumber(tx?: any): Promise<string> {
+    const db = tx || this.prisma;
+    const count = await db.registration.count();
+    let baseSeq = count + 101;
+
+    const latest = await db.registration.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { registrationNumber: true },
+    });
+
+    if (latest && latest.registrationNumber) {
+      const match = latest.registrationNumber.match(/\d+$/);
+      if (match) {
+        const num = parseInt(match[0], 10);
+        if (!isNaN(num) && num >= baseSeq) {
+          baseSeq = num + 1;
+        }
+      }
+    }
+
+    for (let offset = 0; offset < 100; offset++) {
+      const seqStr = (baseSeq + offset).toString().padStart(6, '0');
+      const candidate = `SS-2026-${seqStr}`;
+      const exists = await db.registration.findUnique({
+        where: { registrationNumber: candidate },
+        select: { id: true },
+      });
+      if (!exists) {
+        return candidate;
+      }
+    }
+
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    return `SS-2026-${randomHex}`;
+  }
+
   async findAll(status?: PaymentStatus) {
     const where: any = {};
     if (status) where.status = status;
@@ -303,8 +339,7 @@ export class PaymentsService {
       if (!event || !phase) throw new BadRequestException('Active event or pricing phase missing');
 
       // 2. Generate Registration Number
-      const count = await tx.registration.count();
-      const registrationNumber = `SS-2026-${(count + 101).toString().padStart(6, '0')}`;
+      const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
       const paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;
 
       // 3. Create Registration in PASS_ISSUED state
