@@ -379,6 +379,7 @@ export default function SafedSheriLandingPage() {
   const [currentAttendeeIndex, setCurrentAttendeeIndex] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showFooterTerms, setShowFooterTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
   const [showDressCode, setShowDressCode] = useState(true);
 
@@ -1877,6 +1878,8 @@ export default function SafedSheriLandingPage() {
               <a href="#gazebos" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gazebo Lounges</a>
               <span className="text-[#D99427] text-xs">✦</span>
               <a href="#passes" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Pass Privilege</a>
+              <span className="text-[#D99427] text-xs">✦</span>
+              <button onClick={() => { setShowFooterTerms(true); garbaAudio.playDandiya(); }} className="hover:text-[#D99427] transition">Terms &amp; Conditions</button>
             </div>
           </div>
 
@@ -1970,6 +1973,23 @@ export default function SafedSheriLandingPage() {
 
         </div>
       </footer>
+
+      {showFooterTerms && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => setShowFooterTerms(false)}>
+          <div className="bg-[#FFFCF7] border-2 border-[#EAD9B8] rounded-[2.5rem] w-full max-w-2xl shadow-2xl relative text-[#2D1F0E] p-6 sm:p-8" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowFooterTerms(false)} className="absolute top-4 right-4 p-2 bg-[#FAF6EE] text-[#D99427] rounded-full hover:bg-[#F6C85F] hover:text-[#2D1F0E] transition border border-[#EAD9B8]">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-serif font-bold text-[#2D1F0E] mb-4 text-center">Terms &amp; Conditions</h3>
+            <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              <TermsAndConditionsContent />
+            </div>
+            <button onClick={() => setShowFooterTerms(false)} className="w-full mt-6 py-3 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODAL 1: GUEST REGISTRATION APPLICATION CAROUSEL WIZARD (UP TO 7 PASSES) */}
