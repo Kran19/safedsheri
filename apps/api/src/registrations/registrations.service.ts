@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegistrationStatus, PassType, Gender, Role } from '@prisma/client';
 import { EncryptionService } from '../common/encryption.service';
@@ -7,6 +7,8 @@ import { EmailService } from '../common/email.service';
 
 @Injectable()
 export class RegistrationsService {
+  private readonly logger = new Logger(RegistrationsService.name);
+
   constructor(
     private prisma: PrismaService,
     private encryptionService: EncryptionService,
@@ -245,7 +247,8 @@ export class RegistrationsService {
       documentBackChecksum?: string;
     }>;
   }) {
-    let activeEvent = await this.prisma.event.findFirst({
+    try {
+      let activeEvent = await this.prisma.event.findFirst({
       where: { status: 'ACTIVE' },
     });
     if (!activeEvent) {
@@ -339,6 +342,8 @@ export class RegistrationsService {
       if (existingAadhaarAttendee) {
         const hasActiveRegistration = existingAadhaarAttendee.registrations.some(
           (r) =>
+            r.registration &&
+            !r.registration.deletedAt &&
             r.registration.status !== RegistrationStatus.REJECTED &&
             r.registration.status !== RegistrationStatus.CANCELLED &&
             r.registration.status !== RegistrationStatus.PAYMENT_FAILED,
@@ -359,6 +364,8 @@ export class RegistrationsService {
       if (existingPhoneAttendee) {
         const hasActiveRegistration = existingPhoneAttendee.registrations.some(
           (r) =>
+            r.registration &&
+            !r.registration.deletedAt &&
             r.registration.status !== RegistrationStatus.REJECTED &&
             r.registration.status !== RegistrationStatus.CANCELLED &&
             r.registration.status !== RegistrationStatus.PAYMENT_FAILED,
@@ -544,6 +551,13 @@ export class RegistrationsService {
         message: 'Your registration application has been submitted for review by Safed Sheri executive team.',
       },
     };
+    } catch (err: any) {
+      if (err instanceof BadRequestException || err instanceof NotFoundException) {
+        throw err;
+      }
+      this.logger.error(`Error creating public registration: ${err.message}`, err.stack);
+      throw new BadRequestException(err.message || 'Failed to submit registration. Please try again.');
+    }
   }
 
   async reviewRegistration(
