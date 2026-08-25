@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const rawApiTarget = process.env.INTERNAL_API_URL || 'http://127.0.0.1:4000/api/v1';
-const API_TARGET = rawApiTarget.replace('localhost', '127.0.0.1');
-
 async function handleProxy(req: NextRequest, { params }: { params: { path: string[] } }) {
+  const rawApiTarget = process.env.INTERNAL_API_URL || 'http://127.0.0.1:4000/api/v1';
+  const API_TARGET = rawApiTarget.replace('localhost', '127.0.0.1');
   const subPath = params.path ? params.path.join('/') : '';
   const search = req.nextUrl.search || '';
   const targetUrl = `${API_TARGET}/${subPath}${search}`;

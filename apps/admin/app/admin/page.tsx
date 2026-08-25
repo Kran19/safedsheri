@@ -8,7 +8,7 @@ import {
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
-  Tag, MapPin, Settings
+  Tag, MapPin, Settings, Trash2
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -17,7 +17,12 @@ import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenanc
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash'>('applications');
+  const [trashApplications, setTrashApplications] = useState<any[]>([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [appToDelete, setAppToDelete] = useState<any | null>(null);
   
   const [overview, setOverview] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
@@ -180,6 +185,9 @@ export default function SuperAdminDashboard() {
             : '',
         });
       }
+    } else if (tab === 'trash') {
+      const res = await apiRequest('/registrations/trash');
+      if (res.success) setTrashApplications(res.data || []);
     }
   }
 
@@ -314,6 +322,52 @@ export default function SuperAdminDashboard() {
     setMessage(`Batch completed: ${approvedCount} application(s) approved.`);
     loadOverviewData();
     loadTabContent('applications');
+  }
+
+  async function handleSoftDelete() {
+    if (!appToDelete) return;
+    setActionLoading(true);
+    const res = await apiRequest(`/registrations/${appToDelete.id}/trash`, { method: 'POST' });
+    if (res.success) {
+      setMessage('Application moved to trash.');
+      setDeleteModalOpen(false);
+      setAppToDelete(null);
+      loadTabContent('applications');
+    } else {
+      setError(res.error?.message || 'Failed to move to trash');
+    }
+    setActionLoading(false);
+  }
+
+  async function handleRestore() {
+    if (!appToDelete) return;
+    setActionLoading(true);
+    const res = await apiRequest(`/registrations/${appToDelete.id}/restore`, { method: 'POST' });
+    if (res.success) {
+      setMessage('Application restored successfully.');
+      setRestoreModalOpen(false);
+      setAppToDelete(null);
+      loadTabContent('trash');
+      loadOverviewData();
+    } else {
+      setError(res.error?.message || 'Failed to restore application');
+    }
+    setActionLoading(false);
+  }
+
+  async function handleHardDelete() {
+    if (!appToDelete) return;
+    setActionLoading(true);
+    const res = await apiRequest(`/registrations/${appToDelete.id}/permanent-delete`, { method: 'POST' });
+    if (res.success) {
+      setMessage('Application permanently deleted.');
+      setHardDeleteModalOpen(false);
+      setAppToDelete(null);
+      loadTabContent('trash');
+    } else {
+      setError(res.error?.message || 'Failed to permanently delete');
+    }
+    setActionLoading(false);
   }
 
   async function handleUpdateInquiryStatus(id: string, type: 'sponsor' | 'gazebo', status: string) {
@@ -452,16 +506,117 @@ export default function SuperAdminDashboard() {
       sortable: false,
       align: 'right',
       render: (row) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            openReviewModal(row);
-          }}
-          className="px-3 py-1 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
-        >
-          <Eye className="w-3 h-3 text-[#D99427]" />
-          <span>Review</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openReviewModal(row);
+            }}
+            className="px-3 py-1 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+          >
+            <Eye className="w-3 h-3 text-[#D99427]" />
+            <span>Review</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setAppToDelete(row);
+              setDeleteModalOpen(true);
+            }}
+            className="px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>Trash</span>
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const trashColumns: TabulatorColumn<any>[] = [
+    {
+      key: 'registrationNumber',
+      title: 'Application #',
+      sortable: true,
+      render: (row) => <span className="font-mono font-bold text-[#2D1F0E]">{row.registrationNumber}</span>,
+    },
+    {
+      key: 'primaryAttendee',
+      title: 'Primary Attendee',
+      sortable: true,
+      getValue: (row) => row.attendees?.[0]?.attendee?.fullName || '',
+      render: (row) => {
+        const primary = row.attendees?.[0]?.attendee;
+        return (
+          <div>
+            <div className="font-semibold text-[#2D1F0E]">{primary?.fullName || '—'}</div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'phone',
+      title: 'WhatsApp Phone',
+      sortable: true,
+      getValue: (row) => row.attendees?.[0]?.attendee?.phone || '',
+      render: (row) => <span className="font-mono text-[#6E5336]">{row.attendees?.[0]?.attendee?.phone || '—'}</span>,
+    },
+    {
+      key: 'amountDue',
+      title: 'Amount (₹)',
+      sortable: true,
+      isNumeric: true,
+      align: 'right',
+      getValue: (row) => Number(row.amountDue || 0),
+      render: (row) => (
+        <span className="font-serif font-bold text-emerald-800">
+          ₹{Number(row.amountDue)?.toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      key: 'deletedAt',
+      title: 'Deleted Date',
+      sortable: true,
+      getValue: (row) => new Date(row.deletedAt).toISOString(),
+      render: (row) => (
+        <span className="text-[#6E5336] font-mono text-[11px]">
+          {new Date(row.deletedAt).toLocaleDateString()} {new Date(row.deletedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      title: 'Action',
+      sortable: false,
+      align: 'right',
+      render: (row) => (
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setAppToDelete(row);
+              setRestoreModalOpen(true);
+            }}
+            disabled={actionLoading}
+            className="px-3 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm disabled:opacity-50"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Restore</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setAppToDelete(row);
+              setHardDeleteModalOpen(true);
+            }}
+            disabled={actionLoading}
+            className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 border border-red-700 text-white font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm disabled:opacity-50"
+          >
+            <AlertCircle className="w-3 h-3" />
+            <span>Permanently Delete</span>
+          </button>
+        </div>
       ),
     },
   ];
@@ -651,6 +806,7 @@ export default function SuperAdminDashboard() {
           { id: 'sponsors', label: 'Sponsors & Brands', icon: Building2 },
           { id: 'scans', label: 'Security Scans', icon: Shield },
           { id: 'audit', label: 'Audit Log', icon: FileText },
+          { id: 'trash', label: 'Trash', icon: Trash2 },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -1541,6 +1697,130 @@ export default function SuperAdminDashboard() {
                 </div>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: TRASH */}
+      {/* ========================================================================= */}
+      {activeTab === 'trash' && (
+        <AdvancedTabulatorTable
+          data={trashApplications}
+          columns={trashColumns}
+          keyField="id"
+          title="Trash Bin"
+          subtitle="Soft-deleted applications. Permanent deletion cannot be undone."
+          defaultPageSize={10}
+          onRefresh={() => loadTabContent('trash')}
+          isLoading={loading}
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* PREMIUM SOFT DELETE MODAL */}
+      {/* ========================================================================= */}
+      {deleteModalOpen && appToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-red-100 flex flex-col">
+            <div className="p-6 bg-red-50 border-b border-red-100 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-red-900">Move to Trash?</h3>
+            </div>
+            <div className="p-6 text-center text-[#6E5336]">
+              <p>Are you sure you want to move application <strong className="text-red-700">{appToDelete.registrationNumber}</strong> to the trash?</p>
+              <p className="mt-2 text-sm">It will be hidden from the main view but can still be found in the Trash tab.</p>
+            </div>
+            <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
+              <button
+                disabled={actionLoading}
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={actionLoading}
+                onClick={handleSoftDelete}
+                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-md transition disabled:opacity-50"
+              >
+                {actionLoading ? 'Moving...' : 'Move to Trash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PREMIUM HARD DELETE MODAL */}
+      {/* ========================================================================= */}
+      {hardDeleteModalOpen && appToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#1A1208] rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_40px_rgba(220,38,38,0.3)] border border-red-900/50 flex flex-col">
+            <div className="p-6 bg-red-950/30 border-b border-red-900/50 text-center">
+              <div className="w-16 h-16 bg-red-900/50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 ring-4 ring-red-900/30">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-red-500">Permanent Deletion</h3>
+            </div>
+            <div className="p-6 text-center text-red-200/80">
+              <p>You are about to <strong className="text-red-400">permanently delete</strong> application {appToDelete.registrationNumber}.</p>
+              <p className="mt-4 text-sm font-bold text-red-400">THIS ACTION CANNOT BE UNDONE. ALL RELATED DATA WILL BE DESTROYED.</p>
+            </div>
+            <div className="p-4 bg-[#0A0501] flex items-center justify-end space-x-3 border-t border-red-900/30">
+              <button
+                disabled={actionLoading}
+                onClick={() => setHardDeleteModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-[#EAD9B8] bg-[#1A1208] border border-[#EAD9B8]/20 hover:bg-[#2D1F0E] transition"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={actionLoading}
+                onClick={handleHardDelete}
+                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition disabled:opacity-50"
+              >
+                {actionLoading ? 'Destroying...' : 'Yes, Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PREMIUM RESTORE MODAL */}
+      {/* ========================================================================= */}
+      {restoreModalOpen && appToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-emerald-100 flex flex-col">
+            <div className="p-6 bg-emerald-50 border-b border-emerald-100 text-center">
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <RefreshCw className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-emerald-900">Restore Application?</h3>
+            </div>
+            <div className="p-6 text-center text-[#6E5336]">
+              <p>You are about to restore application <strong className="text-emerald-700">{appToDelete.registrationNumber}</strong> from the trash.</p>
+              <p className="mt-2 text-sm">It will be moved back to the main applications list and removed from the Trash tab.</p>
+            </div>
+            <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
+              <button
+                disabled={actionLoading}
+                onClick={() => setRestoreModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={actionLoading}
+                onClick={handleRestore}
+                className="px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition disabled:opacity-50"
+              >
+                {actionLoading ? 'Restoring...' : 'Yes, Restore Now'}
+              </button>
+            </div>
           </div>
         </div>
       )}

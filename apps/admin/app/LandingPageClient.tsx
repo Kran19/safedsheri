@@ -699,14 +699,20 @@ export default function SafedSheriLandingPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('side', side);
 
-      const res = await fetch(`${API_BASE}/uploads/aadhaar`, {
+      const endpoint = '/uploads/aadhaar/extract';
+      const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         body: formData,
       });
       const json = await res.json();
 
       if (json.success && json.data) {
+        if (json.extractedData && selectedPass === 'SINGLE' && json.extractedData.gender === 'MALE') {
+          throw new Error("Male Aadhaar cards are not allowed for Female passes.");
+        }
+        
         setAttendees((prev) => {
           const copy = [...prev];
           if (copy[index]) {
@@ -724,6 +730,14 @@ export default function SafedSheriLandingPage() {
                 documentBackName: json.data.originalFilename,
                 uploadingBack: false,
               };
+            }
+            
+            if (json.extractedData) {
+              const ex = json.extractedData;
+
+              if (ex.name) copy[index].fullName = ex.name;
+              if (ex.aadhaarNumber) copy[index].aadhaarNumber = ex.aadhaarNumber;
+              if (ex.gender) copy[index].gender = ex.gender;
             }
           }
           return copy;
@@ -1027,7 +1041,7 @@ export default function SafedSheriLandingPage() {
             <div className="hero-pill inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#FFF9EE] border border-[#EAD9B8]">
               <span className="w-2 h-2 rounded-full bg-[#D99427] animate-pulse" />
               <span className="text-[11px] font-bold tracking-[0.25em] text-[#8C6019] uppercase">
-                The Grand Heritage Arena • Rajkot • Navratri 2026
+                Regency Lagoon Resort • Rajkot • Navratri 2026
               </span>
             </div>
 
@@ -1599,7 +1613,7 @@ export default function SafedSheriLandingPage() {
               </p>
             </div>
 
-            <div className="md:absolute md:right-0 md:top-0 flex flex-col items-center justify-center space-y-2 bg-white/60 border border-[#EAD9B8] rounded-xl p-4 shadow-sm backdrop-blur-sm w-full md:w-auto shrink-0 z-10">
+            <div className="xl:absolute xl:right-0 xl:top-0 flex flex-col items-center justify-center space-y-2 bg-white/60 border border-[#EAD9B8] rounded-xl p-4 shadow-sm backdrop-blur-sm w-full md:w-auto shrink-0 z-10">
               <div className="flex items-center space-x-6 text-sm text-[#2D1F0E]">
                 <div className="flex flex-col items-center">
                   <span className="font-bold text-[#D99427] text-base">7:00 - 9:00 PM</span>
@@ -2818,7 +2832,7 @@ export default function SafedSheriLandingPage() {
                             </div>
 
                             <div className="text-xs text-[#6E5336] bg-[#FAF6EE] p-2.5 rounded-xl border border-[#EAD9B8]">
-                              Present this digital pass at the Security Gate on <strong>09 October 2026</strong> • The Grand Heritage Arena, Rajkot.
+                              Present this digital pass at the Security Gate on <strong>09 October 2026</strong> • Regency Lagoon Resort, Rajkot.
                             </div>
                           </div>
                         )}
@@ -2993,7 +3007,7 @@ export default function SafedSheriLandingPage() {
                     <div className="border-t border-[#EAD9B8] pt-2 space-y-1">
                       <div className="flex justify-between text-[#6E5336] text-[11px]">
                         <span>Event Venue:</span>
-                        <span className="font-medium text-[#2D1F0E]">Grand Arena • Rajkot</span>
+                        <span className="font-medium text-[#2D1F0E]">Regency Lagoon Resort • Rajkot</span>
                       </div>
                       <div className="flex justify-between text-[#6E5336] text-[11px]">
                         <span>Dress Code:</span>

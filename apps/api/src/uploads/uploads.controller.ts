@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   Res,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -39,6 +40,29 @@ export class UploadsController {
       success: true,
       data: saved,
       message: 'Aadhaar document uploaded and encrypted successfully',
+    };
+  }
+
+  @Post('aadhaar/extract')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  async extractAadhaar(@UploadedFile() file: any, @Body('side') side?: string) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No file uploaded.');
+    }
+    
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedMimes.includes(file.mimetype.toLowerCase())) {
+      throw new BadRequestException('Invalid file format for extraction. Allowed formats: JPEG, PNG, WebP');
+    }
+
+    const data = await this.uploadsService.extractAadhaarData(file.buffer, side || 'front');
+    const saved = await this.uploadsService.saveAadhaarDocument(file);
+
+    return {
+      success: true,
+      data: saved,
+      extractedData: data,
+      message: 'Aadhaar data processed successfully',
     };
   }
 

@@ -147,7 +147,7 @@ export class RegistrationsService {
   }
 
   async findAll(status?: RegistrationStatus, passType?: PassType, search?: string) {
-    const where: any = {};
+    const where: any = { deletedAt: null };
     if (status) where.status = status;
     if (passType) where.passType = passType;
     if (search) {
@@ -726,5 +726,94 @@ export class RegistrationsService {
       globalNotes: notes,
       attendeeDecisions,
     });
+  }
+
+  async getTrash() {
+    const registrations = await this.prisma.registration.findMany({
+      where: { deletedAt: { not: null } },
+      include: {
+        pricingPhase: true,
+        attendees: {
+          include: {
+            attendee: {
+              include: { document: true },
+            },
+          },
+        },
+        payments: true,
+        credentials: true,
+        reviewedBy: {
+          select: { id: true, fullName: true, role: true },
+        },
+      },
+      orderBy: { deletedAt: 'desc' },
+      take: 150,
+    });
+    return { success: true, data: registrations };
+  }
+
+  async softDelete(id: string, adminId: string) {
+    const reg = await this.prisma.registration.findUnique({ where: { id } });
+    if (!reg) throw new NotFoundException('Registration application not found');
+    
+    await this.prisma.registration.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: 'APPLICATION_SOFT_DELETED',
+        targetEntity: 'Registration',
+        targetId: id,
+        payload: { registrationNumber: reg.registrationNumber },
+      },
+    });
+    
+    return { success: true, message: 'Application moved to trash' };
+  }
+
+  async restore(id: string, adminId: string) {
+    const reg = await this.prisma.registration.findUnique({ where: { id } });
+    if (!reg) throw new NotFoundException('Registration application not found');
+    
+    await this.prisma.registration.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+    
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: 'APPLICATION_RESTORED',
+        targetEntity: 'Registration',
+        targetId: id,
+        payload: { registrationNumber: reg.registrationNumber },
+      },
+    });
+    
+    return { success: true, message: 'Application restored successfully' };
+  }
+
+  async hardDelete(id: string, adminId: string) {
+    const reg = await this.prisma.registration.findUnique({ where: { id } });
+    if (!reg) throw new NotFoundException('Registration application not found');
+    
+    await this.prisma.registration.delete({
+      where: { id },
+    });
+    
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: adminId,
+        action: 'APPLICATION_HARD_DELETED',
+        targetEntity: 'Registration',
+        targetId: id,
+        payload: { registrationNumber: reg.registrationNumber },
+      },
+    });
+    
+    return { success: true, message: 'Application permanently deleted' };
   }
 }

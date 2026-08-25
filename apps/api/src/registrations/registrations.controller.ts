@@ -57,11 +57,39 @@ export class RegistrationsController {
     return this.registrationsService.findAll(status, passType, search);
   }
 
+  @Get('trash')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  getTrash() {
+    return this.registrationsService.getTrash();
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
   findOne(@Param('id') id: string) {
     return this.registrationsService.findOne(id);
+  }
+
+  @Post(':id/trash')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  softDelete(@Param('id') id: string, @Request() req: any) {
+    return this.registrationsService.softDelete(id, req.user.id);
+  }
+
+  @Post(':id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  restore(@Param('id') id: string, @Request() req: any) {
+    return this.registrationsService.restore(id, req.user.id);
+  }
+
+  @Post(':id/permanent-delete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  hardDelete(@Param('id') id: string, @Request() req: any) {
+    return this.registrationsService.hardDelete(id, req.user.id);
   }
 
   @Post(':id/review')

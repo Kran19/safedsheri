@@ -227,6 +227,7 @@ model Registration {
   createdById        String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
 
   event        Event                  @relation(fields: [eventId], references: [id])
   pricingPhase PricingPhase           @relation(fields: [pricingPhaseId], references: [id])
