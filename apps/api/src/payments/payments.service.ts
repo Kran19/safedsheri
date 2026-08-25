@@ -278,6 +278,18 @@ export class PaymentsService {
 
     // Removed Single Pass Female rule to allow any gender to book
 
+    // Strict validation for Couple Pass
+    if (dto.passType === 'COUPLE') {
+      if (dto.attendees.length !== 2) {
+        throw new BadRequestException('Couple Pass requires exactly 2 attendee records');
+      }
+      const maleCount = dto.attendees.filter(a => a.gender === 'MALE').length;
+      const femaleCount = dto.attendees.filter(a => a.gender === 'FEMALE').length;
+      if (maleCount !== 1 || femaleCount !== 1) {
+        throw new BadRequestException('Couple Pass strictly requires exactly 1 Male and 1 Female attendee.');
+      }
+    }
+
     return await this.prisma.$transaction(async (tx) => {
       // 1. Get Active Event & Phase
       const event = await tx.event.findFirst({ where: { status: 'ACTIVE' } });
