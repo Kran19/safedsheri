@@ -52,28 +52,38 @@ export class ReportsService {
       where: { passType: PassType.GAZEBO, deletedAt: null },
     });
 
-    const totalAttendees = await this.prisma.attendee.count();
+    const totalAttendees = await this.prisma.attendee.count({
+      where: {
+        registrations: {
+          some: { registration: { deletedAt: null } }
+        }
+      }
+    });
 
     const paymentAggregate = await this.prisma.payment.aggregate({
-      where: { status: PaymentStatus.CONFIRMED },
+      where: { status: PaymentStatus.CONFIRMED, registration: { deletedAt: null } },
       _sum: { amount: true },
     });
     const totalCollection = paymentAggregate._sum.amount || 0;
 
-    const totalEntries = await this.prisma.entry.count();
+    const totalEntries = await this.prisma.entry.count({
+      where: { registration: { deletedAt: null } }
+    });
     const qrEntries = await this.prisma.entry.count({
-      where: { entryType: 'QR' },
+      where: { entryType: 'QR', registration: { deletedAt: null } },
     });
     const directEntries = await this.prisma.entry.count({
-      where: { entryType: 'DIRECT' },
+      where: { entryType: 'DIRECT', registration: { deletedAt: null } },
     });
 
-    const totalScans = await this.prisma.scanAttempt.count();
+    const totalScans = await this.prisma.scanAttempt.count({
+      where: { credential: { registration: { deletedAt: null } } }
+    });
     const validScans = await this.prisma.scanAttempt.count({
-      where: { result: ScanResult.VALID },
+      where: { result: ScanResult.VALID, credential: { registration: { deletedAt: null } } },
     });
     const alreadyUsedScans = await this.prisma.scanAttempt.count({
-      where: { result: ScanResult.ALREADY_USED },
+      where: { result: ScanResult.ALREADY_USED, credential: { registration: { deletedAt: null } } },
     });
 
     return {
