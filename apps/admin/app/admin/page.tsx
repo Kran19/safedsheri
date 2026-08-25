@@ -279,7 +279,7 @@ export default function SuperAdminDashboard() {
       setSelectedApp(null);
       setReviewNotes('');
       setAttendeeDecisions({});
-      loadOverviewData();
+      loadOverviewData(true);
       const ref = await apiRequest('/registrations');
       if (ref.success) setApplications(ref.data || []);
     } else {
@@ -301,7 +301,7 @@ export default function SuperAdminDashboard() {
       setMessage(`Application approved! Payment order activated.`);
       setSelectedApp(null);
       setReviewNotes('');
-      loadOverviewData();
+      loadOverviewData(true);
       const ref = await apiRequest('/registrations');
       if (ref.success) setApplications(ref.data || []);
     } else {
@@ -327,7 +327,7 @@ export default function SuperAdminDashboard() {
       setMessage('Application rejected.');
       setSelectedApp(null);
       setReviewNotes('');
-      loadOverviewData();
+      loadOverviewData(true);
       const ref = await apiRequest('/registrations');
       if (ref.success) setApplications(ref.data || []);
     } else {
@@ -362,6 +362,7 @@ export default function SuperAdminDashboard() {
       setMessage('Application moved to trash.');
       setDeleteModalOpen(false);
       setAppToDelete(null);
+      loadOverviewData(true);
       loadTabContent('applications');
     } else {
       setError(res.error?.message || 'Failed to move to trash');
@@ -378,7 +379,7 @@ export default function SuperAdminDashboard() {
       setRestoreModalOpen(false);
       setAppToDelete(null);
       loadTabContent('trash');
-      loadOverviewData();
+      loadOverviewData(true);
     } else {
       setError(res.error?.message || 'Failed to restore application');
     }
@@ -393,6 +394,7 @@ export default function SuperAdminDashboard() {
       setMessage('Application permanently deleted.');
       setHardDeleteModalOpen(false);
       setAppToDelete(null);
+      loadOverviewData(true);
       loadTabContent('trash');
     } else {
       setError(res.error?.message || 'Failed to permanently delete');
