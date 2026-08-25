@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { garbaAudio } from './GarbaAudioEngine';
 
 const VIBE_IMAGES = [
-  "/images/galleryimg/DSC01645.JPG.jpeg",
-  "/images/galleryimg/DSC01653.JPG.jpeg",
-  "/images/galleryimg/DSC01674.JPG.jpeg",
-  "/images/galleryimg/DSC02121.JPG.jpeg",
-  "/images/galleryimg/DSC02129.JPG.jpeg",
+  "/images/galleryimg/DSC01645.JPG.webp",
+  "/images/galleryimg/DSC01653.JPG.webp",
+  "/images/galleryimg/DSC01674.JPG.webp",
+  "/images/galleryimg/DSC02121.JPG.webp",
+  "/images/galleryimg/DSC02129.JPG.webp",
 ];
 
 export function Vibe3DOrbit() {
@@ -137,7 +138,7 @@ export function Vibe3DOrbit() {
                   zIndex: zIndex,
                 }}
               >
-                <img src={src} alt={`Safed Sheri Vibe ${idx + 1}`} className="w-full h-full object-cover pointer-events-none" />
+                <Image src={src} alt={`Safed Sheri Vibe ${idx + 1}`} fill className="object-cover pointer-events-none" loading="lazy" sizes="(max-width: 768px) 100vw, 33vw" />
               </div>
             );
           })}

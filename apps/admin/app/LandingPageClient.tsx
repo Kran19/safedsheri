@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { IllusionEngine } from './components/IllusionEngine';
@@ -1393,11 +1394,7 @@ export default function SafedSheriLandingPage() {
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Chowk</h3>
 
                   <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                    <img
-                      src="/images/gazebos/dhol.png"
-                      alt="Sheri Chowk"
-                      className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <Image src="/images/gazebos/dhol.png" alt="Sheri Chowk" fill className="object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   </div>
 
                   <div className="mb-4">
@@ -1450,11 +1447,7 @@ export default function SafedSheriLandingPage() {
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">The Royal Sheri Pavillion</h3>
 
                   <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                    <img
-                      src="/images/gazebos/garba.png"
-                      alt="The Royal Sheri Pavillion"
-                      className="object-contain h-full w-full group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <Image src="/images/gazebos/garba.png" alt="The Royal Sheri Pavillion" fill className="object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   </div>
 
                   <div className="mb-4">
@@ -1504,11 +1497,7 @@ export default function SafedSheriLandingPage() {
                   <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Rass</h3>
 
                   <div className="relative w-full h-32 mb-4 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                    <img
-                      src="/images/gazebos/dandiya.png"
-                      alt="Sheri Rass"
-                      className="object-cover h-full w-full rounded-lg group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <Image src="/images/gazebos/dandiya.png" alt="Sheri Rass" fill className="object-cover rounded-lg group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                   </div>
 
                   <div className="mb-4">
@@ -1572,7 +1561,7 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Chowk</h3>
                 <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img src="/images/gazebos/dhol.png" alt="Sheri Chowk" className="object-contain h-full w-full" />
+                  <Image src="/images/gazebos/dhol.png" alt="Sheri Chowk" fill className="object-contain" loading="lazy" />
                 </div>
                 <div className="mb-6">
                   <div className="flex items-baseline space-x-2">
@@ -1617,7 +1606,7 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">The Royal Sheri Pavillion</h3>
                 <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img src="/images/gazebos/garba.png" alt="The Royal Sheri Pavillion" className="object-contain h-full w-full" />
+                  <Image src="/images/gazebos/garba.png" alt="The Royal Sheri Pavillion" fill className="object-contain" loading="lazy" />
                 </div>
                 <div className="mb-6">
                   <div className="flex items-baseline space-x-2">
@@ -1659,7 +1648,7 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Sheri Rass</h3>
                 <div className="relative w-full h-32 mb-6 overflow-hidden rounded-xl bg-white flex items-center justify-center">
-                  <img src="/images/gazebos/dandiya.png" alt="Sheri Rass" className="object-cover h-full w-full rounded-lg" />
+                  <Image src="/images/gazebos/dandiya.png" alt="Sheri Rass" fill className="object-cover rounded-lg" loading="lazy" />
                 </div>
                 <div className="mb-6">
                   <div className="flex items-baseline space-x-2">
@@ -1704,7 +1693,7 @@ export default function SafedSheriLandingPage() {
             onClick={() => garbaAudio.playDhol()}
             className="block max-w-6xl mx-auto rounded-3xl overflow-hidden shadow-2xl border border-[#EAD9B8] transform hover:-translate-y-2 transition duration-500 bg-[#FAF6EE]"
           >
-            <img src="/images/workflow-new.png" alt="Pass Workflow" className="w-full h-auto object-contain hover:opacity-95 transition" />
+            <Image src="/images/workflow-optimized.webp" alt="Pass Workflow" width={1152} height={400} className="w-full h-auto object-contain hover:opacity-95 transition" loading="lazy" quality={75} />
           </a>
         </div>
       </section>
@@ -1968,7 +1957,10 @@ export default function SafedSheriLandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-8 px-6 bg-[#FAF6EE] z-10 relative bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/footer-upscaled.png')" }}>
+      <footer className="py-8 px-6 bg-[#FAF6EE] z-10 relative overflow-hidden">
+        <div className="absolute inset-0 w-full h-full -z-10 pointer-events-none">
+          <Image src="/images/footer-optimized.webp" alt="Footer Background" fill className="object-cover object-center" quality={75} loading="lazy" />
+        </div>
         <div className="max-w-6xl mx-auto flex flex-col gap-6 text-[#4A3B2C]">
 
           {/* Top Section */}
