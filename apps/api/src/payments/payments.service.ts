@@ -4,6 +4,7 @@ import { CredentialsService } from '../credentials/credentials.service';
 import { EncryptionService } from '../common/encryption.service';
 import { PaymentMethod, PaymentStatus, RegistrationStatus, PassType, Gender } from '@prisma/client';
 import { PaymentGatewayService } from './payment-gateway.service';
+import { EmailService } from '../common/email.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class PaymentsService {
     private credentialsService: CredentialsService,
     private encryptionService: EncryptionService,
     private paymentGatewayService: PaymentGatewayService,
+    private emailService: EmailService,
   ) {}
 
   async findAll(status?: PaymentStatus) {
@@ -276,6 +278,10 @@ export class PaymentsService {
       throw new BadRequestException('At least 1 attendee is required');
     }
 
+    if (!dto.attendees[0].email) {
+      throw new BadRequestException('Primary contact email is mandatory.');
+    }
+
     // Removed Single Pass Female rule to allow any gender to book
 
     // Strict validation for Couple Pass
@@ -404,25 +410,46 @@ export class PaymentsService {
     });
   }
 
-  async confirmRazorpayPayment(body: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string; paymentLinkId: string }) {
+  async createStandardOrder(dto: { amount: number; currency?: string; receipt?: string; notes?: any }) {
+    if (!dto.amount || dto.amount < 100) {
+      throw new BadRequestException('Amount must be at least 100 paise (₹1)');
+    }
+    return this.paymentGatewayService.createStandardOrder(dto.amount, dto.currency, dto.receipt, dto.notes);
+  }
+
+  async verifyPaymentSignature(body: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string; paymentLinkId?: string }) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentLinkId } = body;
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'ongR1rNVsrzSoVyjGx6VY9Zm';
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      throw new BadRequestException('Missing razorpay_order_id, razorpay_payment_id, or razorpay_signature');
+    }
 
-    const generated_signature = crypto
-      .createHmac('sha256', secret)
-      .update(razorpay_order_id + '|' + razorpay_payment_id)
-      .digest('hex');
-
-    if (generated_signature !== razorpay_signature) {
+    const isValid = this.paymentGatewayService.verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    if (!isValid) {
       throw new BadRequestException('Invalid payment signature');
     }
 
-    return this.confirmGatewayPayment({
-      paymentLinkId,
-      providerReference: razorpay_payment_id,
-      notes: `Razorpay Order ID: ${razorpay_order_id}`,
-      method: PaymentMethod.ONLINE_GATEWAY,
-    });
+    if (paymentLinkId) {
+      return this.confirmGatewayPayment({
+        paymentLinkId,
+        providerReference: razorpay_payment_id,
+        notes: `Razorpay Order ID: ${razorpay_order_id}`,
+        method: PaymentMethod.ONLINE_GATEWAY,
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Payment signature verified successfully',
+      data: {
+        razorpay_order_id,
+        razorpay_payment_id,
+        verified: true,
+      },
+    };
+  }
+
+  async confirmRazorpayPayment(body: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string; paymentLinkId: string }) {
+    return this.verifyPaymentSignature(body);
   }
 
   async confirmGatewayPayment(data: {

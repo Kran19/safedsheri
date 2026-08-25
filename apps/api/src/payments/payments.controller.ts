@@ -104,6 +104,34 @@ export class PaymentsController {
     return this.paymentsService.confirmGatewayPayment(body);
   }
 
+  @Post('create-order')
+  @ApiOperation({ summary: 'Create standard Razorpay order for direct checkout' })
+  createStandardOrder(
+    @Body()
+    body: {
+      amount: number;
+      currency?: string;
+      receipt?: string;
+      notes?: any;
+    },
+  ) {
+    return this.paymentsService.createStandardOrder(body);
+  }
+
+  @Post('verify-payment')
+  @ApiOperation({ summary: 'Verify standard Razorpay payment signature' })
+  verifyPaymentSignature(
+    @Body()
+    body: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+      paymentLinkId?: string;
+    },
+  ) {
+    return this.paymentsService.verifyPaymentSignature(body);
+  }
+
   @Post('razorpay-confirm')
   @ApiOperation({ summary: 'Verify and confirm Razorpay payment signature' })
   confirmRazorpayPayment(

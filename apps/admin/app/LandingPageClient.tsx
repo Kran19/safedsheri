@@ -996,10 +996,10 @@ export default function SafedSheriLandingPage() {
   const handleSimulatePayment = async () => {
     if (!activePaymentLink || !paymentOrder) return;
     garbaAudio.playDhol();
-
+    const totalAmount = paymentOrder.amountDue || paymentOrder.amount || 3500;
     const options = {
-      key: paymentOrder.razorpayKeyId,
-      amount: paymentOrder.amount * 100,
+      key: paymentOrder.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TU3glApQtNIVtN',
+      amount: Math.round(totalAmount * 100),
       currency: 'INR',
       name: 'Safed Sheri 2026',
       description: `Pass Booking ${paymentOrder.registrationNumber}`,
@@ -1007,6 +1007,7 @@ export default function SafedSheriLandingPage() {
       prefill: {
         name: paymentOrder.attendees?.[0]?.fullName || '',
         contact: paymentOrder.attendees?.[0]?.phone || '',
+        email: paymentOrder.attendees?.[0]?.email || '',
       },
       handler: async function (response: any) {
         setPaymentLoading(true);

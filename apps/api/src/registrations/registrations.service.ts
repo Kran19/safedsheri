@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegistrationStatus, PassType, Gender } from '@prisma/client';
 import { EncryptionService } from '../common/encryption.service';
 import { PaymentGatewayService } from '../payments/payment-gateway.service';
+import { EmailService } from '../common/email.service';
 
 @Injectable()
 export class RegistrationsService {
@@ -10,6 +11,7 @@ export class RegistrationsService {
     private prisma: PrismaService,
     private encryptionService: EncryptionService,
     private paymentGatewayService: PaymentGatewayService,
+    private emailService: EmailService,
   ) {}
 
   async getActivePhase() {
@@ -261,6 +263,10 @@ export class RegistrationsService {
       throw new BadRequestException('At least one attendee is required');
     }
 
+    if (!data.attendees[0].email) {
+      throw new BadRequestException('Primary contact email is mandatory.');
+    }
+
     if (data.attendees.length > 7) {
       throw new BadRequestException('A single booking can contain a maximum of 7 passes.');
     }
@@ -492,6 +498,11 @@ export class RegistrationsService {
       return createdReg;
     });
 
+    // Send Email Notification
+    if (data.attendees[0].email) {
+      this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registrationNumber).catch(e => console.error(e));
+    }
+
     return {
       success: true,
       data: {
@@ -667,6 +678,16 @@ export class RegistrationsService {
           },
         },
       });
+
+      // Send Approval Email
+      const primaryAtt = reg.attendees.find(a => a.isPrimary);
+      if (primaryAtt && primaryAtt.attendee.email && paymentOrder) {
+        this.emailService.sendRegistrationApproved(
+          primaryAtt.attendee.email,
+          reg.registrationNumber,
+          `http://localhost:3000/order/${paymentOrder.paymentLinkId}`
+        ).catch(e => console.error(e));
+      }
 
       return {
         success: true,
