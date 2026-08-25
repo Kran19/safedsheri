@@ -1168,10 +1168,6 @@ export default function SafedSheriLandingPage() {
               <div className="flex flex-col pt-1">
                 <span className="text-[10px] font-bold text-[#8C6019] uppercase tracking-[0.2em] mb-4">
                   ENCRYPTED AADHAAR STORAGE
-                </span>
-                <p className="text-sm md:text-base text-[#4A3B2C] leading-relaxed">
-                  Protected by 256-bit server <br className="hidden md:block" />HMAC hashing and <br className="hidden md:block" />private storage.
-                </p>
               </div>
             </div>
           </div>
