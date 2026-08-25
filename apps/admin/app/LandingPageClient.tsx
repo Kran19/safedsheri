@@ -677,6 +677,12 @@ export default function SafedSheriLandingPage() {
       setBookingError(`Please enter a valid 10-digit WhatsApp phone for Attendee #${idx + 1}`);
       return false;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!att.email || !emailRegex.test(att.email.trim())) {
+      setBookingError(`Please enter a valid email address for Attendee #${idx + 1}`);
+      return false;
+    }
+
     const cleanAadhaar = (att.aadhaarNumber || '').replace(/\D/g, '');
     if (cleanAadhaar.length !== 12) {
       setBookingError(`Please enter a valid 12-digit Aadhaar number for Attendee #${idx + 1}`);
@@ -3346,7 +3352,7 @@ export default function SafedSheriLandingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address</label>
+                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address *</label>
                     <input
                       type="email"
                       value={gazeboForm.email}
