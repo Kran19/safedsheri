@@ -2079,9 +2079,9 @@ export default function SafedSheriLandingPage() {
             </div>
             <div className="text-[14px] md:text-[15px] font-medium">© 2026 Safed Sheri is owned and operated by Sondarva Harish</div>
             <div className="mt-2 text-xs flex items-center justify-center space-x-3 text-[#D99427] font-medium">
-              <button onClick={() => { setShowFooterTerms(true); garbaAudio.playDandiya(); }} className="hover:underline transition cursor-pointer z-20 relative">Terms &amp; Conditions</button>
+              <Link href="/terms-and-conditions" onClick={() => garbaAudio.playDandiya()} className="hover:underline transition cursor-pointer z-20 relative">Terms & Conditions</Link>
               <span>|</span>
-              <button onClick={() => { setShowPrivacyPolicy(true); garbaAudio.playDandiya(); }} className="hover:underline transition cursor-pointer z-20 relative">Privacy Policy</button>
+              <Link href="/privacy-policy" onClick={() => garbaAudio.playDandiya()} className="hover:underline transition cursor-pointer z-20 relative">Privacy Policy</Link>
             </div>
           </div>
 

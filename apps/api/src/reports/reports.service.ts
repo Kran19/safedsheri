@@ -11,41 +11,45 @@ export class ReportsService {
       where: { status: 'ACTIVE' },
     });
 
-    const totalRegistrations = await this.prisma.registration.count();
+    const totalRegistrations = await this.prisma.registration.count({
+      where: { deletedAt: null },
+    });
     const pendingReview = await this.prisma.registration.count({
       where: {
         status: { in: [RegistrationStatus.SUBMITTED, RegistrationStatus.UNDER_REVIEW] },
+        deletedAt: null,
       },
     });
     const approved = await this.prisma.registration.count({
-      where: { status: RegistrationStatus.APPROVED },
+      where: { status: RegistrationStatus.APPROVED, deletedAt: null },
     });
     const paymentPending = await this.prisma.registration.count({
-      where: { status: RegistrationStatus.PAYMENT_PENDING },
+      where: { status: RegistrationStatus.PAYMENT_PENDING, deletedAt: null },
     });
     const paidRegistrations = await this.prisma.registration.count({
       where: {
         status: { in: [RegistrationStatus.PAYMENT_CONFIRMED, RegistrationStatus.PASS_ISSUED] },
+        deletedAt: null,
       },
     });
     const passesIssued = await this.prisma.registration.count({
-      where: { status: RegistrationStatus.PASS_ISSUED },
+      where: { status: RegistrationStatus.PASS_ISSUED, deletedAt: null },
     });
     const rejected = await this.prisma.registration.count({
-      where: { status: RegistrationStatus.REJECTED },
+      where: { status: RegistrationStatus.REJECTED, deletedAt: null },
     });
     const cancelled = await this.prisma.registration.count({
-      where: { status: RegistrationStatus.CANCELLED },
+      where: { status: RegistrationStatus.CANCELLED, deletedAt: null },
     });
 
     const femaleSinglePasses = await this.prisma.registration.count({
-      where: { passType: PassType.SINGLE },
+      where: { passType: PassType.SINGLE, deletedAt: null },
     });
     const couplePasses = await this.prisma.registration.count({
-      where: { passType: PassType.COUPLE },
+      where: { passType: PassType.COUPLE, deletedAt: null },
     });
     const gazeboBookings = await this.prisma.registration.count({
-      where: { passType: PassType.GAZEBO },
+      where: { passType: PassType.GAZEBO, deletedAt: null },
     });
 
     const totalAttendees = await this.prisma.attendee.count();

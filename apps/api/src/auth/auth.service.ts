@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { UpdateCredentialsDto } from './dto/update-credentials.dto';
 import * as crypto from 'crypto';
 import { Twilio } from 'twilio';
 // In-memory OTP storage for internal WhatsApp service
@@ -141,5 +142,56 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Invalid or expired OTP code');
+  }
+  async updateCredentials(userId: string, dto: UpdateCredentialsDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const hashedInput = this.hashPassword(dto.currentPassword);
+    if (user.passwordHash !== hashedInput) {
+      throw new BadRequestException('Incorrect current password');
+    }
+
+    const data: any = {};
+    if (dto.newUsername) {
+      // Check if new username exists for another user
+      const existing = await this.prisma.user.findUnique({
+        where: { username: dto.newUsername },
+      });
+      if (existing && existing.id !== userId) {
+        throw new BadRequestException('Username/Email is already taken');
+      }
+      data.username = dto.newUsername;
+    }
+
+    if (dto.newPassword && dto.newPassword.trim().length > 0) {
+      data.passwordHash = this.hashPassword(dto.newPassword);
+    }
+
+    if (Object.keys(data).length > 0) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data,
+      });
+
+      await this.prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: 'CREDENTIALS_UPDATED',
+          targetEntity: 'USER',
+          targetId: user.id,
+        }
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Credentials updated successfully',
+    };
   }
 }
