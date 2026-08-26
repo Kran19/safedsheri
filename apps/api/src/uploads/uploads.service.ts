@@ -103,34 +103,54 @@ export class UploadsService {
           return `${p1}/${cleanP2}/${cleanP3}`;
         });
 
-      // Strategy 1: Explicit DOB label match (e.g. "DOB: 12/04/2014", "DOB / जन्म तारीख : 12/04/2014", "Date of Birth : 12-04-2014")
-      const explicitDobRegex = /(?:DOB|D\.O\.B|Date\s*of\s*Birth|जन्म\s*तारीख|जन्म\s*तिथि|Birth)[\s:\/\-_\|]*(\d{1,2}\s*[\/\-\.]\s*\d{1,2}\s*[\/\-\.]\s*\d{2,4})/i;
-      const explicitMatch = normalizedText.match(explicitDobRegex) || text.match(explicitDobRegex);
+      // Strategy 1: Look for DOB / Birth keyword followed by date with slashes, dashes, dots, or spaces
+      // Examples: "DOB: 02/01/2014", "DOB: 02-01-2014", "DOB : 02 . 01 . 2014", "DOB: 02 01 2014"
+      const dobWithDelimitersRegex = /(?:DOB|D\.O\.B|Date\s*of\s*Birth|जन्म\s*तारीख|जन्म\s*तिथि|जन्म|Birth)[\s:\/\-_\|]*(\d{1,2})[\s\/\-\.]+(\d{1,2})[\s\/\-\.]+(\d{2,4})/i;
+      const match1 = normalizedText.match(dobWithDelimitersRegex) || text.match(dobWithDelimitersRegex);
 
-      if (explicitMatch) {
-        const rawDate = explicitMatch[1].replace(/\s+/g, '');
-        const parts = rawDate.split(/[\/\-\.]/);
-        if (parts.length === 3) {
-          let day = parts[0].padStart(2, '0');
-          let month = parts[1].padStart(2, '0');
-          let year = parts[2];
-          if (year.length === 2) {
-            const yNum = parseInt(year, 10);
-            year = yNum <= 30 ? `20${year}` : `19${year}`;
-          }
-          if (parseInt(month, 10) > 12 && parseInt(day, 10) <= 12) {
-            const tmp = day; day = month; month = tmp;
-          }
+      if (match1) {
+        let day = match1[1].padStart(2, '0');
+        let month = match1[2].padStart(2, '0');
+        let year = match1[3];
+        if (year.length === 2) {
+          const yNum = parseInt(year, 10);
+          year = yNum <= 30 ? `20${year}` : `19${year}`;
+        }
+        if (parseInt(month, 10) > 12 && parseInt(day, 10) <= 12) {
+          const tmp = day; day = month; month = tmp;
+        }
+        const yNum = parseInt(year, 10);
+        const mNum = parseInt(month, 10);
+        const dNum = parseInt(day, 10);
+        if (yNum >= 1930 && yNum <= new Date().getFullYear() && mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
           dob = `${year}-${month}-${day}`;
         }
       }
 
-      // Strategy 2: Year of Birth label match (e.g. "Year of Birth : 2014", "जन्म वर्ष : 2014", "YOB: 2014")
+      // Strategy 2: Look for DOB keyword followed by 8 continuous digits (DDMMYYYY) or 6 digits (DDMMYY)
+      // Example from actual Aadhaar card OCR: "ow Af DOB: 02012014"
+      if (!dob) {
+        const dob8DigitsRegex = /(?:DOB|D\.O\.B|Date\s*of\s*Birth|जन्म\s*तारीख|जन्म\s*तिथि|जन्म|Birth)[\s:\/\-_\|]*(\d{2})(\d{2})(\d{4})/i;
+        const match2 = normalizedText.match(dob8DigitsRegex) || text.match(dob8DigitsRegex);
+        if (match2) {
+          let day = match2[1].padStart(2, '0');
+          let month = match2[2].padStart(2, '0');
+          let year = match2[3];
+          const yNum = parseInt(year, 10);
+          const mNum = parseInt(month, 10);
+          const dNum = parseInt(day, 10);
+          if (yNum >= 1930 && yNum <= new Date().getFullYear() && mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
+            dob = `${year}-${month}-${day}`;
+          }
+        }
+      }
+
+      // Strategy 3: Year of Birth label match (e.g. "Year of Birth : 2014", "जन्म वर्ष : 2014", "YOB: 2014")
       if (!dob) {
         const yobRegex = /(?:Year\s*of\s*Birth|YOB|जन्म\s*वर्ष|वर्ष)[\s:\/\-_\|]*(\d{4})/i;
-        const yobMatch = normalizedText.match(yobRegex) || text.match(yobRegex);
-        if (yobMatch) {
-          const year = yobMatch[1];
+        const match3 = normalizedText.match(yobRegex) || text.match(yobRegex);
+        if (match3) {
+          const year = match3[1];
           const yNum = parseInt(year, 10);
           if (yNum >= 1930 && yNum <= new Date().getFullYear()) {
             dob = `${year}-01-01`;
@@ -138,7 +158,7 @@ export class UploadsService {
         }
       }
 
-      // Strategy 3: Any date pattern in DD/MM/YYYY or DD-MM-YYYY format
+      // Strategy 4: Any standard date pattern in text (DD/MM/YYYY or DD-MM-YYYY)
       if (!dob) {
         const genericDateRegex = /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\b/g;
         let match;
@@ -153,41 +173,42 @@ export class UploadsService {
           if (yNum >= 1930 && yNum <= new Date().getFullYear() && mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
             dob = `${year}-${month}-${day}`;
             break;
-          } else if (yNum >= 1930 && yNum <= new Date().getFullYear() && dNum >= 1 && dNum <= 12 && mNum >= 1 && mNum <= 31) {
-            dob = `${year}-${day}-${month}`;
-            break;
           }
         }
       }
 
-      // Strategy 4: Look across adjacent lines if DOB keyword and date are separated
+      // Strategy 5: 8-digit date sequence near DOB line if separated
       if (!dob) {
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         const dobIdx = lines.findIndex(l => /(?:DOB|Date of Birth|जन्म|YOB|Year of Birth)/i.test(l));
         if (dobIdx !== -1) {
-          const searchLines = [lines[dobIdx], lines[dobIdx + 1] || ''].join(' ');
-          const fallbackMatch = searchLines.match(/(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})|(\b\d{4}\b)/);
-          if (fallbackMatch) {
-            if (fallbackMatch[1]) {
-              const parts = fallbackMatch[1].replace(/\s+/g, '').split(/[\/\-\.]/);
-              if (parts.length === 3) {
-                dob = `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-              }
-            } else if (fallbackMatch[2]) {
-              const yNum = parseInt(fallbackMatch[2], 10);
-              if (yNum >= 1930 && yNum <= new Date().getFullYear()) {
-                dob = `${fallbackMatch[2]}-01-01`;
-              }
+          const combined = [lines[dobIdx], lines[dobIdx + 1] || ''].join(' ');
+          const match8 = combined.match(/\b(\d{2})[\s\/\-\.]?(\d{2})[\s\/\-\.]?(\d{4})\b/);
+          if (match8) {
+            let day = match8[1];
+            let month = match8[2];
+            let year = match8[3];
+            const yNum = parseInt(year, 10);
+            const mNum = parseInt(month, 10);
+            const dNum = parseInt(day, 10);
+            if (yNum >= 1930 && yNum <= new Date().getFullYear() && mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
+              dob = `${year}-${month}-${day}`;
             }
           }
         }
       }
 
       if (dob) {
-        const dobDate = new Date(dob);
+        const [y, m, d] = dob.split('-').map(Number);
+        const dobDate = new Date(y, m - 1, d);
         if (!isNaN(dobDate.getTime())) {
-          const diffMs = Date.now() - dobDate.getTime();
-          calculatedAge = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+          const today = new Date();
+          let age = today.getFullYear() - dobDate.getFullYear();
+          const mDiff = today.getMonth() - dobDate.getMonth();
+          if (mDiff < 0 || (mDiff === 0 && today.getDate() < dobDate.getDate())) {
+            age--;
+          }
+          calculatedAge = age;
         }
       }
 
