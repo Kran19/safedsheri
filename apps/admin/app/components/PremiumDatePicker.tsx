@@ -233,3 +233,5 @@ export function PremiumDatePicker({ value, onChange, label = 'Date of Birth *', 
     </div>
   );
 }
+
+export default PremiumDatePicker;

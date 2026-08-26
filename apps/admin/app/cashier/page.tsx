@@ -1,15 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { apiRequest, getAuthToken, getStoredUser } from '../../lib/api';
 import { 
   Search, QrCode, Send, CheckCircle2, AlertCircle, RefreshCw, Lock, Sparkles, 
-  Smartphone, PlusCircle, History, DollarSign, CreditCard, Users, Printer, FileText
+  Smartphone, PlusCircle, History, DollarSign, CreditCard, Users, Printer, FileText,
+  Upload, Check, X, Banknote, Calendar, ShieldCheck, ArrowRight
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
+import { PremiumDatePicker } from '../components/PremiumDatePicker';
+
+interface CashierAttendee {
+  fullName: string;
+  phone: string;
+  email: string;
+  gender: 'FEMALE' | 'MALE';
+  aadhaarNumber: string;
+  dob: string;
+  age?: number | null;
+  kidsAgeGroup?: string;
+  documentFrontKey?: string;
+  documentFrontName?: string;
+  documentBackKey?: string;
+  documentBackName?: string;
+  isUploadingFront?: boolean;
+  isUploadingBack?: boolean;
+  uploadError?: string;
+}
 
 export default function CashierDeskTerminal() {
   const router = useRouter();
@@ -31,23 +51,27 @@ export default function CashierDeskTerminal() {
 
   // Manual On-Spot Form State
   const [manualForm, setManualForm] = useState({
-    passType: 'SINGLE' as 'SINGLE' | 'COUPLE' | 'GAZEBO',
+    passType: 'SINGLE' as 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO',
     customAmount: 3500,
-    paymentMethod: 'UPI_QR' as 'UPI_QR' | 'ONLINE_GATEWAY' | 'CUSTOM_DIRECT',
+    paymentMethod: 'CUSTOM_DIRECT' as 'CUSTOM_DIRECT' | 'UPI_QR',
     notes: 'On-spot walk-in booking by Desk Executive',
-    att1Name: '',
-    att1Phone: '',
-    att1Email: '',
-    att1Gender: 'FEMALE' as 'FEMALE' | 'MALE',
-    att1Aadhaar: '',
-    att2Name: '',
-    att2Phone: '',
-    att2Email: '',
-    att2Gender: 'MALE' as 'FEMALE' | 'MALE',
-    att2Aadhaar: '',
   });
+
+  const [cashierAttendees, setCashierAttendees] = useState<CashierAttendee[]>([
+    {
+      fullName: '',
+      phone: '',
+      email: '',
+      gender: 'FEMALE',
+      aadhaarNumber: '',
+      dob: '',
+      age: null,
+    }
+  ]);
+
   const [submittingManual, setSubmittingManual] = useState(false);
   const [manualSuccessResult, setManualSuccessResult] = useState<any>(null);
+  const [activeQrModal, setActiveQrModal] = useState<any>(null);
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -67,8 +91,8 @@ export default function CashierDeskTerminal() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const interval = setInterval(() => {
-        loadFinancialData(true);
-      }, 5000);
+      loadFinancialData(true);
+    }, 5000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
@@ -91,6 +115,230 @@ export default function CashierDeskTerminal() {
     if (!silent) setLoadingLedger(false);
   }
 
+  // Handle Pass Type Switch
+  function handlePassTypeChange(newType: 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO') {
+    let defaultAmount = 3500;
+    if (newType === 'SINGLE') defaultAmount = 3500;
+    if (newType === 'COUPLE') defaultAmount = 6500;
+    if (newType === 'KIDS') defaultAmount = 0;
+    if (newType === 'GAZEBO') defaultAmount = 85000;
+
+    let newAttendees: CashierAttendee[] = [];
+    if (newType === 'COUPLE') {
+      newAttendees = [
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null },
+        { fullName: '', phone: '', email: '', gender: 'MALE', aadhaarNumber: '', dob: '', age: null },
+      ];
+    } else if (newType === 'KIDS') {
+      newAttendees = [
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null, kidsAgeGroup: 'UNDER_10' },
+      ];
+    } else {
+      newAttendees = [
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null },
+      ];
+    }
+
+    setManualForm({
+      ...manualForm,
+      passType: newType,
+      customAmount: defaultAmount,
+    });
+    setCashierAttendees(newAttendees);
+  }
+
+  // Update specific attendee field
+  function updateCashierAttendee(index: number, field: keyof CashierAttendee, value: any) {
+    setCashierAttendees(prev => {
+      const copy = [...prev];
+      if (!copy[index]) return prev;
+      copy[index] = { ...copy[index], [field]: value };
+
+      // If updating DOB on Kids pass, recalculate age & price
+      if (manualForm.passType === 'KIDS' && field === 'dob' && value) {
+        const [y, m, d] = value.split('-').map(Number);
+        const dobDate = new Date(y, m - 1, d);
+        if (!isNaN(dobDate.getTime())) {
+          const today = new Date();
+          let age = today.getFullYear() - dobDate.getFullYear();
+          const mDiff = today.getMonth() - dobDate.getMonth();
+          if (mDiff < 0 || (mDiff === 0 && today.getDate() < dobDate.getDate())) age--;
+          copy[index].age = age;
+          if (age <= 10) {
+            copy[index].kidsAgeGroup = 'UNDER_10';
+            setManualForm(mf => ({ ...mf, customAmount: 0 }));
+          } else if (age > 10 && age <= 15) {
+            copy[index].kidsAgeGroup = 'AGE_11_15';
+            setManualForm(mf => ({ ...mf, customAmount: 1200 }));
+          }
+        }
+      }
+      return copy;
+    });
+  }
+
+  // OCR Upload for Cashier
+  async function handleAadhaarUpload(index: number, side: 'front' | 'back', file: File) {
+    if (!file) return;
+    setCashierAttendees(prev => {
+      const copy = [...prev];
+      if (side === 'front') copy[index].isUploadingFront = true;
+      if (side === 'back') copy[index].isUploadingBack = true;
+      copy[index].uploadError = undefined;
+      return copy;
+    });
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('side', side);
+
+      const res = await fetch(`/api/v1/uploads/aadhaar/extract`, {
+        method: 'POST',
+        body: formData,
+      });
+      const json = await res.json();
+
+      setCashierAttendees(prev => {
+        const copy = [...prev];
+        if (side === 'front') {
+          copy[index].isUploadingFront = false;
+          if (json.success && json.data) {
+            copy[index].documentFrontKey = json.data.storageKey || json.data.id || file.name;
+            copy[index].documentFrontName = file.name;
+          }
+          if (json.extractedData) {
+            const ex = json.extractedData;
+            if (ex.name) copy[index].fullName = ex.name;
+            if (ex.aadhaarNumber) copy[index].aadhaarNumber = ex.aadhaarNumber;
+            if (ex.gender) copy[index].gender = ex.gender === 'MALE' ? 'MALE' : 'FEMALE';
+            if (ex.dob) {
+              copy[index].dob = ex.dob;
+              if (ex.age !== undefined && ex.age !== null) {
+                copy[index].age = ex.age;
+                if (manualForm.passType === 'KIDS') {
+                  if (ex.age <= 10) {
+                    copy[index].kidsAgeGroup = 'UNDER_10';
+                    setManualForm(mf => ({ ...mf, customAmount: 0 }));
+                  } else if (ex.age > 10 && ex.age <= 15) {
+                    copy[index].kidsAgeGroup = 'AGE_11_15';
+                    setManualForm(mf => ({ ...mf, customAmount: 1200 }));
+                  }
+                }
+              }
+            }
+          }
+        } else if (side === 'back') {
+          copy[index].isUploadingBack = false;
+          if (json.success && json.data) {
+            copy[index].documentBackKey = json.data.storageKeyBack || json.data.id || file.name;
+            copy[index].documentBackName = file.name;
+          }
+        }
+        return copy;
+      });
+    } catch (err: any) {
+      setCashierAttendees(prev => {
+        const copy = [...prev];
+        if (side === 'front') copy[index].isUploadingFront = false;
+        if (side === 'back') copy[index].isUploadingBack = false;
+        copy[index].uploadError = 'Failed to extract Aadhaar data. Please fill details manually.';
+        return copy;
+      });
+    }
+  }
+
+  async function handleManualSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmittingManual(true);
+    setError('');
+    setMessage('');
+    setManualSuccessResult(null);
+
+    // Validate inputs
+    for (let i = 0; i < cashierAttendees.length; i++) {
+      const att = cashierAttendees[i];
+      if (!att.fullName || att.fullName.trim().length < 2) {
+        setError(`Attendee #${i + 1} Name is required.`);
+        setSubmittingManual(false);
+        return;
+      }
+      if (manualForm.passType === 'KIDS') {
+        if (!att.dob) {
+          setError('Child Date of Birth is required for Kids pass.');
+          setSubmittingManual(false);
+          return;
+        }
+        if (att.age && att.age > 15) {
+          setError(`Child age is ${att.age} years. Kids pass is strictly for children aged 15 and below.`);
+          setSubmittingManual(false);
+          return;
+        }
+      }
+    }
+
+    if (manualForm.passType === 'COUPLE') {
+      if (cashierAttendees.length !== 2) {
+        setError('Couple Pass requires 2 attendees.');
+        setSubmittingManual(false);
+        return;
+      }
+      const femaleCount = cashierAttendees.filter(a => a.gender === 'FEMALE').length;
+      const maleCount = cashierAttendees.filter(a => a.gender === 'MALE').length;
+      if (femaleCount !== 1 || maleCount !== 1) {
+        setError('Couple Pass strictly requires 1 Female and 1 Male guest.');
+        setSubmittingManual(false);
+        return;
+      }
+    }
+
+    const payloadAttendees = cashierAttendees.map((att) => ({
+      fullName: att.fullName,
+      phone: att.phone ? (att.phone.startsWith('+91') ? att.phone : `+91${att.phone.replace(/\D/g, '')}`) : `+9199999${Date.now().toString().slice(-5)}`,
+      email: att.email || undefined,
+      gender: att.gender,
+      aadhaarNumber: att.aadhaarNumber ? att.aadhaarNumber.replace(/\D/g, '') : `9999${Date.now().toString().slice(-8)}`,
+      dob: att.dob || undefined,
+      kidsAgeGroup: att.kidsAgeGroup || undefined,
+      documentFrontKey: att.documentFrontKey || undefined,
+      documentBackKey: att.documentBackKey || undefined,
+    }));
+
+    const res = await apiRequest('/payments/manual-entry', {
+      method: 'POST',
+      body: JSON.stringify({
+        passType: manualForm.passType,
+        customAmount: Number(manualForm.customAmount),
+        paymentMethod: manualForm.paymentMethod,
+        attendees: payloadAttendees,
+        notes: manualForm.notes,
+      }),
+    });
+
+    setSubmittingManual(false);
+
+    if (res.success && res.data) {
+      if (manualForm.paymentMethod === 'UPI_QR') {
+        const amountDue = Number(manualForm.customAmount);
+        const upiPayload = `upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${amountDue}&tn=SS26-${res.data.registration?.registrationNumber}&tr=${res.data.registration?.paymentLinkId}`;
+        setActiveQrModal({
+          registration: res.data.registration,
+          payment: res.data.payment,
+          credentials: res.data.credentials,
+          amountDue,
+          upiPayload,
+        });
+      } else {
+        setManualSuccessResult(res.data);
+      }
+      setMessage(res.message || 'Manual entry created and passes issued!');
+      loadFinancialData();
+    } else {
+      setError(res.error?.message || 'Failed to create manual entry');
+    }
+  }
+
+  // Lookup application
   async function handleSearchReg(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -131,6 +379,7 @@ export default function CashierDeskTerminal() {
     if (!foundReg) return;
     setDispatchingWa(true);
     setError('');
+    setMessage('');
 
     const res = await apiRequest('/payments/send-whatsapp-link', {
       method: 'POST',
@@ -170,63 +419,6 @@ export default function CashierDeskTerminal() {
     }
   }
 
-  async function handleManualSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmittingManual(true);
-    setError('');
-    setMessage('');
-    setManualSuccessResult(null);
-
-    const attendees: any[] = [
-      {
-        fullName: manualForm.att1Name,
-        phone: manualForm.att1Phone.startsWith('+91') ? manualForm.att1Phone : `+91${manualForm.att1Phone.replace(/\D/g, '')}`,
-        email: manualForm.att1Email || undefined,
-        gender: manualForm.att1Gender,
-        aadhaarNumber: manualForm.att1Aadhaar.replace(/\D/g, ''),
-      },
-    ];
-
-    if (manualForm.passType === 'COUPLE') {
-      if (!manualForm.att2Name || !manualForm.att2Phone || !manualForm.att2Aadhaar) {
-        setError('Attendee #2 details are required for Couple Pass.');
-        setSubmittingManual(false);
-        return;
-      }
-      attendees.push({
-        fullName: manualForm.att2Name,
-        phone: manualForm.att2Phone.startsWith('+91') ? manualForm.att2Phone : `+91${manualForm.att2Phone.replace(/\D/g, '')}`,
-        email: manualForm.att2Email || undefined,
-        gender: manualForm.att2Gender,
-        aadhaarNumber: manualForm.att2Aadhaar.replace(/\D/g, ''),
-      });
-    }
-
-    const res = await apiRequest('/payments/manual-entry', {
-      method: 'POST',
-      body: JSON.stringify({
-        passType: manualForm.passType,
-        customAmount: Number(manualForm.customAmount),
-        paymentMethod: manualForm.paymentMethod,
-        attendees,
-        notes: manualForm.notes,
-      }),
-    });
-
-    setSubmittingManual(false);
-
-    if (res.success && res.data) {
-      setManualSuccessResult(res.data);
-      setMessage(res.message || 'Manual entry created and passes issued!');
-      loadFinancialData();
-    } else {
-      setError(res.error?.message || 'Failed to create manual entry');
-    }
-  }
-
-  // =========================================================================
-  // CASHIER TABULATOR COLUMNS
-  // =========================================================================
   const cashierColumns: TabulatorColumn<any>[] = [
     {
       key: 'receiptNumber',
@@ -266,9 +458,9 @@ export default function CashierDeskTerminal() {
             ? 'bg-amber-100 text-amber-800'
             : r.method === 'ONLINE_GATEWAY'
             ? 'bg-blue-100 text-blue-800'
-            : 'bg-purple-100 text-purple-800'
+            : 'bg-emerald-100 text-emerald-800'
         }`}>
-          {r.method}
+          {r.method === 'CUSTOM_DIRECT' ? '💵 CASH' : r.method === 'UPI_QR' ? '📱 UPI QR' : r.method}
         </span>
       ),
     },
@@ -349,14 +541,14 @@ export default function CashierDeskTerminal() {
             <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-[#FFF5DC] border border-[#E5A93C] mb-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D99427] animate-pulse" />
               <span className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-wider">
-                BOX OFFICE DESK & TABULATOR SUITE
+                BOX OFFICE DESK & CASHIER PORTAL
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#2D1F0E]">
               Cashier & Collection Hub
             </h1>
             <p className="text-xs text-[#6E5336]">
-              Real-time Analytics • Tabulator Excel & CSV Export • On-Spot Free-Hand Entry • Dynamic UPI Assist
+              Aadhaar-First AI Auto-Fill • Cash & Razorpay UPI QR Settlement • Immediate Pass Minting
             </p>
           </div>
         </div>
@@ -372,357 +564,549 @@ export default function CashierDeskTerminal() {
         </div>
       </div>
 
+      {/* NOTIFICATIONS */}
       {message && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-3">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-          <span>{message}</span>
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center justify-between animate-fade-in shadow-sm">
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span className="font-semibold">{message}</span>
+          </div>
+          <button onClick={() => setMessage('')}><X className="w-4 h-4 text-emerald-700" /></button>
         </div>
       )}
+
       {error && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-3">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{error}</span>
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-300 text-red-800 text-xs flex items-center justify-between animate-fade-in shadow-sm">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <span className="font-semibold">{error}</span>
+          </div>
+          <button onClick={() => setError('')}><X className="w-4 h-4 text-red-700" /></button>
         </div>
       )}
 
-      {/* TOP KPI CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#FFF5DC] to-[#FAF6EE] border-2 border-[#D99427] shadow-sm">
-          <div className="text-[11px] font-bold text-[#8C6019] uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Total Collection</span>
-            <DollarSign className="w-4 h-4 text-[#D99427]" />
+      {/* STATS OVERVIEW */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
+            <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">TOTAL COLLECTION</div>
+            <div className="text-2xl font-serif font-bold text-emerald-800 mt-1">
+              ₹{Number(stats.totalCollection || 0).toLocaleString()}
+            </div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.totalTransactions || 0} Successful Txns</div>
           </div>
-          <div className="text-2xl md:text-3xl font-serif font-bold text-[#2D1F0E]">
-            ₹{stats?.totalVolume?.toLocaleString() || '0'}
+          <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
+            <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">CASH BOX OFFICE</div>
+            <div className="text-2xl font-serif font-bold text-[#2D1F0E] mt-1">
+              ₹{Number(stats.breakdown?.customDirectVolume || 0).toLocaleString()}
+            </div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.customDirectCount || 0} Cash Settlements</div>
           </div>
-          <div className="text-[10px] text-[#6E5336] mt-1 font-mono">
-            {stats?.totalTransactions || 0} Total Receipts Issued
+          <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
+            <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">UPI / DYNAMIC QR</div>
+            <div className="text-2xl font-serif font-bold text-[#D99427] mt-1">
+              ₹{Number(stats.breakdown?.upiQrVolume || 0).toLocaleString()}
+            </div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.upiQrCount || 0} QR Settlements</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
+            <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">ONLINE GATEWAY</div>
+            <div className="text-2xl font-serif font-bold text-blue-900 mt-1">
+              ₹{Number(stats.breakdown?.onlineGatewayVolume || 0).toLocaleString()}
+            </div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.onlineGatewayCount || 0} Web Orders</div>
           </div>
         </div>
-
-        <div className="p-5 rounded-3xl bg-white border border-[#EAD9B8] shadow-sm">
-          <div className="text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Today&apos;s Revenue</span>
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl md:text-3xl font-serif font-bold text-emerald-950">
-            ₹{stats?.todayVolume?.toLocaleString() || '0'}
-          </div>
-          <div className="text-[10px] text-emerald-700 mt-1 font-mono">Active Settlement</div>
-        </div>
-
-        <div className="p-5 rounded-3xl bg-white border border-[#EAD9B8] shadow-sm">
-          <div className="text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>UPI & Gateway</span>
-            <CreditCard className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-xl md:text-2xl font-serif font-bold text-blue-950">
-            ₹{((stats?.methodBreakdown?.UPI_QR || 0) + (stats?.methodBreakdown?.ONLINE_GATEWAY || 0)).toLocaleString()}
-          </div>
-          <div className="text-[10px] text-[#6E5336] mt-1 font-mono">Digital Settlements</div>
-        </div>
-
-        <div className="p-5 rounded-3xl bg-white border border-[#EAD9B8] shadow-sm">
-          <div className="text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Direct Counter</span>
-            <Users className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="text-xl md:text-2xl font-serif font-bold text-purple-950">
-            ₹{(stats?.methodBreakdown?.CUSTOM_DIRECT || 0).toLocaleString()}
-          </div>
-          <div className="text-[10px] text-[#6E5336] mt-1 font-mono">Walk-in Settlements</div>
-        </div>
-      </div>
+      )}
 
       {/* NAVIGATION TABS */}
-      <div className="flex border-b border-[#EAD9B8] space-x-2 text-xs font-semibold">
+      <div className="flex space-x-2 border-b border-[#EAD9B8] pb-1">
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`flex items-center space-x-2 px-5 py-3 rounded-2xl transition ${
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center space-x-2 transition ${
             activeTab === 'analytics'
-              ? 'bg-[#2D1F0E] text-white font-bold shadow-md'
-              : 'text-[#6E5336] hover:bg-[#F8F5EE] hover:text-[#2D1F0E]'
+              ? 'bg-[#2D1F0E] text-[#F6C85F] shadow-md'
+              : 'bg-[#FAF6EE] text-[#6E5336] hover:bg-[#F3ECE0]'
           }`}
         >
-          <History className="w-4 h-4 text-[#D99427]" />
-          <span>Transactions Tabulator & Ledger</span>
+          <History className="w-4 h-4" />
+          <span>Financial Ledger</span>
         </button>
 
         <button
           onClick={() => setActiveTab('manual')}
-          className={`flex items-center space-x-2 px-5 py-3 rounded-2xl transition ${
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center space-x-2 transition ${
             activeTab === 'manual'
-              ? 'bg-[#2D1F0E] text-white font-bold shadow-md'
-              : 'text-[#6E5336] hover:bg-[#F8F5EE] hover:text-[#2D1F0E]'
+              ? 'bg-[#2D1F0E] text-[#F6C85F] shadow-md'
+              : 'bg-[#FAF6EE] text-[#6E5336] hover:bg-[#F3ECE0]'
           }`}
         >
-          <PlusCircle className="w-4 h-4 text-[#D99427]" />
-          <span>Manual On-Spot Booking (Free-Hand)</span>
+          <PlusCircle className="w-4 h-4" />
+          <span>On-Spot Desk Registration</span>
         </button>
 
         <button
           onClick={() => setActiveTab('lookup')}
-          className={`flex items-center space-x-2 px-5 py-3 rounded-2xl transition ${
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center space-x-2 transition ${
             activeTab === 'lookup'
-              ? 'bg-[#2D1F0E] text-white font-bold shadow-md'
-              : 'text-[#6E5336] hover:bg-[#F8F5EE] hover:text-[#2D1F0E]'
+              ? 'bg-[#2D1F0E] text-[#F6C85F] shadow-md'
+              : 'bg-[#FAF6EE] text-[#6E5336] hover:bg-[#F3ECE0]'
           }`}
         >
-          <QrCode className="w-4 h-4 text-[#D99427]" />
-          <span>Dynamic UPI QR & WhatsApp Assist</span>
+          <QrCode className="w-4 h-4" />
+          <span>Dynamic QR Assist</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: ADVANCED TABULATOR TRANSACTIONS LEDGER */}
+      {/* TAB 1: FINANCIAL LEDGER */}
       {/* ========================================================================= */}
       {activeTab === 'analytics' && (
-        <AdvancedTabulatorTable
-          data={transactions}
-          columns={cashierColumns}
-          keyField="id"
-          title="Box Office Transaction Ledger"
-          subtitle="Real-time Financial Ledger • One-Click Excel (.xlsx), CSV, Print & TSV Copy"
-          defaultPageSize={10}
-          onRefresh={() => loadFinancialData()}
-          isLoading={loadingLedger}
-        />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-serif font-bold text-[#2D1F0E] uppercase tracking-wider">
+              Settlement Ledger & Transactions ({transactions.length})
+            </h3>
+          </div>
+          <AdvancedTabulatorTable
+            data={transactions}
+            columns={cashierColumns}
+            keyField="id"
+            title="Financial Settlement Ledger"
+            isLoading={loadingLedger}
+            onRefresh={() => loadFinancialData()}
+          />
+        </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: MANUAL ON-SPOT BOOKING (FREE-HAND MODE) */}
+      {/* TAB 2: ON-SPOT MANUAL ATTENDEE ENTRY */}
       {/* ========================================================================= */}
       {activeTab === 'manual' && (
         <div className="p-6 md:p-8 rounded-3xl bg-white border-2 border-[#EAD9B8] shadow-xl space-y-6">
           <div>
-            <div className="inline-block text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
-              FREE-HAND DESK REGISTRATION & INSTANT MINTING
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-bold text-[#8C6019] uppercase tracking-wider mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#D99427]" />
+              <span>AADHAAR-FIRST DESK REGISTRATION & INSTANT MINTING</span>
             </div>
-            <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">On-Spot Manual Attendee Entry</h3>
+            <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">On-Spot Guest Registration</h3>
             <p className="text-xs text-[#6E5336] mt-1">
-              Create a custom attendee pass with full free-hand amount override, payment method selection, and immediate pass minting.
+              Upload Aadhaar to auto-fill details automatically. Settle via Cash or dynamic Razorpay UPI QR and mint instant digital passes.
             </p>
           </div>
 
           {!manualSuccessResult ? (
             <form onSubmit={handleManualSubmit} className="space-y-6">
-              {/* PASS CONFIGURATION */}
-              <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Pass Category *</label>
-                  <select
-                    value={manualForm.passType}
-                    onChange={(e) => {
-                      const pt = e.target.value as any;
-                      setManualForm({
-                        ...manualForm,
-                        passType: pt,
-                        customAmount: pt === 'SINGLE' ? 3500 : pt === 'COUPLE' ? 6500 : 85000,
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
+              {/* PASS CATEGORY SELECTOR */}
+              <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] space-y-3">
+                <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider">Select Pass Category *</label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handlePassTypeChange('SINGLE')}
+                    className={`p-3.5 rounded-2xl border text-center font-bold text-xs transition ${
+                      manualForm.passType === 'SINGLE'
+                        ? 'bg-[#2D1F0E] text-[#F6C85F] border-[#2D1F0E] shadow-md'
+                        : 'bg-white text-[#2D1F0E] border-[#EAD9B8] hover:border-[#D99427]'
+                    }`}
                   >
-                    <option value="SINGLE">Single Pass (Female)</option>
-                    <option value="COUPLE">Couple Pass (2 Guests)</option>
-                    <option value="GAZEBO">Gazebo VIP Lounge</option>
-                  </select>
-                </div>
+                    <div className="text-base mb-1">💃</div>
+                    <div>Single Pass</div>
+                    <div className="text-[10px] font-normal opacity-80">(Female)</div>
+                  </button>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Settlement Amount (₹ Free-Hand) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={manualForm.customAmount}
-                    onChange={(e) => setManualForm({ ...manualForm, customAmount: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-xs font-serif font-bold text-emerald-800 focus:border-[#D99427] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Payment Method *</label>
-                  <select
-                    value={manualForm.paymentMethod}
-                    onChange={(e) => setManualForm({ ...manualForm, paymentMethod: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
+                  <button
+                    type="button"
+                    onClick={() => handlePassTypeChange('COUPLE')}
+                    className={`p-3.5 rounded-2xl border text-center font-bold text-xs transition ${
+                      manualForm.passType === 'COUPLE'
+                        ? 'bg-[#2D1F0E] text-[#F6C85F] border-[#2D1F0E] shadow-md'
+                        : 'bg-white text-[#2D1F0E] border-[#EAD9B8] hover:border-[#D99427]'
+                    }`}
                   >
-                    <option value="UPI_QR">UPI Dynamic QR</option>
-                    <option value="ONLINE_GATEWAY">Online Gateway / Link</option>
-                    <option value="CUSTOM_DIRECT">Custom Direct / POS Settlement</option>
-                  </select>
+                    <div className="text-base mb-1">👫</div>
+                    <div>Couple Pass</div>
+                    <div className="text-[10px] font-normal opacity-80">(1 Female + 1 Male)</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePassTypeChange('KIDS')}
+                    className={`p-3.5 rounded-2xl border text-center font-bold text-xs transition ${
+                      manualForm.passType === 'KIDS'
+                        ? 'bg-[#2D1F0E] text-[#F6C85F] border-[#2D1F0E] shadow-md'
+                        : 'bg-white text-[#2D1F0E] border-[#EAD9B8] hover:border-[#D99427]'
+                    }`}
+                  >
+                    <div className="text-base mb-1">👶</div>
+                    <div>Kids Pass</div>
+                    <div className="text-[10px] font-normal opacity-80">(Age ≤ 15)</div>
+                  </button>
                 </div>
               </div>
 
-              {/* ATTENDEE 1 */}
-              <div className="p-5 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] space-y-4">
-                <div className="text-xs font-bold text-[#2D1F0E] uppercase border-b border-[#EAD9B8] pb-2">
-                  Attendee #1 (Primary Guest)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Full Legal Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Name on ID"
-                      value={manualForm.att1Name}
-                      onChange={(e) => setManualForm({ ...manualForm, att1Name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">WhatsApp Phone *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="9876543210"
-                      value={manualForm.att1Phone}
-                      onChange={(e) => setManualForm({ ...manualForm, att1Phone: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Gender *</label>
-                    <select
-                      value={manualForm.att1Gender}
-                      onChange={(e) => setManualForm({ ...manualForm, att1Gender: e.target.value as any })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
-                    >
-                      <option value="FEMALE">Female</option>
-                      {manualForm.passType !== 'SINGLE' && <option value="MALE">Male</option>}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">12-Digit Aadhaar *</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={14}
-                      placeholder="XXXXXXXXXXXX"
-                      value={manualForm.att1Aadhaar}
-                      onChange={(e) => setManualForm({ ...manualForm, att1Aadhaar: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs font-mono focus:border-[#D99427] outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
+              {/* ATTENDEES (AADHAAR-FIRST UPLOAD & AUTO-FILL) */}
+              {cashierAttendees.map((att, idx) => (
+                <div key={idx} className="p-5 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-[#EAD9B8] pb-2">
+                    <div className="text-xs font-bold text-[#2D1F0E] uppercase flex items-center space-x-2">
+                      <span className="w-5 h-5 rounded-full bg-[#D99427] text-white flex items-center justify-center text-[10px]">
+                        {idx + 1}
+                      </span>
+                      <span>
+                        {manualForm.passType === 'COUPLE'
+                          ? idx === 0 ? 'Guest #1 (Female Partner)' : 'Guest #2 (Male Partner)'
+                          : manualForm.passType === 'KIDS'
+                          ? 'Child Guest Details'
+                          : 'Primary Guest Details'}
+                      </span>
+                    </div>
 
-              {/* ATTENDEE 2 (IF COUPLE) */}
-              {manualForm.passType === 'COUPLE' && (
-                <div className="p-5 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] space-y-4">
-                  <div className="text-xs font-bold text-[#2D1F0E] uppercase border-b border-[#EAD9B8] pb-2">
-                    Attendee #2 (Accompanying Guest)
+                    {att.age !== null && att.age !== undefined && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
+                        Age: {att.age} Years {manualForm.passType === 'KIDS' && (att.age <= 10 ? '• Free Pass (₹0)' : att.age <= 15 ? '• Tier Pass (₹1,200)' : '• Blocked (>15)')}
+                      </span>
+                    )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+
+                  {/* STEP 1: AADHAAR CARD UPLOAD */}
+                  <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] space-y-3">
+                    <div className="text-[11px] font-bold text-[#6E5336] uppercase tracking-wider flex items-center justify-between">
+                      <span>1. Upload Aadhaar Card (Auto-Fills Details via AI OCR)</span>
+                      <span className="text-[9px] font-mono text-[#D99427] bg-white px-2 py-0.5 rounded-md border border-[#EAD9B8]">AI OCR Enabled</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Front Upload */}
+                      <div className="border border-dashed border-[#D99427]/60 rounded-xl p-3 bg-white text-center hover:bg-[#FFFDF9] transition">
+                        <div className="text-[10px] font-bold text-[#6E5336] mb-1">Aadhaar Front (Photo & Name) *</div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id={`front-upload-${idx}`}
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) handleAadhaarUpload(idx, 'front', e.target.files[0]);
+                          }}
+                        />
+                        <label
+                          htmlFor={`front-upload-${idx}`}
+                          className="cursor-pointer inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[11px] font-semibold text-[#2D1F0E] transition"
+                        >
+                          <Upload className="w-3 h-3 text-[#D99427]" />
+                          <span>{att.isUploadingFront ? 'Extracting OCR...' : att.documentFrontName ? 'Replace Front' : 'Upload Front Side'}</span>
+                        </label>
+                        {att.documentFrontName && (
+                          <div className="text-[9px] text-emerald-700 font-medium mt-1 truncate">
+                            ✓ {att.documentFrontName}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Back Upload */}
+                      <div className="border border-dashed border-[#EAD9B8] rounded-xl p-3 bg-white text-center hover:bg-[#FFFDF9] transition">
+                        <div className="text-[10px] font-bold text-[#6E5336] mb-1">Aadhaar Back (Address Side)</div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id={`back-upload-${idx}`}
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) handleAadhaarUpload(idx, 'back', e.target.files[0]);
+                          }}
+                        />
+                        <label
+                          htmlFor={`back-upload-${idx}`}
+                          className="cursor-pointer inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[11px] font-semibold text-[#2D1F0E] transition"
+                        >
+                          <Upload className="w-3 h-3 text-[#D99427]" />
+                          <span>{att.isUploadingBack ? 'Saving Back...' : att.documentBackName ? 'Replace Back' : 'Upload Back Side'}</span>
+                        </label>
+                        {att.documentBackName && (
+                          <div className="text-[9px] text-emerald-700 font-medium mt-1 truncate">
+                            ✓ {att.documentBackName}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {att.uploadError && (
+                      <div className="text-[10px] text-rose-600 font-medium">{att.uploadError}</div>
+                    )}
+                  </div>
+
+                  {/* STEP 2: VERIFIED GUEST DETAILS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <div>
-                      <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Full Legal Name *</label>
+                      <label className="block text-[10px] font-bold text-[#6E5336] mb-1 uppercase tracking-wider">Full Legal Name *</label>
                       <input
                         type="text"
                         required
-                        placeholder="Name on ID"
-                        value={manualForm.att2Name}
-                        onChange={(e) => setManualForm({ ...manualForm, att2Name: e.target.value })}
+                        placeholder="Name as on Aadhaar"
+                        value={att.fullName}
+                        onChange={(e) => updateCashierAttendee(idx, 'fullName', e.target.value)}
                         className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-[11px] font-bold text-[#6E5336] mb-1">WhatsApp Phone *</label>
+                      <label className="block text-[10px] font-bold text-[#6E5336] mb-1 uppercase tracking-wider">WhatsApp Phone</label>
                       <input
                         type="tel"
-                        required
                         placeholder="9876543210"
-                        value={manualForm.att2Phone}
-                        onChange={(e) => setManualForm({ ...manualForm, att2Phone: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
+                        value={att.phone}
+                        onChange={(e) => updateCashierAttendee(idx, 'phone', e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none font-mono"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Gender *</label>
+                      <label className="block text-[10px] font-bold text-[#6E5336] mb-1 uppercase tracking-wider">Gender *</label>
                       <select
-                        value={manualForm.att2Gender}
-                        onChange={(e) => setManualForm({ ...manualForm, att2Gender: e.target.value as any })}
+                        value={att.gender}
+                        onChange={(e) => updateCashierAttendee(idx, 'gender', e.target.value)}
                         className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
                       >
-                        <option value="MALE">Male</option>
                         <option value="FEMALE">Female</option>
+                        <option value="MALE">Male</option>
                       </select>
                     </div>
+
                     <div>
-                      <label className="block text-[11px] font-bold text-[#6E5336] mb-1">12-Digit Aadhaar *</label>
+                      <label className="block text-[10px] font-bold text-[#6E5336] mb-1 uppercase tracking-wider">12-Digit Aadhaar #</label>
                       <input
                         type="text"
-                        required
                         maxLength={14}
                         placeholder="XXXXXXXXXXXX"
-                        value={manualForm.att2Aadhaar}
-                        onChange={(e) => setManualForm({ ...manualForm, att2Aadhaar: e.target.value })}
+                        value={att.aadhaarNumber}
+                        onChange={(e) => updateCashierAttendee(idx, 'aadhaarNumber', e.target.value)}
                         className="w-full px-3 py-2 rounded-xl bg-white border border-[#EAD9B8] text-xs font-mono focus:border-[#D99427] outline-none"
                       />
                     </div>
+
+                    {/* Date of Birth Field */}
+                    <div className="col-span-1 sm:col-span-2">
+                      <PremiumDatePicker
+                        label="Date of Birth (Auto-filled from Aadhaar)"
+                        value={att.dob}
+                        onChange={(dateStr) => updateCashierAttendee(idx, 'dob', dateStr)}
+                      />
+                    </div>
+
+                    <div className="col-span-1 sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-[#6E5336] mb-1 uppercase tracking-wider">Email Address (Optional)</label>
+                      <input
+                        type="email"
+                        placeholder="guest@example.com"
+                        value={att.email}
+                        onChange={(e) => updateCashierAttendee(idx, 'email', e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
-              )}
+              ))}
 
-              <div>
-                <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Custom Notes / Desk Reason</label>
-                <input
-                  type="text"
-                  value={manualForm.notes}
-                  onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
-                />
+              {/* PAYMENT CONFIGURATION: CASH VS UPI QR */}
+              <div className="p-5 rounded-2xl bg-[#FAF6EE] border-2 border-[#EAD9B8] space-y-4">
+                <div className="text-xs font-bold text-[#2D1F0E] uppercase tracking-wider">
+                  Payment Mode & Settlement Amount
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Option 1: CASH */}
+                  <button
+                    type="button"
+                    onClick={() => setManualForm({ ...manualForm, paymentMethod: 'CUSTOM_DIRECT' })}
+                    className={`p-4 rounded-2xl border-2 text-left flex items-start space-x-3 transition ${
+                      manualForm.paymentMethod === 'CUSTOM_DIRECT'
+                        ? 'bg-white border-[#2D1F0E] shadow-md ring-2 ring-[#D99427]/40'
+                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-[#D99427]'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                      💵
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-[#2D1F0E]">Cash Payment</div>
+                      <div className="text-[11px] text-[#6E5336] mt-0.5">
+                        Collect cash at desk and immediately mint passes with cash receipt.
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Option 2: RAZORPAY / UPI DYNAMIC QR */}
+                  <button
+                    type="button"
+                    onClick={() => setManualForm({ ...manualForm, paymentMethod: 'UPI_QR' })}
+                    className={`p-4 rounded-2xl border-2 text-left flex items-start space-x-3 transition ${
+                      manualForm.paymentMethod === 'UPI_QR'
+                        ? 'bg-white border-[#2D1F0E] shadow-md ring-2 ring-[#D99427]/40'
+                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-[#D99427]'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                      📱
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-[#2D1F0E]">Razorpay / Dynamic UPI QR</div>
+                      <div className="text-[11px] text-[#6E5336] mt-0.5">
+                        Display dynamic QR on screen for customer to scan with PhonePe, GPay, Paytm.
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Settlement Amount (₹) *</label>
+                    <input
+                      type="number"
+                      required
+                      value={manualForm.customAmount}
+                      onChange={(e) => setManualForm({ ...manualForm, customAmount: Number(e.target.value) })}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-sm font-serif font-bold text-emerald-800 focus:border-[#D99427] outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Desk Reason / Notes</label>
+                    <input
+                      type="text"
+                      value={manualForm.notes}
+                      onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* SUBMIT BUTTON */}
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
                   disabled={submittingManual}
-                  className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-widest hover:opacity-95 transition shadow-lg shadow-[#D99427]/25 disabled:opacity-50"
+                  className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-widest hover:opacity-95 transition shadow-lg shadow-[#D99427]/25 disabled:opacity-50 flex items-center space-x-2"
                 >
-                  {submittingManual ? 'Issuing Passes...' : 'Confirm Settlement & Mint Passes (₹' + Number(manualForm.customAmount).toLocaleString() + ')'}
+                  <span>
+                    {submittingManual
+                      ? 'Processing Settlement...'
+                      : manualForm.paymentMethod === 'CUSTOM_DIRECT'
+                      ? `Confirm Cash & Mint Passes (₹${Number(manualForm.customAmount).toLocaleString()})`
+                      : `Generate Dynamic UPI QR & Collect (₹${Number(manualForm.customAmount).toLocaleString()})`}
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </form>
           ) : (
+            /* SUCCESS & PASS PRESENTATION */
             <div className="text-center py-6 space-y-6">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center text-2xl mx-auto font-bold">
                 ✓
               </div>
               <div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                  Manual Entry & Passes Minted!
+                  Passes Minted Successfully!
                 </h3>
                 <p className="text-xs text-[#6E5336] mt-1 font-mono">
                   Receipt #{manualSuccessResult.payment?.receiptNumber} • Application #{manualSuccessResult.registration?.registrationNumber}
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-left max-w-lg mx-auto space-y-2">
+              <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-left max-w-lg mx-auto space-y-2.5">
                 <div className="flex justify-between">
                   <span className="text-[#6E5336]">Amount Settled:</span>
-                  <span className="font-bold text-emerald-800 font-serif">₹{Number(manualSuccessResult.payment?.amount).toLocaleString()}</span>
+                  <span className="font-bold text-emerald-800 font-serif text-sm">₹{Number(manualSuccessResult.payment?.amount).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6E5336]">Payment Method:</span>
-                  <span className="font-bold">{manualSuccessResult.payment?.method}</span>
+                  <span className="font-bold">{manualSuccessResult.payment?.method === 'CUSTOM_DIRECT' ? '💵 CASH AT DESK' : '📱 DYNAMIC UPI QR'}</span>
                 </div>
                 <div className="flex justify-between border-t border-[#EAD9B8] pt-2">
                   <span className="text-[#6E5336]">Issued Passes:</span>
-                  <span className="font-bold text-[#D99427]">{manualSuccessResult.credentials?.length} Active Digital Pass(es)</span>
+                  <span className="font-bold text-[#D99427]">{manualSuccessResult.credentials?.length || 1} Active Digital Pass(es)</span>
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setManualSuccessResult(null);
-                  setActiveTab('analytics');
-                }}
-                className="px-6 py-2.5 rounded-full bg-[#2D1F0E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
-              >
-                Back to Ledger
-              </button>
+              {/* MINTED PASSES DISPLAY */}
+              {manualSuccessResult.credentials && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                  {manualSuccessResult.credentials.map((cred: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-white border-2 border-[#EAD9B8] text-center space-y-2 shadow-md">
+                      <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">
+                        PASS #{idx + 1} • {manualSuccessResult.registration?.passType}
+                      </div>
+                      <div className="flex justify-center p-2 bg-[#FAF6EE] rounded-xl border border-[#EAD9B8] inline-block mx-auto">
+                        <QRCodeSVG value={cred.qrPayload || `SS26-PASS-${cred.id}`} size={120} level="M" />
+                      </div>
+                      <div className="text-[11px] font-bold text-[#2D1F0E]">{cred.attendee?.fullName || 'Guest Pass'}</div>
+                      <div className="text-[9px] font-mono text-[#6E5336]">{cred.passNumber || cred.id?.slice(0, 10)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-center space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-6 py-2.5 rounded-full bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-bold uppercase tracking-wider transition flex items-center space-x-1.5 shadow-sm"
+                >
+                  <Printer className="w-3.5 h-3.5 text-[#D99427]" />
+                  <span>Print Receipt & Passes</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setManualSuccessResult(null);
+                    handlePassTypeChange('SINGLE');
+                  }}
+                  className="px-6 py-2.5 rounded-full bg-[#2D1F0E] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#4A351B] transition shadow-md"
+                >
+                  + New Guest Booking
+                </button>
+              </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* DYNAMIC QR MODAL (FOR ON-SPOT UPI QR) */}
+      {activeQrModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white border-2 border-[#EAD9B8] rounded-3xl p-6 shadow-2xl text-center space-y-5 animate-scale-in">
+            <div className="flex justify-between items-center border-b border-[#EAD9B8] pb-3">
+              <span className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-wider">
+                DYNAMIC UPI QR SETTLEMENT
+              </span>
+              <button onClick={() => setActiveQrModal(null)}><X className="w-5 h-5 text-[#6E5336]" /></button>
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Scan with PhonePe, GPay, or Paytm</h3>
+              <p className="text-xs text-[#6E5336]">
+                Application #{activeQrModal.registration?.registrationNumber}
+              </p>
+            </div>
+
+            <div className="flex justify-center p-4 bg-[#FAF6EE] rounded-2xl border-2 border-[#D99427]/40 inline-block mx-auto shadow-inner">
+              <QRCodeSVG value={activeQrModal.upiPayload} size={200} level="M" />
+            </div>
+
+            <div className="text-2xl font-serif font-bold text-emerald-800">
+              Amount Due: ₹{Number(activeQrModal.amountDue).toLocaleString()}
+            </div>
+
+            <button
+              onClick={() => {
+                setManualSuccessResult(activeQrModal);
+                setActiveQrModal(null);
+              }}
+              className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs uppercase tracking-wider hover:opacity-90 transition shadow-md"
+            >
+              ✓ Payment Received & Mint Passes
+            </button>
+          </div>
         </div>
       )}
 

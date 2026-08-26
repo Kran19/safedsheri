@@ -314,21 +314,37 @@ export class PaymentsService {
       throw new BadRequestException('At least 1 attendee is required');
     }
 
-    if (!dto.attendees[0].email) {
-      throw new BadRequestException('Primary contact email is mandatory.');
-    }
-
-    // Removed Single Pass Female rule to allow any gender to book
+    // Default primary email if missing for walk-in desk booking
+    const primaryPhone = dto.attendees[0].phone?.replace(/\D/g, '') || Date.now().toString().slice(-6);
+    const primaryEmail = dto.attendees[0].email || `walkin-${primaryPhone}@safedsheri.com`;
 
     // Strict validation for Couple Pass
     if (dto.passType === 'COUPLE') {
       if (dto.attendees.length !== 2) {
-        throw new BadRequestException('Couple Pass requires exactly 2 attendee records');
+        throw new BadRequestException('Couple Pass requires exactly 2 attendee records (1 Male and 1 Female).');
       }
       const maleCount = dto.attendees.filter(a => a.gender === 'MALE').length;
       const femaleCount = dto.attendees.filter(a => a.gender === 'FEMALE').length;
       if (maleCount !== 1 || femaleCount !== 1) {
         throw new BadRequestException('Couple Pass strictly requires exactly 1 Male and 1 Female attendee.');
+      }
+    }
+
+    // Strict validation for Kids Pass
+    if (dto.passType === 'KIDS') {
+      const kid = dto.attendees[0];
+      if (kid && (kid as any).dob) {
+        const [y, m, d] = (kid as any).dob.split('-').map(Number);
+        const dobDate = new Date(y, m - 1, d);
+        if (!isNaN(dobDate.getTime())) {
+          const today = new Date();
+          let age = today.getFullYear() - dobDate.getFullYear();
+          const mDiff = today.getMonth() - dobDate.getMonth();
+          if (mDiff < 0 || (mDiff === 0 && today.getDate() < dobDate.getDate())) age--;
+          if (age > 15) {
+            throw new BadRequestException('Kids Pass is strictly for children aged 15 and below. Age calculated: ' + age + ' years.');
+          }
+        }
       }
     }
 
@@ -355,14 +371,14 @@ export class PaymentsService {
           createdById: dto.staffUserId,
           reviewedById: dto.staffUserId,
           reviewedAt: new Date(),
-          reviewNotes: dto.notes || 'Manual Desk Entry by Staff',
+          reviewNotes: dto.notes || `Manual Desk Entry by Cashier (${dto.paymentMethod})`,
         },
       });
 
       // 4. Create Attendees and Link
       for (let i = 0; i < dto.attendees.length; i++) {
-        const attDto = dto.attendees[i];
-        const cleanAadhaar = attDto.aadhaarNumber.replace(/\D/g, '');
+        const attDto = dto.attendees[i] as any;
+        const cleanAadhaar = attDto.aadhaarNumber ? attDto.aadhaarNumber.replace(/\D/g, '') : `9999${Date.now().toString().slice(-8)}`;
         const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
         const aadhaarMasked = `XXXX-XXXX-${cleanAadhaar.slice(-4)}`;
         const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
@@ -376,11 +392,43 @@ export class PaymentsService {
             data: {
               fullName: attDto.fullName,
               phone: attDto.phone,
-              email: attDto.email,
+              email: attDto.email || (i === 0 ? primaryEmail : undefined),
               gender: attDto.gender,
+              dob: attDto.dob ? new Date(attDto.dob) : undefined,
+              kidsAgeGroup: attDto.kidsAgeGroup || undefined,
               aadhaarHmac,
               aadhaarMasked,
               aadhaarEncrypted,
+            },
+          });
+        } else {
+          await tx.attendee.update({
+            where: { id: attendee.id },
+            data: {
+              fullName: attDto.fullName,
+              phone: attDto.phone,
+              gender: attDto.gender,
+              dob: attDto.dob ? new Date(attDto.dob) : attendee.dob,
+              kidsAgeGroup: attDto.kidsAgeGroup || attendee.kidsAgeGroup,
+            },
+          });
+        }
+
+        if (attDto.documentFrontKey) {
+          await tx.aadhaarDocument.upsert({
+            where: { attendeeId: attendee.id },
+            update: {
+              storageKey: attDto.documentFrontKey,
+              storageKeyBack: attDto.documentBackKey || undefined,
+            },
+            create: {
+              attendeeId: attendee.id,
+              storageKey: attDto.documentFrontKey,
+              storageKeyBack: attDto.documentBackKey || undefined,
+              originalFilename: 'cashier_desk_upload.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 1024,
+              checksum: 'desk_manual_entry',
             },
           });
         }
@@ -397,7 +445,7 @@ export class PaymentsService {
       // 5. Create Confirmed Payment Record
       const receiptSeq = (await tx.payment.count() + 1001).toString();
       const receiptNumber = `RCP-2026-${receiptSeq}`;
-      const providerRef = `DESK-${dto.paymentMethod}-${Date.now().toString().slice(-6)}`;
+      const providerRef = `DESK-${dto.paymentMethod === 'CUSTOM_DIRECT' ? 'CASH' : dto.paymentMethod}-${Date.now().toString().slice(-6)}`;
 
       const payment = await tx.payment.create({
         data: {
@@ -406,11 +454,11 @@ export class PaymentsService {
           method: dto.paymentMethod,
           status: PaymentStatus.CONFIRMED,
           receiptNumber,
-          provider: 'BOX_OFFICE_DESK_OPERATIONS',
+          provider: dto.paymentMethod === 'CUSTOM_DIRECT' ? 'CASH_BOX_OFFICE' : 'UPI_DESK_DYNAMIC_QR',
           providerReference: providerRef,
           paymentLinkId,
           collectedById: dto.staffUserId,
-          notes: dto.notes || `Manual desk payment recorded via ${dto.paymentMethod}`,
+          notes: dto.notes || `Manual desk payment recorded via ${dto.paymentMethod === 'CUSTOM_DIRECT' ? 'CASH' : 'UPI DYNAMIC QR'}`,
         },
       });
 
