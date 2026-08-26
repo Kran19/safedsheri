@@ -474,6 +474,14 @@ export default function SafedSheriLandingPage() {
     uploadingBack?: boolean;
     kidsAgeGroup?: 'BELOW_10' | '10_TO_15';
     dob?: string;
+    ocrData?: {
+      name?: string;
+      aadhaarNumber?: string;
+      gender?: string;
+      dob?: string;
+    };
+    ocrMismatch?: boolean;
+    ocrDiscrepancies?: string[];
   }>>([
     { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: 'BELOW_10' }
   ]);
@@ -484,7 +492,7 @@ export default function SafedSheriLandingPage() {
   const [samePhoneForAll, setSamePhoneForAll] = useState(true);
 
   // Carousel Wizard State
-  const [wizardStep, setWizardStep] = useState<'QUANTITY' | 'ATTENDEE' | 'SUMMARY'>('QUANTITY');
+  const [wizardStep, setWizardStep] = useState<'ATTENDEE' | 'SUMMARY'>('ATTENDEE');
   const [currentAttendeeIndex, setCurrentAttendeeIndex] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
@@ -501,7 +509,9 @@ export default function SafedSheriLandingPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.attendees && parsed.attendees.length > 0) {
-          setAttendees(parsed.attendees);
+          const passType = parsed.selectedPass || 'SINGLE';
+          const maxAllowed = passType === 'COUPLE' ? 2 : 1;
+          setAttendees(parsed.attendees.slice(0, maxAllowed));
           if (parsed.selectedPass) setSelectedPass(parsed.selectedPass);
           if (parsed.samePhoneForAll !== undefined) setSamePhoneForAll(parsed.samePhoneForAll);
         }
@@ -598,60 +608,77 @@ export default function SafedSheriLandingPage() {
     }
   };
 
-  const handlePassQuantityChange = (count: number) => {
-    const currentCount = attendees.length;
-    if (count === currentCount || count < 1 || count > 7) return;
-    garbaAudio.playDandiya();
-    const primaryPhone = attendees[0]?.phone || '';
-    if (count > currentCount) {
-      const newAttendees = [...attendees];
-      for (let i = currentCount; i < count; i++) {
-        newAttendees.push({
-          fullName: '',
-          phone: samePhoneForAll ? primaryPhone : '',
-          email: '',
-          gender: 'FEMALE',
-          aadhaarNumber: '',
-          documentKey: '',
-          documentName: '',
-          kidsAgeGroup: 'BELOW_10'
-        });
-      }
-      setAttendees(newAttendees);
-    } else {
-      setAttendees(attendees.slice(0, count));
-      if (currentAttendeeIndex >= count) {
-        setCurrentAttendeeIndex(count - 1);
+  const computeOcrDiscrepancies = (att: any): { hasMismatch: boolean; discrepancies: string[] } => {
+    if (!att || !att.ocrData) return { hasMismatch: false, discrepancies: [] };
+    const disc: string[] = [];
+    const ocr = att.ocrData;
+
+    // 1. Name check
+    if (ocr.name && att.fullName) {
+      const cleanOcrName = ocr.name.trim().toLowerCase().replace(/[^a-z]/g, '');
+      const cleanAttName = att.fullName.trim().toLowerCase().replace(/[^a-z]/g, '');
+      if (cleanOcrName && cleanAttName && cleanOcrName !== cleanAttName) {
+        disc.push(`Full Name modified (Aadhaar: "${ocr.name}" ➔ Form: "${att.fullName}")`);
       }
     }
+
+    // 2. Aadhaar number check
+    if (ocr.aadhaarNumber && att.aadhaarNumber) {
+      const cleanOcrAadhaar = ocr.aadhaarNumber.replace(/\D/g, '');
+      const cleanAttAadhaar = att.aadhaarNumber.replace(/\D/g, '');
+      if (cleanOcrAadhaar.length === 12 && cleanAttAadhaar.length === 12 && cleanOcrAadhaar !== cleanAttAadhaar) {
+        disc.push(`Aadhaar Number modified (Aadhaar: "${ocr.aadhaarNumber}" ➔ Form: "${att.aadhaarNumber}")`);
+      }
+    }
+
+    // 3. Gender check
+    if (ocr.gender && att.gender) {
+      if (ocr.gender.toUpperCase() !== att.gender.toUpperCase()) {
+        disc.push(`Gender modified (Aadhaar: ${ocr.gender} ➔ Form: ${att.gender})`);
+      }
+    }
+
+    // 4. DOB check (if exists)
+    if (ocr.dob && att.dob) {
+      if (ocr.dob !== att.dob) {
+        disc.push(`Date of Birth modified (Aadhaar: ${ocr.dob} ➔ Form: ${att.dob})`);
+      }
+    }
+
+    return {
+      hasMismatch: disc.length > 0,
+      discrepancies: disc,
+    };
+  };
+
+  const updateAttendeeField = (index: number, field: string, value: any) => {
+    setAttendees((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+        const { hasMismatch, discrepancies } = computeOcrDiscrepancies(updated[index]);
+        updated[index].ocrMismatch = hasMismatch;
+        updated[index].ocrDiscrepancies = discrepancies;
+      }
+      return updated;
+    });
   };
 
   const calculateTotalAmount = () => {
     if (selectedPass === 'COUPLE') return pricing.couplePrice || 0;
-    if (selectedPass === 'SINGLE') return (pricing.singlePrice || 0) * attendees.length;
+    if (selectedPass === 'SINGLE') return pricing.singlePrice || 0;
     if (selectedPass === 'KIDS') {
-      return attendees.reduce((total, att) => {
-        if (!att.dob) return total;
-        const dobDate = new Date(att.dob);
-        if (isNaN(dobDate.getTime())) return total;
-        const diffMs = Date.now() - dobDate.getTime();
-        const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
-        if (age < 10) return total; // Free
-        if (age >= 10 && age <= 15) return total + 1200;
-        return total;
-      }, 0);
+      const att = attendees[0];
+      if (!att || !att.dob) return 0;
+      const dobDate = new Date(att.dob);
+      if (isNaN(dobDate.getTime())) return 0;
+      const diffMs = Date.now() - dobDate.getTime();
+      const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+      if (age <= 10) return 0; // Free pass for 10 and under
+      if (age > 10 && age <= 15) return 1200; // ₹1,200 for 11 to 15
+      return 0;
     }
     return 0;
-  };
-
-  const handlePassQuantityIncrement = () => {
-    if (attendees.length >= 7) return;
-    handlePassQuantityChange(attendees.length + 1);
-  };
-
-  const handlePassQuantityDecrement = () => {
-    if (attendees.length <= 1) return;
-    handlePassQuantityChange(attendees.length - 1);
   };
 
   const handleResetDraft = () => {
@@ -659,17 +686,28 @@ export default function SafedSheriLandingPage() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('safedsheri_booking_draft');
     }
-    setAttendees([
-      { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' }
-    ]);
+    if (selectedPass === 'COUPLE') {
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' },
+        { fullName: '', phone: '', email: '', gender: 'MALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+      ]);
+    } else if (selectedPass === 'KIDS') {
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: kidsCardTier }
+      ]);
+    } else {
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+      ]);
+    }
     setCurrentAttendeeIndex(0);
-    setWizardStep(selectedPass === 'SINGLE' ? 'QUANTITY' : 'ATTENDEE');
+    setWizardStep('ATTENDEE');
     setBookingError(null);
   };
 
   const validateCurrentAttendee = (idx: number): boolean => {
     const att = attendees[idx];
-    if (!att.fullName || att.fullName.trim().length < 2) {
+    if (!att || !att.fullName || att.fullName.trim().length < 2) {
       setBookingError(`Please enter full legal name for Attendee #${idx + 1}`);
       return false;
     }
@@ -707,18 +745,18 @@ export default function SafedSheriLandingPage() {
 
     if (selectedPass === 'KIDS') {
       if (!att.dob) {
-        setBookingError(`Please enter Date of Birth for Attendee #${idx + 1}`);
+        setBookingError(`Please provide or extract Date of Birth for the child.`);
         return false;
       }
       const dobDate = new Date(att.dob);
       if (isNaN(dobDate.getTime())) {
-        setBookingError(`Please enter a valid Date of Birth for Attendee #${idx + 1}`);
+        setBookingError(`Please enter a valid Date of Birth for the child.`);
         return false;
       }
       const diffMs = Date.now() - dobDate.getTime();
       const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
       if (age > 15) {
-        setBookingError(`Attendee #${idx + 1} is ${age} years old. Kids pass is only valid for ages 15 and under.`);
+        setBookingError(`Child is ${age} years old according to Aadhaar card. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
         return false;
       }
     }
@@ -728,14 +766,13 @@ export default function SafedSheriLandingPage() {
   };
 
   const handleNextStep = () => {
-    if (wizardStep === 'QUANTITY') {
-      garbaAudio.playDandiya();
-      setWizardStep('ATTENDEE');
-      setCurrentAttendeeIndex(0);
-      return;
-    }
-
     if (wizardStep === 'ATTENDEE') {
+      if (currentAttendeeIndex === 0 && !termsAccepted) {
+        setTermsError(true);
+        return;
+      }
+      setTermsError(false);
+
       if (!validateCurrentAttendee(currentAttendeeIndex)) {
         garbaAudio.playDandiya();
         return;
@@ -761,10 +798,6 @@ export default function SafedSheriLandingPage() {
     if (wizardStep === 'ATTENDEE') {
       if (currentAttendeeIndex > 0) {
         setCurrentAttendeeIndex(currentAttendeeIndex - 1);
-      } else {
-        if (selectedPass === 'SINGLE' || selectedPass === 'KIDS') {
-          setWizardStep('QUANTITY');
-        }
       }
     }
   };
@@ -773,15 +806,16 @@ export default function SafedSheriLandingPage() {
     garbaAudio.playGhunghroo();
     setSelectedPass(type);
     setCurrentAttendeeIndex(0);
-    if (type === 'SINGLE' || type === 'KIDS') {
-      setWizardStep('QUANTITY');
-      if (attendees.length === 0) {
-        setAttendees([
-          { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: type === 'KIDS' ? kidsCardTier : undefined }
-        ]);
-      }
+    setWizardStep('ATTENDEE');
+    if (type === 'SINGLE') {
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+      ]);
+    } else if (type === 'KIDS') {
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: kidsCardTier }
+      ]);
     } else if (type === 'COUPLE') {
-      setWizardStep('ATTENDEE');
       setAttendees([
         { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' },
         { fullName: '', phone: '', email: '', gender: 'MALE', aadhaarNumber: '', documentKey: '', documentName: '' }
@@ -852,14 +886,42 @@ export default function SafedSheriLandingPage() {
             if (json.extractedData) {
               const ex = json.extractedData;
 
-              if (ex.name) copy[index].fullName = ex.name;
-              if (ex.aadhaarNumber) copy[index].aadhaarNumber = ex.aadhaarNumber;
-              if (ex.gender) copy[index].gender = ex.gender;
+              if (side === 'front') {
+                copy[index].ocrData = {
+                  name: ex.name || copy[index].ocrData?.name,
+                  aadhaarNumber: ex.aadhaarNumber || copy[index].ocrData?.aadhaarNumber,
+                  gender: ex.gender || copy[index].ocrData?.gender,
+                  dob: ex.dob || copy[index].ocrData?.dob,
+                };
+                copy[index].ocrMismatch = false;
+                copy[index].ocrDiscrepancies = [];
+
+                if (ex.name) copy[index].fullName = ex.name;
+                if (ex.aadhaarNumber) copy[index].aadhaarNumber = ex.aadhaarNumber;
+                if (ex.gender) copy[index].gender = ex.gender;
+                if (ex.dob) copy[index].dob = ex.dob;
+              }
             }
           }
           return copy;
         });
-        setBookingError(null);
+
+        // Validate age immediately if Kids Pass
+        if (selectedPass === 'KIDS' && json.extractedData?.dob) {
+          const dobDate = new Date(json.extractedData.dob);
+          if (!isNaN(dobDate.getTime())) {
+            const diffMs = Date.now() - dobDate.getTime();
+            const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+            if (age > 15) {
+              setBookingError(`Child age is ${age} years according to Aadhaar card. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
+            } else {
+              setBookingError(null);
+            }
+          }
+        } else {
+          setBookingError(null);
+        }
+
         garbaAudio.playDandiya();
       } else {
         throw new Error(json.message || 'Upload failed');
@@ -925,20 +987,36 @@ export default function SafedSheriLandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           passType: selectedPass,
-          attendees: attendees.map((a) => ({
-            fullName: a.fullName,
-            phone: a.phone.startsWith('+91') ? a.phone : `+91${a.phone.replace(/\D/g, '')}`,
-            email: a.email || undefined,
-            gender: a.gender,
-            aadhaarNumber: a.aadhaarNumber.replace(/\D/g, ''),
-            documentKey: a.documentKey,
-            documentName: a.documentName,
-            originalFilename: a.documentName,
-            documentBackKey: a.documentBackKey,
-            documentBackName: a.documentBackName,
-            kidsAgeGroup: a.kidsAgeGroup,
-            dob: a.dob,
-          })),
+          attendees: attendees.map((a) => {
+            const { hasMismatch, discrepancies } = computeOcrDiscrepancies(a);
+            return {
+              fullName: a.fullName,
+              phone: a.phone.startsWith('+91') ? a.phone : `+91${a.phone.replace(/\D/g, '')}`,
+              email: a.email || undefined,
+              gender: a.gender,
+              aadhaarNumber: a.aadhaarNumber.replace(/\D/g, ''),
+              documentKey: a.documentKey,
+              documentName: a.documentName,
+              originalFilename: a.documentName,
+              documentBackKey: a.documentBackKey,
+              documentBackName: a.documentBackName,
+              kidsAgeGroup: a.kidsAgeGroup,
+              dob: a.dob,
+              ocrMismatch: hasMismatch,
+              ocrExtractedData: a.ocrData
+                ? JSON.stringify({
+                    extracted: a.ocrData,
+                    userSubmitted: {
+                      fullName: a.fullName,
+                      aadhaarNumber: a.aadhaarNumber,
+                      gender: a.gender,
+                      dob: a.dob,
+                    },
+                    discrepancies,
+                  })
+                : undefined,
+            };
+          }),
         }),
       });
 
@@ -1748,9 +1826,9 @@ export default function SafedSheriLandingPage() {
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF0F5] text-purple-800 border border-purple-200">
-                    Single Female Only
+                    Female Only
                   </span>
-                  <span className="text-xs text-[#8C6019] font-mono">1-7 Passes</span>
+                  <span className="text-xs text-[#8C6019] font-mono">1 Attendee</span>
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Single Female Pass</h3>
                 <p className="text-xs text-[#6E5336] leading-relaxed mb-6">
@@ -1901,7 +1979,7 @@ export default function SafedSheriLandingPage() {
                   <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
                     Kids Only
                   </span>
-                  <span className="text-xs text-[#8C6019] font-mono">1-7 Passes</span>
+                  <span className="text-xs text-[#8C6019] font-mono">1 Attendee</span>
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] mb-2">Kids Pass</h3>
                 <p className="text-xs text-[#6E5336] leading-relaxed mb-6">
@@ -2130,7 +2208,7 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: GUEST REGISTRATION APPLICATION CAROUSEL WIZARD (UP TO 7 PASSES) */}
+      {/* MODAL 1: GUEST REGISTRATION APPLICATION CAROUSEL WIZARD */}
       {/* ========================================================================= */}
       {isBookingOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
@@ -2176,32 +2254,15 @@ export default function SafedSheriLandingPage() {
                 <div className="flex items-center justify-between bg-[#F8F3E8] p-3 sm:p-4 rounded-2xl border border-[#EAD9B8]">
                   <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto text-xs font-semibold">
 
-                    {/* Step 1: Pass Quantity (for Single & Kids) */}
-                    {(selectedPass === 'SINGLE' || selectedPass === 'KIDS') && (
-                      <button
-                        type="button"
-                        onClick={() => { garbaAudio.playDandiya(); setWizardStep('QUANTITY'); }}
-                        className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${wizardStep === 'QUANTITY'
-                          ? 'bg-[#D99427] text-white font-bold shadow-sm'
-                          : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
-                          }`}
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                        <span>Passes ({attendees.length})</span>
-                      </button>
-                    )}
-
                     {/* Attendee Steps */}
                     {attendees.map((att, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => {
-                          if (wizardStep === 'QUANTITY') {
-                            setWizardStep('ATTENDEE');
-                          }
                           garbaAudio.playDandiya();
                           setCurrentAttendeeIndex(idx);
+                          setWizardStep('ATTENDEE');
                         }}
                         className={`px-3 py-1.5 rounded-full flex items-center space-x-1.5 transition whitespace-nowrap ${wizardStep === 'ATTENDEE' && currentAttendeeIndex === idx
                           ? 'bg-[#D99427] text-white font-bold shadow-sm'
@@ -2210,7 +2271,16 @@ export default function SafedSheriLandingPage() {
                             : 'bg-white text-[#6E5336] border border-[#EAD9B8]'
                           }`}
                       >
-                        <span>#{idx + 1} {att.fullName ? att.fullName.split(' ')[0] : `Guest ${idx + 1}`}</span>
+                        <span>
+                          {attendees.length > 1 ? `#${idx + 1} ` : ''}
+                          {att.fullName
+                            ? att.fullName.split(' ')[0]
+                            : selectedPass === 'KIDS'
+                              ? 'Child Details'
+                              : selectedPass === 'COUPLE'
+                                ? idx === 0 ? 'Female Guest' : 'Male Guest'
+                                : 'Guest Details'}
+                        </span>
                         {att.fullName && att.aadhaarNumber && att.documentKey && (
                           <Check className="w-3 h-3 text-emerald-700" />
                         )}
@@ -2231,6 +2301,10 @@ export default function SafedSheriLandingPage() {
                           }
                         }
                         if (allValid) {
+                          if (!termsAccepted) {
+                            setTermsError(true);
+                            return;
+                          }
                           garbaAudio.playDandiya();
                           setWizardStep('SUMMARY');
                         }
@@ -2257,148 +2331,21 @@ export default function SafedSheriLandingPage() {
                 )}
 
                 {/* ========================================================================= */}
-                {/* STEP 1 VIEW: ULTRA-LUXURY PASS COUNTER */}
-                {/* ========================================================================= */}
-                {wizardStep === 'QUANTITY' && (
-                  <div className="space-y-6 animate-fade-in py-2">
-                    <div className="text-center space-y-2">
-                      <span className="text-xs font-mono font-bold text-[#8C6019] uppercase tracking-widest">
-                        STEP 1 OF 3 • SELECT PASS QUANTITY
-                      </span>
-                      <h4 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E]">
-                        How many passes do you wish to book?
-                      </h4>
-                      <p className="text-xs text-[#6E5336] max-w-md mx-auto">
-                        A single applicant can book up to <strong>7 {selectedPass === 'KIDS' ? 'kids passes' : 'female passes'}</strong> in a single reservation.
-                      </p>
-                    </div>
-
-                    {/* Luxury Counter Box */}
-                    <div className="p-8 rounded-3xl bg-gradient-to-b from-[#FFFDF9] to-[#F8F3E8] border-2 border-[#EAD9B8] shadow-lg max-w-md mx-auto text-center space-y-6">
-                      <div className="flex items-center justify-center space-x-6">
-                        <button
-                          type="button"
-                          onClick={handlePassQuantityDecrement}
-                          disabled={attendees.length <= 1}
-                          className="w-14 h-14 rounded-2xl bg-white border border-[#EAD9B8] hover:border-[#D99427] text-[#2D1F0E] flex items-center justify-center text-xl font-bold shadow-md hover:scale-105 active:scale-95 transition disabled:opacity-40"
-                        >
-                          <Minus className="w-6 h-6" />
-                        </button>
-
-                        <div className="space-y-1">
-                          <div className="text-5xl sm:text-6xl font-serif font-black text-[#8C6019] tracking-tight">
-                            {attendees.length < 10 ? `0${attendees.length}` : attendees.length}
-                          </div>
-                          <div className="text-xs font-mono tracking-widest uppercase font-bold text-[#6E5336]">
-                            {attendees.length === 1 ? 'PASS SELECTED' : 'PASSES SELECTED'}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handlePassQuantityIncrement}
-                          disabled={attendees.length >= 7}
-                          className="w-14 h-14 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] flex items-center justify-center text-xl font-bold shadow-md hover:scale-105 active:scale-95 transition disabled:opacity-40"
-                        >
-                          <Plus className="w-6 h-6" />
-                        </button>
-                      </div>
-
-                      {/* Seat Slots Preview */}
-                      <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-[#EAD9B8]/60">
-                        {attendees.map((_, i) => (
-                          <span
-                            key={i}
-                            className="px-3 py-1 rounded-full bg-white border border-[#EAD9B8] text-[11px] font-bold text-[#8C6019] shadow-sm flex items-center space-x-1"
-                          >
-                            <span>{selectedPass === 'KIDS' ? '👶' : '👧'}</span>
-                            <span>{i === 0 ? 'Primary Contact' : `Guest #${i + 1}`}</span>
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Amount Due Card */}
-                      <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] text-xs text-[#2D1F0E] space-y-1 shadow-sm">
-                        {pricing.showSinglePrice ? (
-                          <>
-                            {selectedPass === 'KIDS' ? (
-                              <div className="text-[#6E5336]">Phase Pricing: ₹1,200 per pass</div>
-                            ) : (
-                              <div className="text-[#6E5336]">Phase Pricing: ₹{pricing.singlePrice?.toLocaleString()} per pass</div>
-                            )}
-                            <div className="text-xl font-serif font-bold text-[#D99427]">
-                              Total: ₹{calculateTotalAmount().toLocaleString()}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="text-xs font-bold text-[#8C6019] flex items-center justify-center space-x-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-[#D99427]" />
-                              <span>{pricing.hiddenPriceLabel || 'Price Revealed on Approval'}</span>
-                            </div>
-                            <div className="text-[11px] text-[#6E5336]">
-                              Pass amounts will be confirmed upon executive document review.
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Terms and Conditions */}
-                      <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 text-left shadow-sm animate-fade-in">
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 mt-0.5">
-                            <input
-                              type="checkbox"
-                              id="terms-checkbox-single"
-                              checked={termsAccepted}
-                              onChange={(e) => setTermsAccepted(e.target.checked)}
-                              className="w-5 h-5 text-[#D99427] bg-white border-[#D99427] rounded focus:ring-[#D99427] cursor-pointer accent-[#D99427]"
-                            />
-                          </div>
-                          <div className="text-xs text-[#6E5336] w-full">
-                            <label htmlFor="terms-checkbox-single" className="font-bold text-[#2D1F0E] text-sm cursor-pointer block">I agree to the Safed Sheri 2026 Terms &amp; Conditions</label>
-                            <button type="button" onClick={() => setShowTerms(!showTerms)} className="text-[#D99427] font-bold mt-1 hover:underline outline-none">
-                              {showTerms ? 'Hide Details' : 'Read More'}
-                            </button>
-
-                            {showTerms && (
-                              <TermsAndConditionsContent />
-                            )}
-                            {termsError && (
-                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠️ You must accept the Terms & Conditions to continue.</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!termsAccepted) { setTermsError(true); return; }
-                          setTermsError(false);
-                          handleNextStep();
-                        }}
-                        className="w-full py-4 mt-6 rounded-2xl bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center justify-center space-x-2 transition"
-                      >
-                        <span>Continue to Guest Details</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* ========================================================================= */}
-                {/* STEP 2 VIEW: SINGLE ATTENDEE SLIDE-CARD (NO DOOM SCROLLING) */}
+                {/* ATTENDEE DETAILS SLIDE-CARD */}
                 {/* ========================================================================= */}
                 {wizardStep === 'ATTENDEE' && (
                   <div className="space-y-6 animate-fade-in">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-[#EAD9B8] pb-3">
                       <div>
                         <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-wider">
-                          GUEST {currentAttendeeIndex + 1} OF {attendees.length}
+                          {attendees.length > 1 ? `GUEST ${currentAttendeeIndex + 1} OF ${attendees.length}` : 'STEP 1 OF 2 • GUEST DETAILS'}
                         </div>
                         <h4 className="text-xl sm:text-2xl font-serif font-bold text-[#2D1F0E]">
-                          {currentAttendeeIndex === 0 ? 'Primary Contact Details' : `Attendee #${currentAttendeeIndex + 1} Details`}
+                          {selectedPass === 'KIDS'
+                            ? 'Child Registration Details'
+                            : currentAttendeeIndex === 0
+                              ? 'Primary Contact Details'
+                              : `Attendee #${currentAttendeeIndex + 1} Details`}
                         </h4>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -2411,14 +2358,15 @@ export default function SafedSheriLandingPage() {
                           </span>
                         ) : selectedPass === 'KIDS' ? (
                           <span className="text-[10px] text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200 font-semibold">
-                            Kids (Under 12)
+                            Kids (Under 15)
                           </span>
                         ) : null}
                       </div>
                     </div>
 
                     {/* ACTIVE ATTENDEE CARD */}
-                    <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#EAD9B8] shadow-md space-y-5">
+                    <div className="p-6 sm:p-8 rounded-3xl bg-white border-2 border-[#EAD9B8] shadow-md space-y-6">
+                      
                       {/* KIDS SPECIFIC MANDATORY AADHAAR NOTICE */}
                       {selectedPass === 'KIDS' && (
                         <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2.5">
@@ -2429,118 +2377,34 @@ export default function SafedSheriLandingPage() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
-                            {selectedPass === 'KIDS' ? 'Child Full Legal Name *' : 'Full Legal Name *'}
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={attendees[currentAttendeeIndex]?.fullName || ''}
-                            onChange={(e) => {
-                              const updated = [...attendees];
-                              updated[currentAttendeeIndex].fullName = e.target.value;
-                              setAttendees(updated);
-                            }}
-                            placeholder="As printed on government Aadhaar"
-                            className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
-                          />
+                      {/* ========================================================================= */}
+                      {/* STEP 1: AADHAAR UPLOAD (FIRST ACTION — AUTO-FILLS DATA) */}
+                      {/* ========================================================================= */}
+                      <div className="p-5 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#FFF9EE] border-2 border-[#EAD9B8] space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#EAD9B8]/70 pb-3">
+                          <div className="flex items-center space-x-2.5">
+                            <span className="w-7 h-7 rounded-full bg-[#D99427] text-white flex items-center justify-center text-xs font-bold font-mono shadow-sm">
+                              1
+                            </span>
+                            <div>
+                              <h5 className="text-xs font-bold text-[#2D1F0E] uppercase tracking-wider">
+                                {selectedPass === 'KIDS' ? 'Upload Child Aadhaar Card' : 'Upload Government Aadhaar Card'}
+                              </h5>
+                              <p className="text-[11px] text-[#6E5336]">
+                                Upload front side to auto-fill Name, Aadhaar #, Gender &amp; DOB automatically.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-[#8C6019] bg-white px-2.5 py-1 rounded-full border border-[#EAD9B8] self-start sm:self-auto">
+                            AI OCR AUTO-FILL
+                          </span>
                         </div>
 
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Gender *</label>
-                          <select
-                            value={attendees[currentAttendeeIndex]?.gender || 'FEMALE'}
-                            onChange={(e) => {
-                              const updated = [...attendees];
-                              updated[currentAttendeeIndex].gender = e.target.value as any;
-                              setAttendees(updated);
-                            }}
-                            className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
-                          >
-                            <option value="FEMALE">Female</option>
-                            {selectedPass !== 'SINGLE' && <option value="MALE">Male</option>}
-                          </select>
-                        </div>
-
-                        {selectedPass === 'KIDS' && (
-                          <PremiumDatePicker
-                            value={attendees[currentAttendeeIndex]?.dob || ''}
-                            onChange={(val) => {
-                              const updated = [...attendees];
-                              updated[currentAttendeeIndex].dob = val;
-                              setAttendees(updated);
-                            }}
-                            label="Date of Birth *"
-                            error={bookingError?.includes('Date of Birth')}
-                          />
-                        )}
-                        
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
-                            {selectedPass === 'KIDS' ? 'Parent / Guardian WhatsApp (+91) *' : 'WhatsApp Mobile (+91) *'}
-                          </label>
-                          <input
-                            type="tel"
-                            required
-                            maxLength={11}
-                            value={formatPhoneNumber(attendees[currentAttendeeIndex]?.phone || '')}
-                            onChange={(e) => {
-                              const newDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                              const updated = [...attendees];
-                              updated[currentAttendeeIndex].phone = newDigits;
-                              if (currentAttendeeIndex === 0 && samePhoneForAll) {
-                                for (let k = 1; k < updated.length; k++) {
-                                  updated[k].phone = newDigits;
-                                }
-                              }
-                              setAttendees(updated);
-                            }}
-                            placeholder="98765 43210"
-                            className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address *</label>
-                          <input
-                            type="email"
-                            value={attendees[currentAttendeeIndex]?.email || ''}
-                            onChange={(e) => {
-                              const updated = [...attendees];
-                              updated[currentAttendeeIndex].email = e.target.value;
-                              setAttendees(updated);
-                            }}
-                            placeholder="you@example.com"
-                            className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
-                            {selectedPass === 'KIDS' ? 'Child 12-Digit Aadhaar Number *' : '12-Digit Aadhaar Number *'}
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            maxLength={14}
-                            value={formatAadhaarNumber(attendees[currentAttendeeIndex]?.aadhaarNumber || '')}
-                            onChange={(e) => {
-                              const updated = [...attendees];
-                              updated[currentAttendeeIndex].aadhaarNumber = e.target.value.replace(/\D/g, '').slice(0, 12);
-                              setAttendees(updated);
-                            }}
-                            placeholder="1234 5678 9012"
-                            className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Front Side */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Front Side Upload */}
                           <div>
                             <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
-                              {selectedPass === 'KIDS' ? 'Child Aadhaar Front *' : 'Aadhaar Front *'}
+                              {selectedPass === 'KIDS' ? 'Child Aadhaar Front *' : 'Aadhaar Front Side *'}
                             </label>
                             <div className="relative">
                               <input
@@ -2553,24 +2417,24 @@ export default function SafedSheriLandingPage() {
                               />
                               <label
                                 htmlFor={`aadhaar-upload-front-${currentAttendeeIndex}`}
-                                className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition"
+                                className="w-full px-4 py-3 rounded-2xl bg-white border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition shadow-sm"
                               >
-                                <span className="truncate">
+                                <span className="truncate max-w-[170px] font-medium">
                                   {attendees[currentAttendeeIndex]?.uploadingFront
-                                    ? 'Uploading...'
-                                    : attendees[currentAttendeeIndex]?.documentName || 'Upload Front'}
+                                    ? 'Scanning Aadhaar...'
+                                    : attendees[currentAttendeeIndex]?.documentName || 'Upload Front Side'}
                                 </span>
-                                <span className="text-[10px] px-3 py-1 rounded bg-white font-bold text-[#8C6019] border border-[#EAD9B8]">
-                                  Browse
+                                <span className="text-[10px] px-3 py-1 rounded-lg bg-[#FAF6EE] font-bold text-[#8C6019] border border-[#EAD9B8]">
+                                  {attendees[currentAttendeeIndex]?.documentName ? 'Replace' : 'Browse'}
                                 </span>
                               </label>
                             </div>
                           </div>
 
-                          {/* Back Side */}
+                          {/* Back Side Upload */}
                           <div>
                             <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
-                              {selectedPass === 'KIDS' ? 'Child Aadhaar Back *' : 'Aadhaar Back *'}
+                              {selectedPass === 'KIDS' ? 'Child Aadhaar Back *' : 'Aadhaar Back Side *'}
                             </label>
                             <div className="relative">
                               <input
@@ -2583,20 +2447,197 @@ export default function SafedSheriLandingPage() {
                               />
                               <label
                                 htmlFor={`aadhaar-upload-back-${currentAttendeeIndex}`}
-                                className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition"
+                                className="w-full px-4 py-3 rounded-2xl bg-white border border-dashed border-[#D99427] text-[#6E5336] text-xs flex items-center justify-between cursor-pointer hover:bg-[#FFF9EE] transition shadow-sm"
                               >
-                                <span className="truncate">
+                                <span className="truncate max-w-[170px] font-medium">
                                   {attendees[currentAttendeeIndex]?.uploadingBack
                                     ? 'Uploading...'
-                                    : attendees[currentAttendeeIndex]?.documentBackName || 'Upload Back'}
+                                    : attendees[currentAttendeeIndex]?.documentBackName || 'Upload Back Side'}
                                 </span>
-                                <span className="text-[10px] px-3 py-1 rounded bg-white font-bold text-[#8C6019] border border-[#EAD9B8]">
-                                  Browse
+                                <span className="text-[10px] px-3 py-1 rounded-lg bg-[#FAF6EE] font-bold text-[#8C6019] border border-[#EAD9B8]">
+                                  {attendees[currentAttendeeIndex]?.documentBackName ? 'Replace' : 'Browse'}
                                 </span>
                               </label>
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* ========================================================================= */}
+                      {/* STEP 2: VERIFY OR EDIT AUTO-FILLED DETAILS */}
+                      {/* ========================================================================= */}
+                      <div className="space-y-4 pt-1">
+                        <div className="flex items-center space-x-2.5 border-b border-[#EAD9B8] pb-2">
+                          <span className="w-6 h-6 rounded-full bg-[#FAF6EE] border border-[#EAD9B8] text-[#8C6019] flex items-center justify-center text-xs font-bold font-mono">
+                            2
+                          </span>
+                          <h5 className="text-xs font-bold text-[#2D1F0E] uppercase tracking-wider">
+                            Verify Guest Details
+                          </h5>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
+                              {selectedPass === 'KIDS' ? 'Child Full Legal Name *' : 'Full Legal Name *'}
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={attendees[currentAttendeeIndex]?.fullName || ''}
+                              onChange={(e) => updateAttendeeField(currentAttendeeIndex, 'fullName', e.target.value)}
+                              placeholder="As printed on government Aadhaar"
+                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Gender *</label>
+                            <select
+                              value={attendees[currentAttendeeIndex]?.gender || 'FEMALE'}
+                              onChange={(e) => updateAttendeeField(currentAttendeeIndex, 'gender', e.target.value)}
+                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                            >
+                              <option value="FEMALE">Female</option>
+                              {selectedPass !== 'SINGLE' && <option value="MALE">Male</option>}
+                            </select>
+                          </div>
+
+                          {selectedPass === 'KIDS' && (
+                            <div className="space-y-2">
+                              <PremiumDatePicker
+                                value={attendees[currentAttendeeIndex]?.dob || ''}
+                                onChange={(val) => {
+                                  updateAttendeeField(currentAttendeeIndex, 'dob', val);
+                                  if (val) {
+                                    const dobDate = new Date(val);
+                                    if (!isNaN(dobDate.getTime())) {
+                                      const diffMs = Date.now() - dobDate.getTime();
+                                      const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+                                      if (age > 15) {
+                                        setBookingError(`Child age is ${age} years. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
+                                      } else {
+                                        setBookingError(null);
+                                      }
+                                    }
+                                  }
+                                }}
+                                label="Date of Birth (Auto-filled from Aadhaar or select) *"
+                                error={bookingError?.includes('Date of Birth') || bookingError?.includes('Kids')}
+                              />
+
+                              {attendees[currentAttendeeIndex]?.dob && (() => {
+                                const dobDate = new Date(attendees[currentAttendeeIndex].dob!);
+                                if (isNaN(dobDate.getTime())) return null;
+                                const diffMs = Date.now() - dobDate.getTime();
+                                const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+                                if (age > 15) {
+                                  return (
+                                    <div className="p-3 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs font-bold flex items-center space-x-2 animate-fade-in shadow-sm">
+                                      <span className="text-base">⛔</span>
+                                      <div>
+                                        <div>Child Age: <span className="font-mono text-rose-950 font-extrabold">{age} Years</span></div>
+                                        <div className="text-[11px] text-rose-700 font-normal">You are not able to book a Kids pass (strictly valid for ages 15 &amp; under).</div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                if (age <= 10) {
+                                  return (
+                                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center justify-between animate-fade-in shadow-sm">
+                                      <div className="flex items-center space-x-2">
+                                        <span className="text-base">🎉</span>
+                                        <div>
+                                          <div>Child Age: <span className="font-mono font-extrabold text-emerald-950">{age} Years</span></div>
+                                          <div className="text-[11px] text-emerald-700 font-normal">Complimentary entry for 10 &amp; under.</div>
+                                        </div>
+                                      </div>
+                                      <span className="px-3 py-1 bg-emerald-600 text-white rounded-full uppercase tracking-wider text-[10px] font-bold shadow-sm">
+                                        FREE PASS (₹0)
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs font-bold flex items-center justify-between animate-fade-in shadow-sm">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-base">🎟️</span>
+                                      <div>
+                                        <div>Child Age: <span className="font-mono font-extrabold text-amber-950">{age} Years</span></div>
+                                        <div className="text-[11px] text-amber-800 font-normal">Kids Pass Tier (Ages 11–15).</div>
+                                      </div>
+                                    </div>
+                                    <span className="px-3 py-1 bg-amber-600 text-white rounded-full uppercase tracking-wider text-[10px] font-bold shadow-sm">
+                                      ₹1,200 PASS
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
+                              {selectedPass === 'KIDS' ? 'Child 12-Digit Aadhaar Number *' : '12-Digit Aadhaar Number *'}
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              maxLength={14}
+                              value={formatAadhaarNumber(attendees[currentAttendeeIndex]?.aadhaarNumber || '')}
+                              onChange={(e) => updateAttendeeField(currentAttendeeIndex, 'aadhaarNumber', e.target.value.replace(/\D/g, '').slice(0, 12))}
+                              placeholder="1234 5678 9012"
+                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">
+                              {selectedPass === 'KIDS' ? 'Parent / Guardian WhatsApp (+91) *' : 'WhatsApp Mobile (+91) *'}
+                            </label>
+                            <input
+                              type="tel"
+                              required
+                              maxLength={11}
+                              value={formatPhoneNumber(attendees[currentAttendeeIndex]?.phone || '')}
+                              onChange={(e) => {
+                                const newDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                updateAttendeeField(currentAttendeeIndex, 'phone', newDigits);
+                                if (currentAttendeeIndex === 0 && samePhoneForAll) {
+                                  for (let k = 1; k < attendees.length; k++) {
+                                    updateAttendeeField(k, 'phone', newDigits);
+                                  }
+                                }
+                              }}
+                              placeholder="98765 43210"
+                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address *</label>
+                            <input
+                              type="email"
+                              value={attendees[currentAttendeeIndex]?.email || ''}
+                              onChange={(e) => updateAttendeeField(currentAttendeeIndex, 'email', e.target.value)}
+                              placeholder="you@example.com"
+                              className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* OCR Mismatch Notice */}
+                        {attendees[currentAttendeeIndex]?.ocrMismatch && (
+                          <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-amber-950 text-xs flex items-start space-x-2.5 animate-fade-in">
+                            <span className="text-base">⚠️</span>
+                            <div>
+                              <div className="font-bold">Notice: Details modified after Aadhaar upload.</div>
+                              <div className="text-[11px] text-amber-800">
+                                Your submitted details will be cross-verified by our verification desk against the uploaded Aadhaar card document.
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Primary Contact Shared Phone Option */}
@@ -2615,26 +2656,26 @@ export default function SafedSheriLandingPage() {
                             }}
                             className="w-4 h-4 rounded text-[#D99427] accent-[#D99427]"
                           />
-                          <span>Automatically use this phone (+91 {formatPhoneNumber(attendees[0].phone)}) for all other guests</span>
+                          <span>Automatically use this phone (+91 {formatPhoneNumber(attendees[0].phone)}) for both attendees</span>
                         </label>
                       )}
                     </div>
 
-                    {/* Terms and Conditions — shown on Couple pass first guest screen */}
-                    {selectedPass === 'COUPLE' && currentAttendeeIndex === 0 && (
+                    {/* Terms and Conditions — shown on first guest screen */}
+                    {currentAttendeeIndex === 0 && (
                       <div className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mt-6 text-left shadow-sm animate-fade-in">
                         <div className="flex items-start space-x-4">
                           <div className="flex-shrink-0 mt-0.5">
                             <input
                               type="checkbox"
-                              id="terms-checkbox-couple"
+                              id="terms-checkbox-booking"
                               checked={termsAccepted}
                               onChange={(e) => setTermsAccepted(e.target.checked)}
                               className="w-5 h-5 text-[#D99427] bg-white border-[#D99427] rounded focus:ring-[#D99427] cursor-pointer accent-[#D99427]"
                             />
                           </div>
                           <div className="text-xs text-[#6E5336] w-full">
-                            <label htmlFor="terms-checkbox-couple" className="font-bold text-[#2D1F0E] text-sm cursor-pointer block">I agree to the Safed Sheri 2026 Terms &amp; Conditions</label>
+                            <label htmlFor="terms-checkbox-booking" className="font-bold text-[#2D1F0E] text-sm cursor-pointer block">I agree to the Safed Sheri 2026 Terms &amp; Conditions</label>
                             <button type="button" onClick={() => setShowTerms(!showTerms)} className="text-[#D99427] font-bold mt-1 hover:underline outline-none">
                               {showTerms ? 'Hide Details' : 'Read More'}
                             </button>
@@ -2643,7 +2684,7 @@ export default function SafedSheriLandingPage() {
                               <TermsAndConditionsContent />
                             )}
                             {termsError && (
-                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">âš  You must accept the Terms &amp; Conditions to continue.</p>
+                              <p className="mt-2 text-[11px] font-bold text-rose-600 animate-fade-in">⚠️ You must accept the Terms &amp; Conditions to continue.</p>
                             )}
                           </div>
                         </div>
@@ -2652,26 +2693,30 @@ export default function SafedSheriLandingPage() {
 
                     {/* Navigation Bar */}
                     <div className="flex items-center justify-between pt-2">
-                      <button
-                        type="button"
-                        onClick={handlePrevStep}
-                        className="px-6 py-3 rounded-full bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        <span>{currentAttendeeIndex === 0 && selectedPass === 'SINGLE' ? 'Pass Count' : 'Previous'}</span>
-                      </button>
+                      {currentAttendeeIndex > 0 ? (
+                        <button
+                          type="button"
+                          onClick={handlePrevStep}
+                          className="px-6 py-3 rounded-full bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5 transition"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Previous</span>
+                        </button>
+                      ) : (
+                        <div />
+                      )}
 
                       <button
                         type="button"
                         onClick={() => {
-                          if (selectedPass === 'COUPLE' && currentAttendeeIndex === 0 && !termsAccepted) {
+                          if (currentAttendeeIndex === 0 && !termsAccepted) {
                             setTermsError(true);
                             return;
                           }
                           setTermsError(false);
                           handleNextStep();
                         }}
-                        className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center space-x-2 transition"
+                        className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center space-x-2 transition ml-auto"
                       >
                         <span>
                           {currentAttendeeIndex < attendees.length - 1
@@ -2685,7 +2730,7 @@ export default function SafedSheriLandingPage() {
                 )}
 
                 {/* ========================================================================= */}
-                {/* STEP 3 VIEW: EXECUTIVE SUMMARY & FINAL SUBMISSION */}
+                {/* STEP 2 VIEW: EXECUTIVE SUMMARY & FINAL SUBMISSION */}
                 {/* ========================================================================= */}
                 {wizardStep === 'SUMMARY' && (
                   <div className="space-y-6 animate-fade-in">
@@ -2713,6 +2758,7 @@ export default function SafedSheriLandingPage() {
                             setWizardStep('ATTENDEE');
                           }}
                         >
+
                           <div className="flex items-center space-x-3">
                             <span className="w-7 h-7 rounded-full bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-mono font-bold text-[#8C6019] flex items-center justify-center">
                               {idx + 1}

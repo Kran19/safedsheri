@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegistrationStatus, PassType, Gender, Role } from '@prisma/client';
+import { RegistrationStatus, PassType, Gender, Role, PaymentStatus } from '@prisma/client';
 import { EncryptionService } from '../common/encryption.service';
 import { PaymentGatewayService } from '../payments/payment-gateway.service';
 import { EmailService } from '../common/email.service';
@@ -282,6 +282,8 @@ export class RegistrationsService {
       documentBackMimeType?: string;
       documentBackSizeBytes?: number;
       documentBackChecksum?: string;
+      ocrExtractedData?: string;
+      ocrMismatch?: boolean;
     }>;
   }) {
     try {
@@ -320,20 +322,24 @@ export class RegistrationsService {
       throw new BadRequestException('Primary contact email is mandatory.');
     }
 
-    if (data.attendees.length > 7) {
-      throw new BadRequestException('A single booking can contain a maximum of 7 passes.');
-    }
-
-    // RULE 1: Single Pass strictly for Female attendees only (1 to 7 female passes)
+    // RULE 1: Single Pass strictly for 1 Female attendee only
     if (data.passType === PassType.SINGLE) {
-      for (let i = 0; i < data.attendees.length; i++) {
-        if (data.attendees[i].gender === Gender.MALE) {
-          throw new BadRequestException(`Single pass tier is strictly for female attendees. Attendee #${i + 1} (${data.attendees[i].fullName}) must be female.`);
-        }
+      if (data.attendees.length !== 1) {
+        throw new BadRequestException('Single Female Pass allows only 1 pass per booking.');
+      }
+      if (data.attendees[0].gender === Gender.MALE) {
+        throw new BadRequestException(`Single pass tier is strictly for female attendees. Attendee (${data.attendees[0].fullName}) must be female.`);
       }
     }
 
-    // RULE 2: Couple Pass requires exactly 2 attendees
+    // RULE 2: Kids Pass strictly for 1 Kid attendee only
+    if (data.passType === PassType.KIDS) {
+      if (data.attendees.length !== 1) {
+        throw new BadRequestException('Kids Pass allows only 1 pass per booking.');
+      }
+    }
+
+    // RULE 3: Couple Pass requires exactly 2 attendees
     if (data.passType === PassType.COUPLE) {
       if (data.attendees.length !== 2) {
         throw new BadRequestException('Couple Pass requires exactly 2 attendee records');
@@ -434,11 +440,11 @@ export class RegistrationsService {
         const age = Math.abs(ageDate.getUTCFullYear() - 1970);
         
         if (age > 15) {
-          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is ${age} years old and not eligible for a Kids pass (must be 15 or under).`);
-        } else if (age >= 10 && age <= 15) {
+          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is ${age} years old. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
+        } else if (age > 10 && age <= 15) {
           amountDue += 1200;
         } else {
-          amountDue += 0;
+          amountDue += 0; // Free pass for age <= 10
         }
       }
     } else {
@@ -525,6 +531,8 @@ export class RegistrationsService {
             mimeTypeBack: attData.documentBackMimeType || null,
             sizeBytesBack: attData.documentBackSizeBytes || null,
             checksumBack: attData.documentBackChecksum || null,
+            ocrExtractedData: attData.ocrExtractedData || null,
+            ocrMismatch: !!attData.ocrMismatch,
           },
           create: {
             attendeeId: attendee.id,
@@ -538,6 +546,8 @@ export class RegistrationsService {
             mimeTypeBack: attData.documentBackMimeType || null,
             sizeBytesBack: attData.documentBackSizeBytes || null,
             checksumBack: attData.documentBackChecksum || null,
+            ocrExtractedData: attData.ocrExtractedData || null,
+            ocrMismatch: !!attData.ocrMismatch,
           },
         });
 
@@ -851,8 +861,26 @@ export class RegistrationsService {
   }
 
   async softDelete(id: string, adminId: string) {
-    const reg = await this.prisma.registration.findUnique({ where: { id } });
+    const reg = await this.prisma.registration.findUnique({
+      where: { id },
+      include: {
+        payments: {
+          where: { status: PaymentStatus.CONFIRMED },
+        },
+        credentials: true,
+      },
+    });
     if (!reg) throw new NotFoundException('Registration application not found');
+
+    const isPaid =
+      reg.status === RegistrationStatus.PAYMENT_CONFIRMED ||
+      reg.status === RegistrationStatus.PASS_ISSUED ||
+      (reg.payments && reg.payments.length > 0) ||
+      (reg.credentials && reg.credentials.length > 0);
+
+    if (isPaid) {
+      throw new BadRequestException('Cannot delete or move to trash an application where payment has already been completed.');
+    }
     
     await this.prisma.registration.update({
       where: { id },
@@ -895,8 +923,26 @@ export class RegistrationsService {
   }
 
   async hardDelete(id: string, adminId: string) {
-    const reg = await this.prisma.registration.findUnique({ where: { id } });
+    const reg = await this.prisma.registration.findUnique({
+      where: { id },
+      include: {
+        payments: {
+          where: { status: PaymentStatus.CONFIRMED },
+        },
+        credentials: true,
+      },
+    });
     if (!reg) throw new NotFoundException('Registration application not found');
+
+    const isPaid =
+      reg.status === RegistrationStatus.PAYMENT_CONFIRMED ||
+      reg.status === RegistrationStatus.PASS_ISSUED ||
+      (reg.payments && reg.payments.length > 0) ||
+      (reg.credentials && reg.credentials.length > 0);
+
+    if (isPaid) {
+      throw new BadRequestException('Cannot permanently delete an application where payment has already been completed.');
+    }
     
     await this.prisma.registration.delete({
       where: { id },

@@ -8,7 +8,7 @@ import {
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
-  Tag, MapPin, Settings, Trash2
+  Tag, MapPin, Settings, Trash2, Lock, Flag
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -354,8 +354,24 @@ export default function SuperAdminDashboard() {
     loadTabContent('applications');
   }
 
+  function isPaidApp(app: any): boolean {
+    if (!app) return false;
+    if (app.status === 'PAYMENT_CONFIRMED' || app.status === 'PASS_ISSUED') return true;
+    if (app.payments && Array.isArray(app.payments)) {
+      if (app.payments.some((p: any) => p.status === 'CONFIRMED')) return true;
+    }
+    if (app.credentials && Array.isArray(app.credentials) && app.credentials.length > 0) return true;
+    return false;
+  }
+
   async function handleSoftDelete() {
     if (!appToDelete) return;
+    if (isPaidApp(appToDelete)) {
+      setError('Cannot move to trash: Payment has already been completed for this application.');
+      setDeleteModalOpen(false);
+      setAppToDelete(null);
+      return;
+    }
     setActionLoading(true);
     const res = await apiRequest(`/registrations/${appToDelete.id}/trash`, { method: 'POST' });
     if (res.success) {
@@ -388,6 +404,12 @@ export default function SuperAdminDashboard() {
 
   async function handleHardDelete() {
     if (!appToDelete) return;
+    if (isPaidApp(appToDelete)) {
+      setError('Cannot permanently delete: Payment has already been completed for this application.');
+      setHardDeleteModalOpen(false);
+      setAppToDelete(null);
+      return;
+    }
     setActionLoading(true);
     const res = await apiRequest(`/registrations/${appToDelete.id}/permanent-delete`, { method: 'POST' });
     if (res.success) {
@@ -466,11 +488,18 @@ export default function SuperAdminDashboard() {
       getValue: (row) => row.attendees?.[0]?.attendee?.fullName || '',
       render: (row) => {
         const primary = row.attendees?.[0]?.attendee;
+        const hasOcrMismatch = row.attendees?.some((ra: any) => ra.attendee?.document?.ocrMismatch);
         return (
           <div>
             <div className="font-semibold text-[#2D1F0E]">{primary?.fullName || '—'}</div>
-            <div className="text-[10px] text-[#6E5336]">
-              {row.passType === 'SINGLE' && primary?.gender === 'FEMALE' ? 'SINGLE FEMALE' : primary?.gender}
+            <div className="text-[10px] text-[#6E5336] flex flex-wrap items-center gap-1.5 mt-0.5">
+              <span>{row.passType === 'SINGLE' && primary?.gender === 'FEMALE' ? 'SINGLE FEMALE' : primary?.gender}</span>
+              {hasOcrMismatch && (
+                <span className="px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[9px] flex items-center space-x-1 animate-pulse">
+                  <Flag className="w-2.5 h-2.5 text-rose-600 fill-rose-600" />
+                  <span>OCR MISMATCH</span>
+                </span>
+              )}
             </div>
           </div>
         );
@@ -549,17 +578,27 @@ export default function SuperAdminDashboard() {
             <Eye className="w-3 h-3 text-[#D99427]" />
             <span>Review</span>
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setAppToDelete(row);
-              setDeleteModalOpen(true);
-            }}
-            className="px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
-          >
-            <Trash2 className="w-3 h-3" />
-            <span>Trash</span>
-          </button>
+          {isPaidApp(row) ? (
+            <span
+              title="Paid applications cannot be deleted"
+              className="px-2.5 py-1 rounded-xl bg-gray-100 border border-gray-200 text-gray-400 font-medium text-[11px] inline-flex items-center space-x-1 cursor-not-allowed select-none"
+            >
+              <Lock className="w-3 h-3 text-gray-400" />
+              <span>Paid</span>
+            </span>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setAppToDelete(row);
+                setDeleteModalOpen(true);
+              }}
+              className="px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>Trash</span>
+            </button>
+          )}
         </div>
       ),
     },
@@ -636,18 +675,20 @@ export default function SuperAdminDashboard() {
             <RefreshCw className="w-3 h-3" />
             <span>Restore</span>
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setAppToDelete(row);
-              setHardDeleteModalOpen(true);
-            }}
-            disabled={actionLoading}
-            className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 border border-red-700 text-white font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm disabled:opacity-50"
-          >
-            <AlertCircle className="w-3 h-3" />
-            <span>Permanently Delete</span>
-          </button>
+          {!isPaidApp(row) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setAppToDelete(row);
+                setHardDeleteModalOpen(true);
+              }}
+              disabled={actionLoading}
+              className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 border border-red-700 text-white font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm disabled:opacity-50"
+            >
+              <AlertCircle className="w-3 h-3" />
+              <span>Permanently Delete</span>
+            </button>
+          )}
         </div>
       ),
     },
@@ -655,7 +696,22 @@ export default function SuperAdminDashboard() {
 
   // 2. Verified Attendees Columns
   const attendeeColumns: TabulatorColumn<any>[] = [
-    { key: 'fullName', title: 'Attendee Name', sortable: true, render: (r) => <strong className="text-[#2D1F0E]">{r.fullName}</strong> },
+    { 
+      key: 'fullName', 
+      title: 'Attendee Name', 
+      sortable: true, 
+      render: (r) => (
+        <div className="flex items-center space-x-2">
+          <strong className="text-[#2D1F0E]">{r.fullName}</strong>
+          {r.document?.ocrMismatch && (
+            <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[9px] flex items-center space-x-1">
+              <Flag className="w-2.5 h-2.5 text-rose-600 fill-rose-600" />
+              <span>DATA MODIFIED</span>
+            </span>
+          )}
+        </div>
+      ) 
+    },
     {
       key: 'gender',
       title: 'Gender',
@@ -1650,6 +1706,89 @@ export default function SuperAdminDashboard() {
                       </div>
                     </div>
 
+                    {/* CRITICAL OCR MISMATCH AUDIT ALERT */}
+                    {(() => {
+                      const doc = att.document;
+                      if (!doc) return null;
+                      let ocrInfo: any = null;
+                      try {
+                        if (doc.ocrExtractedData) ocrInfo = JSON.parse(doc.ocrExtractedData);
+                      } catch (e) {}
+
+                      if (!doc.ocrMismatch && (!ocrInfo || !ocrInfo.discrepancies || ocrInfo.discrepancies.length === 0)) {
+                        return null;
+                      }
+
+                      return (
+                        <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-50 to-red-50 border-2 border-rose-500 text-rose-950 space-y-3 shadow-md animate-pulse">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-9 h-9 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow">
+                              🚩
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-extrabold text-sm text-rose-900 tracking-wide">
+                                  CRITICAL AUDIT ALERT: USER CHANGED DATA AFTER AADHAAR UPLOAD
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider">
+                                  CHECK CAREFULLY
+                                </span>
+                              </div>
+                              <p className="text-xs text-rose-800 mt-0.5 font-medium">
+                                The applicant uploaded an Aadhaar card and then manually modified one or more extracted fields. Compare the uploaded ID document with the form submission below before making an approval decision.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Discrepancies Details */}
+                          {ocrInfo?.discrepancies && ocrInfo.discrepancies.length > 0 && (
+                            <div className="bg-white/90 p-3 rounded-xl border border-rose-300 text-xs space-y-1.5 shadow-inner">
+                              <div className="font-bold text-rose-950 flex items-center space-x-1.5">
+                                <span>⚠️</span>
+                                <span>Specific Modified Fields Detected:</span>
+                              </div>
+                              <ul className="list-disc pl-5 space-y-1 text-rose-900 font-medium">
+                                {ocrInfo.discrepancies.map((d: string, dIdx: number) => (
+                                  <li key={dIdx} className="font-mono text-[11px]">{d}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Side-by-Side Comparison Box */}
+                          {ocrInfo?.extracted && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                              <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-300 shadow-sm">
+                                <div className="font-bold text-amber-900 uppercase text-[10px] tracking-wider mb-2 flex items-center space-x-1">
+                                  <span>📄</span>
+                                  <span>Data Read from Aadhaar Image (OCR)</span>
+                                </div>
+                                <div className="space-y-1 text-[11px]">
+                                  <div><span className="text-[#6E5336]">Name:</span> <strong className="font-mono text-amber-950 ml-1">{ocrInfo.extracted.name || '—'}</strong></div>
+                                  <div><span className="text-[#6E5336]">Aadhaar:</span> <strong className="font-mono text-amber-950 ml-1">{ocrInfo.extracted.aadhaarNumber || '—'}</strong></div>
+                                  <div><span className="text-[#6E5336]">Gender:</span> <strong className="font-mono text-amber-950 ml-1">{ocrInfo.extracted.gender || '—'}</strong></div>
+                                  {ocrInfo.extracted.dob && <div><span className="text-[#6E5336]">DOB:</span> <strong className="font-mono text-amber-950 ml-1">{ocrInfo.extracted.dob}</strong></div>}
+                                </div>
+                              </div>
+
+                              <div className="p-3 rounded-xl bg-rose-50/90 border border-rose-300 shadow-sm">
+                                <div className="font-bold text-rose-900 uppercase text-[10px] tracking-wider mb-2 flex items-center space-x-1">
+                                  <span>✍️</span>
+                                  <span>Data Submitted by Applicant in Form</span>
+                                </div>
+                                <div className="space-y-1 text-[11px]">
+                                  <div><span className="text-[#6E5336]">Name:</span> <strong className="font-mono text-rose-950 ml-1">{att.fullName}</strong></div>
+                                  <div><span className="text-[#6E5336]">Aadhaar:</span> <strong className="font-mono text-rose-950 ml-1">{att.aadhaarMasked || att.aadhaarNumber}</strong></div>
+                                  <div><span className="text-[#6E5336]">Gender:</span> <strong className="font-mono text-rose-950 ml-1">{att.gender}</strong></div>
+                                  {att.dob && <div><span className="text-[#6E5336]">DOB:</span> <strong className="font-mono text-rose-950 ml-1">{new Date(att.dob).toLocaleDateString()}</strong></div>}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {/* Aadhaar Document Preview */}
                     {att.document ? (
                       <AadhaarDocumentPreview
@@ -1725,8 +1864,8 @@ export default function SuperAdminDashboard() {
                         if (attWrapper.attendee.dob) {
                           const diffMs = Date.now() - new Date(attWrapper.attendee.dob).getTime();
                           const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
-                          if (age >= 10 && age <= 15) return sum + 1200;
-                          return sum; // Free below 10
+                          if (age > 10 && age <= 15) return sum + 1200;
+                          return sum; // Free for <= 10
                         }
                         return sum; // Fallback
                       }
@@ -1831,8 +1970,20 @@ export default function SuperAdminDashboard() {
               <h3 className="text-2xl font-serif font-bold text-red-900">Move to Trash?</h3>
             </div>
             <div className="p-6 text-center text-[#6E5336]">
-              <p>Are you sure you want to move application <strong className="text-red-700">{appToDelete.registrationNumber}</strong> to the trash?</p>
-              <p className="mt-2 text-sm">It will be hidden from the main view but can still be found in the Trash tab.</p>
+              {isPaidApp(appToDelete) ? (
+                <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl text-amber-900 text-xs font-semibold space-y-1 text-left">
+                  <div className="flex items-center space-x-2 font-bold text-sm text-amber-950">
+                    <Lock className="w-4 h-4 text-amber-700" />
+                    <span>Payment Completed</span>
+                  </div>
+                  <p>Application <strong className="font-mono">{appToDelete.registrationNumber}</strong> has already completed payment or has active passes issued. It cannot be deleted or moved to trash.</p>
+                </div>
+              ) : (
+                <>
+                  <p>Are you sure you want to move application <strong className="text-red-700">{appToDelete.registrationNumber}</strong> to the trash?</p>
+                  <p className="mt-2 text-sm">It will be hidden from the main view but can still be found in the Trash tab.</p>
+                </>
+              )}
             </div>
             <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
               <button
@@ -1840,15 +1991,17 @@ export default function SuperAdminDashboard() {
                 onClick={() => setDeleteModalOpen(false)}
                 className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition"
               >
-                Cancel
+                {isPaidApp(appToDelete) ? 'Close' : 'Cancel'}
               </button>
-              <button
-                disabled={actionLoading}
-                onClick={handleSoftDelete}
-                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-md transition disabled:opacity-50"
-              >
-                {actionLoading ? 'Moving...' : 'Move to Trash'}
-              </button>
+              {!isPaidApp(appToDelete) && (
+                <button
+                  disabled={actionLoading}
+                  onClick={handleSoftDelete}
+                  className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-md transition disabled:opacity-50"
+                >
+                  {actionLoading ? 'Moving...' : 'Move to Trash'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1867,8 +2020,20 @@ export default function SuperAdminDashboard() {
               <h3 className="text-2xl font-serif font-bold text-red-500">Permanent Deletion</h3>
             </div>
             <div className="p-6 text-center text-red-200/80">
-              <p>You are about to <strong className="text-red-400">permanently delete</strong> application {appToDelete.registrationNumber}.</p>
-              <p className="mt-4 text-sm font-bold text-red-400">THIS ACTION CANNOT BE UNDONE. ALL RELATED DATA WILL BE DESTROYED.</p>
+              {isPaidApp(appToDelete) ? (
+                <div className="p-4 bg-red-950/80 border border-red-500/50 rounded-2xl text-red-200 text-xs font-semibold space-y-1 text-left">
+                  <div className="flex items-center space-x-2 font-bold text-sm text-red-400">
+                    <Lock className="w-4 h-4 text-red-400" />
+                    <span>Payment Completed</span>
+                  </div>
+                  <p>Application <strong className="font-mono text-white">{appToDelete.registrationNumber}</strong> has already completed payment or has active credentials. Permanent deletion is locked for financial audit integrity.</p>
+                </div>
+              ) : (
+                <>
+                  <p>You are about to <strong className="text-red-400">permanently delete</strong> application {appToDelete.registrationNumber}.</p>
+                  <p className="mt-4 text-sm font-bold text-red-400">THIS ACTION CANNOT BE UNDONE. ALL RELATED DATA WILL BE DESTROYED.</p>
+                </>
+              )}
             </div>
             <div className="p-4 bg-[#0A0501] flex items-center justify-end space-x-3 border-t border-red-900/30">
               <button
@@ -1876,15 +2041,17 @@ export default function SuperAdminDashboard() {
                 onClick={() => setHardDeleteModalOpen(false)}
                 className="px-5 py-2.5 rounded-xl font-bold text-[#EAD9B8] bg-[#1A1208] border border-[#EAD9B8]/20 hover:bg-[#2D1F0E] transition"
               >
-                Cancel
+                {isPaidApp(appToDelete) ? 'Close' : 'Cancel'}
               </button>
-              <button
-                disabled={actionLoading}
-                onClick={handleHardDelete}
-                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition disabled:opacity-50"
-              >
-                {actionLoading ? 'Destroying...' : 'Yes, Delete Permanently'}
-              </button>
+              {!isPaidApp(appToDelete) && (
+                <button
+                  disabled={actionLoading}
+                  onClick={handleHardDelete}
+                  className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition disabled:opacity-50"
+                >
+                  {actionLoading ? 'Destroying...' : 'Yes, Delete Permanently'}
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -92,15 +92,47 @@ export class UploadsService {
       const aadhaarMatch = text.match(/\b\d{4}\s?\d{4}\s?\d{4}\b/);
       const aadhaarNumber = aadhaarMatch ? aadhaarMatch[0].replace(/\s/g, '') : null;
 
-      const dobMatch = text.match(/(?:DOB|Date of Birth|Year of Birth|YOB)[\s:]*(\d{2}\/\d{2}\/\d{4}|\d{4})/i);
-      const dob = dobMatch ? dobMatch[1] : null;
+      let dob: string | null = null;
+      let calculatedAge: number | null = null;
+
+      // 1. Full DOB: DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+      const dobMatch = text.match(/(?:DOB|Date of Birth|जन्म तारीख|जन्म वर्ष|Year of Birth|YOB)?[\s:\/]*(\b\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}\b)/i);
+      if (dobMatch) {
+        const parts = dobMatch[1].split(/[\/\-\.]/);
+        if (parts.length === 3) {
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          dob = `${year}-${month}-${day}`;
+        }
+      } else {
+        // 2. Year of birth only: YYYY (e.g. Year of Birth: 2018)
+        const yobMatch = text.match(/(?:Year of Birth|YOB|जन्म वर्ष|वर्ष)[\s:]*(\b\d{4}\b)/i);
+        if (yobMatch) {
+          dob = `${yobMatch[1]}-01-01`;
+        } else {
+          // 3. Fallback date pattern match anywhere in text
+          const genericMatch = text.match(/\b(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})\b/);
+          if (genericMatch) {
+            dob = `${genericMatch[3]}-${genericMatch[2].padStart(2, '0')}-${genericMatch[1].padStart(2, '0')}`;
+          }
+        }
+      }
+
+      if (dob) {
+        const dobDate = new Date(dob);
+        if (!isNaN(dobDate.getTime())) {
+          const diffMs = Date.now() - dobDate.getTime();
+          calculatedAge = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+        }
+      }
 
       const genderMatch = text.match(/\b(MALE|FEMALE|TRANSGENDER)\b/i);
       const gender = genderMatch ? genderMatch[1].toUpperCase() : null;
 
       let name = null;
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      const dobLineIndex = lines.findIndex(l => /(?:DOB|Year of Birth|YOB)/i.test(l));
+      const dobLineIndex = lines.findIndex(l => /(?:DOB|Year of Birth|YOB|जन्म)/i.test(l));
       if (dobLineIndex > 0) {
         const potentialName = lines[dobLineIndex - 1];
         if (potentialName && !potentialName.toLowerCase().includes('government')) {
@@ -111,6 +143,7 @@ export class UploadsService {
       return {
         aadhaarNumber,
         dob,
+        age: calculatedAge,
         gender,
         name,
         rawText: text

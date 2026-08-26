@@ -204,6 +204,8 @@ model AadhaarDocument {
   mimeTypeBack         String?
   sizeBytesBack        Int?
   checksumBack         String?
+  ocrExtractedData     String?  // JSON string storing { name, aadhaarNumber, dob, gender, isModifiedAfterOcr, discrepancies: [...] }
+  ocrMismatch          Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
