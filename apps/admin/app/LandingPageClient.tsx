@@ -271,7 +271,7 @@ const PrivacyPolicyContent = () => (
         <p className="mt-1">If you have any questions about this Privacy Policy, please contact us:</p>
         <ul className="list-none mt-2 space-y-1 font-medium bg-[#FAF6EE] p-3 rounded-lg border border-[#EAD9B8]">
           <li><strong>Legal Name:</strong> SONDARVA HARISH</li>
-          <li><strong>Registration No:</strong> UDYAM-GJ-10-0079582</li>
+          <li><strong>Pan No:</strong> BFPPH9298G</li>
           <li><strong>Address:</strong> HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, JAMNAGAR, JAMNAGAR, Pin 361006, JAMNAGAR, Gujarat</li>
           <li><strong>Phone:</strong> +91 70169 77518</li>
           <li><strong>Email:</strong> safedsheri9@gmail.com</li>
@@ -2154,7 +2154,7 @@ export default function SafedSheriLandingPage() {
           <div className="text-center flex flex-col items-center">
             <div className="text-[12px] md:text-[13px] font-medium leading-relaxed text-[#4A3B2C] mb-5 space-y-2 max-w-4xl px-4">
               <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1">
-                <span>Registration no: UDYAM-GJ-10-0079582</span>
+                <span>Pan No: BFPPH9298G</span>
                 <span className="text-[#D99427]/70 hidden md:inline">|</span>
                 <span>Legal name: SONDARVA HARISH</span>
               </div>

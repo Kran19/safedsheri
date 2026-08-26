@@ -47,7 +47,7 @@ export default function TermsAndConditionsPage() {
           </p>
           
           <p className="mt-8 pt-4 border-t border-[#EAD9B8] text-sm text-[#A3927B]">
-            Safed Sheri is owned and operated by Sondarva Harish (Registration no: UDYAM-GJ-10-0079582).<br />
+            Safed Sheri is owned and operated by Sondarva Harish (Pan No: BFPPH9298G).<br />
             Address: HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, Gujarat 361006.
           </p>
         </div>
