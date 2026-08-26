@@ -18,16 +18,31 @@ async function main() {
       username: 'admin1@safedsheri.com',
       fullName: 'Super Admin 1 (Vikramaditya Solanki)',
       role: 'SUPER_ADMIN',
+      password: process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!',
     },
     {
       username: 'admin2@safedsheri.com',
       fullName: 'Super Admin 2 (Rudra Pratap Singh)',
       role: 'SUPER_ADMIN',
+      password: process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!',
     },
     {
       username: 'admin3@safedsheri.com',
       fullName: 'Super Admin 3 (Harshvardhan Jadeja)',
       role: 'SUPER_ADMIN',
+      password: process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!',
+    },
+    {
+      username: 'cashier1@safedsheri.com',
+      fullName: 'Cashier Desk Executive (Aarav Mehta)',
+      role: 'TICKETING_FINANCE',
+      password: process.env.CASHIER_DEFAULT_PASSWORD || 'CashierPass123!',
+    },
+    {
+      username: 'gate1@safedsheri.com',
+      fullName: 'Gate Verification Lead (Digvijay Jadeja)',
+      role: 'SECURITY_BOUNCER',
+      password: process.env.GATE_DEFAULT_PASSWORD || 'SecurityPass123!',
     },
   ];
 
@@ -53,13 +68,13 @@ async function main() {
       await prisma.user.create({
         data: {
           username: account.username,
-          passwordHash: adminPassHash,
+          passwordHash: hashPassword(account.password),
           fullName: account.fullName,
           role: account.role,
           isActive: true,
         },
       });
-      console.log(`✓ Created Super Admin: ${account.username} (Password: ${defaultPassword})`);
+      console.log(`✓ Created Staff Account: ${account.username} (Role: ${account.role}, Password: ${account.password})`);
     } else {
       await prisma.user.update({
         where: { username: account.username },
@@ -69,7 +84,7 @@ async function main() {
           isActive: true,
         },
       });
-      console.log(`✓ Verified Super Admin: ${account.username} is Active`);
+      console.log(`✓ Verified Staff Account: ${account.username} is Active`);
     }
   }
 
