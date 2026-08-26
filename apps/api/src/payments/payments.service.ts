@@ -282,7 +282,15 @@ export class PaymentsService {
     }
 
     const amountDue = Number(reg.amountDue);
-    const upiQrPayload = `upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${amountDue}&tn=SS26-${reg.registrationNumber}&tr=${paymentLinkId}`;
+
+    // Create real Razorpay order for this registration
+    const orderData = await this.paymentGatewayService.createPaymentOrder({
+      registrationId: reg.id,
+      registrationNumber: reg.registrationNumber,
+      amount: amountDue,
+      customerName: reg.attendees[0]?.attendee.fullName || 'Customer',
+      customerPhone: reg.attendees[0]?.attendee.phone || '0000000000',
+    });
 
     return {
       success: true,
@@ -294,10 +302,11 @@ export class PaymentsService {
         status: reg.status,
         isPaid: reg.payments.length > 0,
         paymentLinkId,
-        upiQrPayload,
+        razorpayOrderId: orderData.razorpayOrderId,
+        razorpayKeyId: orderData.razorpayKeyId,
         attendees: reg.attendees.map((a) => a.attendee),
       },
-      message: 'Dynamic UPI QR generated for online payment',
+      message: 'Real Razorpay order created for online payment',
     };
   }
 
@@ -313,7 +322,7 @@ export class PaymentsService {
     const primary = reg.attendees[0]?.attendee;
     if (!primary) throw new BadRequestException('Primary attendee not found');
 
-    const paymentUrl = `http://localhost:3000/?pay=${reg.paymentLinkId}`;
+    const paymentUrl = `https://safedsheri.com/?pay=${reg.paymentLinkId}`;
 
     return {
       success: true,
@@ -330,53 +339,25 @@ export class PaymentsService {
     passType: PassType;
     customAmount: number;
     paymentMethod: PaymentMethod;
+    staffUserId: string;
     attendees: Array<{
       fullName: string;
       phone: string;
       email?: string;
       gender: Gender;
-      aadhaarNumber: string;
+      aadhaarNumber?: string;
+      dob?: string;
+      kidsAgeGroup?: string;
+      documentFrontKey?: string;
+      documentBackKey?: string;
     }>;
     notes?: string;
-    staffUserId: string;
   }) {
     if (!dto.attendees || dto.attendees.length === 0) {
-      throw new BadRequestException('At least 1 attendee is required');
+      throw new BadRequestException('At least one attendee is required');
     }
 
-    // Default primary email if missing for walk-in desk booking
-    const primaryPhone = dto.attendees[0].phone?.replace(/\D/g, '') || Date.now().toString().slice(-6);
-    const primaryEmail = dto.attendees[0].email || `walkin-${primaryPhone}@safedsheri.com`;
-
-    // Strict validation for Couple Pass
-    if (dto.passType === 'COUPLE') {
-      if (dto.attendees.length !== 2) {
-        throw new BadRequestException('Couple Pass requires exactly 2 attendee records (1 Male and 1 Female).');
-      }
-      const maleCount = dto.attendees.filter(a => a.gender === 'MALE').length;
-      const femaleCount = dto.attendees.filter(a => a.gender === 'FEMALE').length;
-      if (maleCount !== 1 || femaleCount !== 1) {
-        throw new BadRequestException('Couple Pass strictly requires exactly 1 Male and 1 Female attendee.');
-      }
-    }
-
-    // Strict validation for Kids Pass
-    if (dto.passType === 'KIDS') {
-      const kid = dto.attendees[0];
-      if (kid && (kid as any).dob) {
-        const [y, m, d] = (kid as any).dob.split('-').map(Number);
-        const dobDate = new Date(y, m - 1, d);
-        if (!isNaN(dobDate.getTime())) {
-          const today = new Date();
-          let age = today.getFullYear() - dobDate.getFullYear();
-          const mDiff = today.getMonth() - dobDate.getMonth();
-          if (mDiff < 0 || (mDiff === 0 && today.getDate() < dobDate.getDate())) age--;
-          if (age > 15) {
-            throw new BadRequestException('Kids Pass is strictly for children aged 15 and below. Age calculated: ' + age + ' years.');
-          }
-        }
-      }
-    }
+    const primaryEmail = dto.attendees[0]?.email || `desk_${Date.now()}@safedsheri.com`;
 
     return await this.prisma.$transaction(async (tx) => {
       // 1. Get Active Event & Phase
@@ -388,7 +369,7 @@ export class PaymentsService {
       const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
       const paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;
 
-      // 3. Create Registration in PASS_ISSUED state
+      // 3. Create Registration
       const registration = await tx.registration.create({
         data: {
           registrationNumber,
@@ -396,7 +377,7 @@ export class PaymentsService {
           pricingPhaseId: phase.id,
           passType: dto.passType,
           amountDue: dto.customAmount,
-          status: RegistrationStatus.PASS_ISSUED,
+          status: dto.paymentMethod === PaymentMethod.UPI_QR ? RegistrationStatus.PAYMENT_PENDING : RegistrationStatus.PASS_ISSUED,
           paymentLinkId,
           createdById: dto.staffUserId,
           reviewedById: dto.staffUserId,
@@ -472,10 +453,51 @@ export class PaymentsService {
         });
       }
 
-      // 5. Create Confirmed Payment Record
+      // 5. IF UPI_QR: Create Real Razorpay Order for live customer payment directly to merchant bank account
+      if (dto.paymentMethod === PaymentMethod.UPI_QR) {
+        const orderData = await this.paymentGatewayService.createPaymentOrder({
+          registrationId: registration.id,
+          registrationNumber: registration.registrationNumber,
+          amount: dto.customAmount,
+          customerName: dto.attendees[0]?.fullName || 'Cashier Desk Guest',
+          customerPhone: dto.attendees[0]?.phone || '0000000000',
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorId: dto.staffUserId,
+            action: 'MANUAL_DESK_ENTRY_RAZORPAY_QR_INITIATED',
+            targetEntity: 'Registration',
+            targetId: registration.id,
+            payload: {
+              amount: dto.customAmount,
+              razorpayOrderId: orderData.razorpayOrderId,
+            },
+          },
+        });
+
+        return {
+          success: true,
+          data: {
+            isRazorpayOrder: true,
+            registration: {
+              ...registration,
+              status: RegistrationStatus.PAYMENT_PENDING,
+            },
+            amountDue: dto.customAmount,
+            paymentLinkId,
+            razorpayOrderId: orderData.razorpayOrderId,
+            razorpayKeyId: orderData.razorpayKeyId,
+            primaryAttendee: dto.attendees[0],
+          },
+          message: `Real Razorpay Order #${orderData.razorpayOrderId} created! Customer can scan QR or pay via UPI.`,
+        };
+      }
+
+      // 6. IF CASH (CUSTOM_DIRECT): Create Confirmed Payment Record Immediately
       const receiptSeq = (await tx.payment.count() + 1001).toString();
       const receiptNumber = `RCP-2026-${receiptSeq}`;
-      const providerRef = `DESK-${dto.paymentMethod === 'CUSTOM_DIRECT' ? 'CASH' : dto.paymentMethod}-${Date.now().toString().slice(-6)}`;
+      const providerRef = `DESK-CASH-${Date.now().toString().slice(-6)}`;
 
       const payment = await tx.payment.create({
         data: {
@@ -484,15 +506,15 @@ export class PaymentsService {
           method: dto.paymentMethod,
           status: PaymentStatus.CONFIRMED,
           receiptNumber,
-          provider: dto.paymentMethod === 'CUSTOM_DIRECT' ? 'CASH_BOX_OFFICE' : 'UPI_DESK_DYNAMIC_QR',
+          provider: 'CASH_BOX_OFFICE',
           providerReference: providerRef,
           paymentLinkId,
           collectedById: dto.staffUserId,
-          notes: dto.notes || `Manual desk payment recorded via ${dto.paymentMethod === 'CUSTOM_DIRECT' ? 'CASH' : 'UPI DYNAMIC QR'}`,
+          notes: dto.notes || 'Cash payment collected at box office counter',
         },
       });
 
-      // 6. Mint Instant Credentials
+      // 7. Mint Instant Credentials
       await this.credentialsService.generateCredentialsForRegistration(registration.id, tx);
       const fullCredentials = await tx.credential.findMany({
         where: { registrationId: registration.id },
@@ -503,7 +525,7 @@ export class PaymentsService {
         orderBy: { createdAt: 'asc' },
       });
 
-      // 7. Audit Log
+      // 8. Audit Log
       await tx.auditLog.create({
         data: {
           actorId: dto.staffUserId,
@@ -644,11 +666,19 @@ export class PaymentsService {
         data: { status: RegistrationStatus.PAYMENT_CONFIRMED },
       });
 
-      const credentials = await this.credentialsService.generateCredentialsForRegistration(lockedReg.id, tx);
+      await this.credentialsService.generateCredentialsForRegistration(lockedReg.id, tx);
+      const fullCredentials = await tx.credential.findMany({
+        where: { registrationId: lockedReg.id },
+        include: {
+          attendee: true,
+          registration: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
 
       await tx.auditLog.create({
         data: {
-          actorId: lockedReg.createdById,
+          actorId: lockedReg.createdById || 'SYSTEM',
           action: 'ONLINE_PAYMENT_CONFIRMED_PASS_ISSUED',
           targetEntity: 'Registration',
           targetId: lockedReg.id,
@@ -657,7 +687,7 @@ export class PaymentsService {
             amount: Number(lockedReg.amountDue),
             providerReference: providerRef,
             method: data.method || PaymentMethod.UPI_QR,
-            credentialsCount: credentials.length,
+            credentialsCount: fullCredentials.length,
           },
         },
       });
@@ -665,13 +695,9 @@ export class PaymentsService {
       return {
         success: true,
         data: {
-          registrationId: lockedReg.id,
-          registrationNumber: lockedReg.registrationNumber,
-          receiptNumber,
-          providerReference: providerRef,
-          amount: Number(lockedReg.amountDue),
-          status: RegistrationStatus.PASS_ISSUED,
-          credentialsCount: credentials.length,
+          registration: lockedReg,
+          payment,
+          credentials: fullCredentials,
         },
         message: 'Online Payment Confirmed! Active Pass Credentials Issued.',
       };

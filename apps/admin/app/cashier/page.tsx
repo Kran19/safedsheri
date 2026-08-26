@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { QRCodeSVG } from 'qrcode.react';
 import { apiRequest, getAuthToken, getStoredUser } from '../../lib/api';
 import { 
@@ -320,14 +321,26 @@ export default function CashierDeskTerminal() {
     if (res.success && res.data) {
       if (manualForm.paymentMethod === 'UPI_QR') {
         const amountDue = Number(manualForm.customAmount);
-        const upiPayload = `upi://pay?pa=safedsheri@icici&pn=Safed%20Sheri%202026&am=${amountDue}&tn=SS26-${res.data.registration?.registrationNumber}&tr=${res.data.registration?.paymentLinkId}`;
         setActiveQrModal({
           registration: res.data.registration,
-          payment: res.data.payment,
-          credentials: res.data.credentials,
           amountDue,
-          upiPayload,
+          paymentLinkId: res.data.paymentLinkId,
+          razorpayOrderId: res.data.razorpayOrderId,
+          razorpayKeyId: res.data.razorpayKeyId,
+          primaryAttendee: cashierAttendees[0],
         });
+
+        // Automatically launch Razorpay Checkout Modal
+        setTimeout(() => {
+          openRazorpayCheckoutModal({
+            razorpayOrderId: res.data.razorpayOrderId,
+            razorpayKeyId: res.data.razorpayKeyId,
+            amountDue,
+            paymentLinkId: res.data.paymentLinkId,
+            registrationNumber: res.data.registration?.registrationNumber,
+            primaryAttendee: cashierAttendees[0],
+          });
+        }, 300);
       } else {
         setManualSuccessResult(res.data);
       }
@@ -336,6 +349,74 @@ export default function CashierDeskTerminal() {
     } else {
       setError(res.error?.message || 'Failed to create manual entry');
     }
+  }
+
+  function openRazorpayCheckoutModal(orderData: {
+    razorpayOrderId: string;
+    razorpayKeyId?: string;
+    amountDue: number;
+    paymentLinkId: string;
+    registrationNumber: string;
+    primaryAttendee?: { fullName?: string; phone?: string; email?: string };
+  }) {
+    if (typeof window === 'undefined' || !(window as any).Razorpay) {
+      setError('Razorpay SDK is loading. Please try again in a moment.');
+      return;
+    }
+
+    const options = {
+      key: orderData.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TU3glApQtNIVtN',
+      amount: Math.round(orderData.amountDue * 100),
+      currency: 'INR',
+      name: 'Safed Sheri 2026',
+      description: `Counter Dynamic UPI QR Settlement #${orderData.registrationNumber}`,
+      order_id: orderData.razorpayOrderId,
+      prefill: {
+        name: orderData.primaryAttendee?.fullName || 'Cashier Counter Guest',
+        contact: orderData.primaryAttendee?.phone || '9999999999',
+        email: orderData.primaryAttendee?.email || 'info@safedsheri.com',
+      },
+      theme: {
+        color: '#D99427',
+      },
+      handler: async function (response: any) {
+        setSubmittingManual(true);
+        setMessage('⏳ Verifying Razorpay payment signature & minting passes...');
+        setError('');
+
+        const confirmRes = await apiRequest('/payments/razorpay-confirm', {
+          method: 'POST',
+          body: JSON.stringify({
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+            paymentLinkId: orderData.paymentLinkId,
+          }),
+        });
+
+        setSubmittingManual(false);
+
+        if (confirmRes.success && confirmRes.data) {
+          setManualSuccessResult(confirmRes.data);
+          setActiveQrModal(null);
+          setMessage(`✅ Real payment of ₹${orderData.amountDue.toLocaleString()} verified! Passes minted successfully.`);
+          loadFinancialData();
+        } else {
+          setError(confirmRes.error?.message || 'Payment verification failed. Please contact admin.');
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          setSubmittingManual(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.on('payment.failed', function (resp: any) {
+      setError(resp.error?.description || 'Razorpay transaction was declined or failed.');
+    });
+    rzp.open();
   }
 
   // Lookup application
@@ -391,31 +472,6 @@ export default function CashierDeskTerminal() {
       setMessage(res.message || 'WhatsApp online payment link dispatched successfully!');
     } else {
       setError(res.error?.message || 'Failed to dispatch WhatsApp payment link');
-    }
-  }
-
-  async function handleSimulateGatewayPayment() {
-    if (!upiQrData?.paymentLinkId) return;
-    setSimulatingConfirm(true);
-    setError('');
-
-    const res = await apiRequest('/payments/gateway-confirm', {
-      method: 'POST',
-      body: JSON.stringify({
-        paymentLinkId: upiQrData.paymentLinkId,
-        providerReference: `UPI-ONLINE-${Date.now().toString().slice(-6)}`,
-        notes: 'Candidate completed online UPI payment via desk dynamic QR',
-      }),
-    });
-
-    setSimulatingConfirm(false);
-
-    if (res.success && res.data) {
-      setMessage(`Online payment confirmed! Pass issued with receipt #${res.data.receiptNumber}`);
-      loadFinancialData();
-      handleSearchReg();
-    } else {
-      setError(res.error?.message || 'Online payment confirmation failed');
     }
   }
 
@@ -1132,41 +1188,63 @@ export default function CashierDeskTerminal() {
         </div>
       )}
 
-      {/* DYNAMIC QR MODAL (FOR ON-SPOT UPI QR) */}
+      {/* REAL RAZORPAY DYNAMIC QR MODAL (FOR ON-SPOT COUNTER SETTLEMENT) */}
       {activeQrModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white border-2 border-[#EAD9B8] rounded-3xl p-6 shadow-2xl text-center space-y-5 animate-scale-in">
             <div className="flex justify-between items-center border-b border-[#EAD9B8] pb-3">
-              <span className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-wider">
-                DYNAMIC UPI QR SETTLEMENT
-              </span>
+              <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#2D1F0E] text-[#F6C85F] text-[9px] font-mono font-bold tracking-widest uppercase">
+                <span>✦ REAL RAZORPAY UPI SETTLEMENT ✦</span>
+              </div>
               <button onClick={() => setActiveQrModal(null)}><X className="w-5 h-5 text-[#6E5336]" /></button>
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Scan with PhonePe, GPay, or Paytm</h3>
-              <p className="text-xs text-[#6E5336]">
-                Application #{activeQrModal.registration?.registrationNumber}
+              <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Scan with PhonePe, GPay, Paytm</h3>
+              <p className="text-xs text-[#6E5336] font-mono">
+                App #{activeQrModal.registration?.registrationNumber} • Order #{activeQrModal.razorpayOrderId}
               </p>
             </div>
 
-            <div className="flex justify-center p-4 bg-[#FAF6EE] rounded-2xl border-2 border-[#D99427]/40 inline-block mx-auto shadow-inner">
-              <QRCodeSVG value={activeQrModal.upiPayload} size={200} level="M" />
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-[#FFF9EE] rounded-2xl border-2 border-[#D99427]/50 text-xs text-amber-950 text-left space-y-2">
+              <div className="flex items-center space-x-2 font-bold text-amber-900">
+                <Sparkles className="w-4 h-4 text-[#D99427]" />
+                <span>Live Bank Account Settlement Active</span>
+              </div>
+              <p className="text-[11px] text-[#6E5336] leading-relaxed">
+                Customer scans the dynamic Razorpay QR on screen. Payment is verified in real-time and settles directly into your bank account.
+              </p>
             </div>
 
-            <div className="text-2xl font-serif font-bold text-emerald-800">
+            <div className="text-3xl font-serif font-bold text-emerald-800">
               Amount Due: ₹{Number(activeQrModal.amountDue).toLocaleString()}
             </div>
 
-            <button
-              onClick={() => {
-                setManualSuccessResult(activeQrModal);
-                setActiveQrModal(null);
-              }}
-              className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs uppercase tracking-wider hover:opacity-90 transition shadow-md"
-            >
-              ✓ Payment Received & Mint Passes
-            </button>
+            <div className="space-y-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => openRazorpayCheckoutModal({
+                  razorpayOrderId: activeQrModal.razorpayOrderId,
+                  razorpayKeyId: activeQrModal.razorpayKeyId,
+                  amountDue: activeQrModal.amountDue,
+                  paymentLinkId: activeQrModal.paymentLinkId,
+                  registrationNumber: activeQrModal.registration?.registrationNumber,
+                  primaryAttendee: activeQrModal.primaryAttendee || cashierAttendees[0],
+                })}
+                className="w-full py-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:scale-105 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>⚡ Open Live Razorpay Dynamic QR Modal</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveQrModal(null)}
+                className="w-full py-2.5 rounded-full border border-[#EAD9B8] text-[#6E5336] hover:bg-[#FAF6EE] text-xs font-bold uppercase transition"
+              >
+                Close & Return to Terminal
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1253,30 +1331,46 @@ export default function CashierDeskTerminal() {
                 </div>
 
                 {foundReg.status !== 'PASS_ISSUED' && foundReg.status !== 'PAYMENT_CONFIRMED' ? (
-                  <div className="p-6 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] text-center space-y-3 shadow-md">
+                  <div className="p-6 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] text-center space-y-4 shadow-md">
                     <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-wider">
-                      DYNAMIC COUNTER UPI QR
+                      LIVE RAZORPAY UPI SETTLEMENT
                     </div>
 
                     {upiQrData ? (
-                      <>
-                        <div className="flex justify-center p-2 bg-white rounded-xl border border-[#EAD9B8] inline-block mx-auto shadow-sm">
-                          <QRCodeSVG value={upiQrData.upiQrPayload} size={150} level="M" />
+                      <div className="space-y-4">
+                        <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 text-left space-y-1">
+                          <div className="font-bold flex items-center space-x-1">
+                            <Sparkles className="w-3.5 h-3.5 text-[#D99427]" />
+                            <span>Real Razorpay Order Ready</span>
+                          </div>
+                          <p className="text-[11px] text-[#6E5336]">
+                            Order: <strong className="font-mono text-[#2D1F0E]">{upiQrData.razorpayOrderId}</strong>
+                          </p>
                         </div>
-                        <div className="text-xs font-serif font-bold text-[#2D1F0E]">
-                          Amount: ₹{upiQrData.amountDue?.toLocaleString()}
+
+                        <div className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                          ₹{Number(upiQrData.amountDue).toLocaleString()}
                         </div>
+
                         <button
-                          onClick={handleSimulateGatewayPayment}
-                          disabled={simulatingConfirm}
-                          className="w-full py-2.5 mt-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs uppercase tracking-wider hover:opacity-90 transition disabled:opacity-50 shadow-md"
+                          type="button"
+                          onClick={() => openRazorpayCheckoutModal({
+                            razorpayOrderId: upiQrData.razorpayOrderId,
+                            razorpayKeyId: upiQrData.razorpayKeyId,
+                            amountDue: upiQrData.amountDue,
+                            paymentLinkId: upiQrData.paymentLinkId,
+                            registrationNumber: upiQrData.registrationNumber,
+                            primaryAttendee: upiQrData.attendees?.[0],
+                          })}
+                          className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:scale-105 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2"
                         >
-                          {simulatingConfirm ? 'Verifying...' : 'Simulate Gateway Webhook Confirmation'}
+                          <Sparkles className="w-4 h-4" />
+                          <span>⚡ Open Live Razorpay UPI QR & Settle</span>
                         </button>
-                      </>
+                      </div>
                     ) : (
                       <div className="py-8 text-xs text-[#6E5336]">
-                        {generatingQr ? 'Generating Dynamic UPI QR...' : 'Application must be approved to generate QR.'}
+                        {generatingQr ? 'Initializing Real Razorpay Order...' : 'Application must be approved to generate QR.'}
                       </div>
                     )}
                   </div>
@@ -1292,6 +1386,9 @@ export default function CashierDeskTerminal() {
           )}
         </div>
       )}
+
+      {/* Razorpay Standard Checkout SDK */}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   );
 }
