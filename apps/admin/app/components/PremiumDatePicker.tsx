@@ -26,6 +26,27 @@ export function PremiumDatePicker({ value, onChange, label = 'Date of Birth *', 
   const [currentYear, setCurrentYear] = useState(initialDate.getFullYear());
   const [showYearSelector, setShowYearSelector] = useState(false);
   
+  // Sync state whenever value prop updates (e.g. OCR auto-fill)
+  useEffect(() => {
+    if (value) {
+      const parts = value.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y) && !isNaN(m) && m >= 0 && m <= 11) {
+          setCurrentYear(y);
+          setCurrentMonth(m);
+          return;
+        }
+      }
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        setCurrentMonth(d.getMonth());
+        setCurrentYear(d.getFullYear());
+      }
+    }
+  }, [value]);
+
   // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -165,7 +186,20 @@ export function PremiumDatePicker({ value, onChange, label = 'Date of Birth *', 
         `}
       >
         <span className={value ? 'text-[#2D1F0E] text-xs font-medium' : 'text-[#A89885] text-xs'}>
-          {value ? new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Select Date'}
+          {(() => {
+            if (!value) return 'Select Date';
+            const parts = value.split('-');
+            if (parts.length === 3) {
+              const y = parseInt(parts[0], 10);
+              const m = parseInt(parts[1], 10) - 1;
+              const d = parseInt(parts[2], 10);
+              const dateObj = new Date(y, m, d);
+              if (!isNaN(dateObj.getTime())) {
+                return dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+              }
+            }
+            return value;
+          })()}
         </span>
         <Calendar size={16} className="text-[#D99427]" />
       </button>
