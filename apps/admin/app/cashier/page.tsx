@@ -591,30 +591,30 @@ export default function CashierDeskTerminal() {
           <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
             <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">TOTAL COLLECTION</div>
             <div className="text-2xl font-serif font-bold text-emerald-800 mt-1">
-              ₹{Number(stats.totalCollection || 0).toLocaleString()}
+              ₹{Number(stats.totalCollection ?? stats.totalVolume ?? 0).toLocaleString()}
             </div>
-            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.totalTransactions || 0} Successful Txns</div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.totalTransactions ?? transactions.length ?? 0} Successful Txns</div>
           </div>
           <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
             <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">CASH BOX OFFICE</div>
             <div className="text-2xl font-serif font-bold text-[#2D1F0E] mt-1">
-              ₹{Number(stats.breakdown?.customDirectVolume || 0).toLocaleString()}
+              ₹{Number(stats.breakdown?.customDirectVolume ?? stats.methodBreakdown?.CUSTOM_DIRECT ?? 0).toLocaleString()}
             </div>
-            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.customDirectCount || 0} Cash Settlements</div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.customDirectCount ?? transactions.filter(t => t.method === 'CUSTOM_DIRECT').length ?? 0} Cash Settlements</div>
           </div>
           <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
             <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">UPI / DYNAMIC QR</div>
             <div className="text-2xl font-serif font-bold text-[#D99427] mt-1">
-              ₹{Number(stats.breakdown?.upiQrVolume || 0).toLocaleString()}
+              ₹{Number(stats.breakdown?.upiQrVolume ?? stats.methodBreakdown?.UPI_QR ?? 0).toLocaleString()}
             </div>
-            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.upiQrCount || 0} QR Settlements</div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.upiQrCount ?? transactions.filter(t => t.method === 'UPI_QR').length ?? 0} QR Settlements</div>
           </div>
           <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
             <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">ONLINE GATEWAY</div>
             <div className="text-2xl font-serif font-bold text-blue-900 mt-1">
-              ₹{Number(stats.breakdown?.onlineGatewayVolume || 0).toLocaleString()}
+              ₹{Number(stats.breakdown?.onlineGatewayVolume ?? stats.methodBreakdown?.ONLINE_GATEWAY ?? 0).toLocaleString()}
             </div>
-            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.onlineGatewayCount || 0} Web Orders</div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.onlineGatewayCount ?? transactions.filter(t => t.method === 'ONLINE_GATEWAY').length ?? 0} Web Orders</div>
           </div>
         </div>
       )}

@@ -100,6 +100,14 @@ export class PaymentsService {
 
     let totalVolume = 0;
     let todayVolume = 0;
+
+    let customDirectVolume = 0;
+    let customDirectCount = 0;
+    let upiQrVolume = 0;
+    let upiQrCount = 0;
+    let onlineGatewayVolume = 0;
+    let onlineGatewayCount = 0;
+
     const methodBreakdown: Record<string, number> = {
       ONLINE_GATEWAY: 0,
       UPI_QR: 0,
@@ -108,16 +116,29 @@ export class PaymentsService {
     const passBreakdown: Record<string, number> = {
       SINGLE: 0,
       COUPLE: 0,
+      KIDS: 0,
       GAZEBO: 0,
     };
 
     for (const p of payments) {
-      const amt = Number(p.amount);
+      const amt = Number(p.amount) || 0;
       totalVolume += amt;
       if (new Date(p.createdAt) >= todayStart) {
         todayVolume += amt;
       }
       methodBreakdown[p.method] = (methodBreakdown[p.method] || 0) + amt;
+
+      if (p.method === 'CUSTOM_DIRECT') {
+        customDirectVolume += amt;
+        customDirectCount++;
+      } else if (p.method === 'UPI_QR') {
+        upiQrVolume += amt;
+        upiQrCount++;
+      } else {
+        onlineGatewayVolume += amt;
+        onlineGatewayCount++;
+      }
+
       const pt = p.registration?.passType || 'SINGLE';
       passBreakdown[pt] = (passBreakdown[pt] || 0) + 1;
     }
@@ -125,9 +146,18 @@ export class PaymentsService {
     return {
       success: true,
       data: {
+        totalCollection: totalVolume,
         totalVolume,
         todayVolume,
         totalTransactions: payments.length,
+        breakdown: {
+          customDirectVolume,
+          customDirectCount,
+          upiQrVolume,
+          upiQrCount,
+          onlineGatewayVolume,
+          onlineGatewayCount,
+        },
         methodBreakdown,
         passBreakdown,
       },
