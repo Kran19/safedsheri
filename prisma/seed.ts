@@ -95,16 +95,50 @@ async function main() {
   });
   console.log('✓ Pricing Phases Initialized (Early Bird: Single ₹3500, Couple ₹6500)');
 
-  // 3. Create Demo Staff Users
+  // 3. Create Demo Staff Users & 3 Super Admin Accounts
   const adminPassHash = hashPassword('AdminPass123!');
   const cashierPassHash = hashPassword('CashierPass123!');
   const securityPassHash = hashPassword('SecurityPass123!');
 
+  // Super Admin 1
   const superAdmin = await prisma.user.create({
+    data: {
+      username: 'admin1@safedsheri.com',
+      passwordHash: adminPassHash,
+      fullName: 'Vikramaditya Solanki (Super Admin 1)',
+      role: Role.SUPER_ADMIN,
+      isActive: true,
+    },
+  });
+
+  // Alias default admin
+  await prisma.user.create({
     data: {
       username: 'admin@safedsheri.com',
       passwordHash: adminPassHash,
-      fullName: 'Vikramaditya Solanki (Super Admin)',
+      fullName: 'Master Admin (Super Admin)',
+      role: Role.SUPER_ADMIN,
+      isActive: true,
+    },
+  });
+
+  // Super Admin 2
+  const superAdmin2 = await prisma.user.create({
+    data: {
+      username: 'admin2@safedsheri.com',
+      passwordHash: adminPassHash,
+      fullName: 'Rudra Pratap Singh (Super Admin 2)',
+      role: Role.SUPER_ADMIN,
+      isActive: true,
+    },
+  });
+
+  // Super Admin 3
+  const superAdmin3 = await prisma.user.create({
+    data: {
+      username: 'admin3@safedsheri.com',
+      passwordHash: adminPassHash,
+      fullName: 'Harshvardhan Jadeja (Super Admin 3)',
       role: Role.SUPER_ADMIN,
       isActive: true,
     },
@@ -129,7 +163,7 @@ async function main() {
       isActive: true,
     },
   });
-  console.log('✓ Demo Staff Accounts Seeded (Admin, Cashier, Security)');
+  console.log('✓ Demo Staff Accounts Seeded (3 Super Admins, Cashier, Security)');
 
   // 4. Payment Locations
   await prisma.paymentLocation.create({

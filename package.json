@@ -21,6 +21,7 @@
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:seed": "npx ts-node prisma/seed.ts",
+    "prisma:seed:admins": "npx ts-node prisma/seed-admins.ts",
     "test:e2e": "npx ts-node scripts/e2e-verification.ts"
   },
   "devDependencies": {
