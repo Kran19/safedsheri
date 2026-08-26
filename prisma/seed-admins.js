@@ -1,0 +1,85 @@
+const { PrismaClient } = require('@prisma/client');
+const crypto = require('crypto');
+
+const prisma = new PrismaClient();
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+async function main() {
+  console.log('🛡️ Auto-Synchronizing 3 Super Admin Accounts...');
+
+  const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!';
+  const adminPassHash = hashPassword(defaultPassword);
+
+  const adminAccounts = [
+    {
+      username: 'admin1@safedsheri.com',
+      fullName: 'Super Admin 1 (Vikramaditya Solanki)',
+      role: 'SUPER_ADMIN',
+    },
+    {
+      username: 'admin2@safedsheri.com',
+      fullName: 'Super Admin 2 (Rudra Pratap Singh)',
+      role: 'SUPER_ADMIN',
+    },
+    {
+      username: 'admin3@safedsheri.com',
+      fullName: 'Super Admin 3 (Harshvardhan Jadeja)',
+      role: 'SUPER_ADMIN',
+    },
+  ];
+
+  // Clean up old legacy admin
+  try {
+    const deleted = await prisma.user.deleteMany({
+      where: { username: 'admin@safedsheri.com' },
+    });
+    if (deleted.count > 0) {
+      console.log('✓ Cleaned up legacy admin@safedsheri.com');
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  for (const account of adminAccounts) {
+    // Only set default password if user does not exist yet (so any password changes by the admin are preserved)
+    const existing = await prisma.user.findUnique({
+      where: { username: account.username },
+    });
+
+    if (!existing) {
+      await prisma.user.create({
+        data: {
+          username: account.username,
+          passwordHash: adminPassHash,
+          fullName: account.fullName,
+          role: account.role,
+          isActive: true,
+        },
+      });
+      console.log(`✓ Created Super Admin: ${account.username} (Password: ${defaultPassword})`);
+    } else {
+      await prisma.user.update({
+        where: { username: account.username },
+        data: {
+          fullName: account.fullName,
+          role: account.role,
+          isActive: true,
+        },
+      });
+      console.log(`✓ Verified Super Admin: ${account.username} is Active`);
+    }
+  }
+
+  console.log('🎉 Super Admin Accounts Ready!');
+}
+
+main()
+  .catch((e) => {
+    console.error('⚠️ Admin seeding notice:', e.message);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
