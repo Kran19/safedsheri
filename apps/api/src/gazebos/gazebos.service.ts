@@ -109,12 +109,185 @@ export class GazebosService {
     return { success: true, data: inquiries };
   }
 
-  // STAFF: List all 12 Physical Gazebos
+  // STAFF: List all 12 Physical Gazebos with linked active inquiries
   async findAllGazebos() {
     const gazebos = await this.prisma.gazebo.findMany({
+      include: {
+        inquiries: {
+          where: {
+            status: { in: [GazeboInquiryStatus.CONFIRMED, GazeboInquiryStatus.HOLD, GazeboInquiryStatus.APPROVED] }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+        },
+      },
       orderBy: { gazeboNumber: 'asc' },
     });
     return { success: true, data: gazebos };
+  }
+
+  // ADMIN: Direct Booking / Allocation of a Gazebo
+  async bookGazeboDirect(
+    id: string,
+    data: {
+      fullName?: string;
+      phone?: string;
+      email?: string;
+      amount?: number;
+      notes?: string;
+      status?: 'CONFIRMED' | 'HOLD';
+    },
+    actorId: string,
+  ) {
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { id },
+      include: {
+        inquiries: {
+          where: { status: { in: [GazeboInquiryStatus.CONFIRMED, GazeboInquiryStatus.HOLD] } },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Gazebo not found');
+    }
+
+    const targetStatus = data.status === 'HOLD' ? GazeboStatus.HELD : GazeboStatus.CONFIRMED;
+    const inquiryStatus = data.status === 'HOLD' ? GazeboInquiryStatus.HOLD : GazeboInquiryStatus.CONFIRMED;
+
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Update Gazebo status
+      const updatedGazebo = await tx.gazebo.update({
+        where: { id },
+        data: {
+          status: targetStatus,
+          price: data.amount ? data.amount : gazebo.price,
+        },
+      });
+
+      // 2. Prepare Guest Contact Info
+      const fullName = data.fullName?.trim() || `VIP Host (Gazebo ${gazebo.gazeboNumber})`;
+      const phone = data.phone?.trim() || '+91 99999 99999';
+      const formattedNotes = [
+        data.email ? `Email: ${data.email.trim()}` : null,
+        data.amount ? `Amount: ₹${Number(data.amount).toLocaleString()}` : null,
+        data.notes ? `Notes: ${data.notes.trim()}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | ') || `Direct booking by Super Admin`;
+
+      let inquiry;
+      if (gazebo.inquiries && gazebo.inquiries.length > 0) {
+        // Update existing active inquiry
+        inquiry = await tx.gazeboInquiry.update({
+          where: { id: gazebo.inquiries[0].id },
+          data: {
+            fullName,
+            phone,
+            notes: formattedNotes,
+            status: inquiryStatus,
+          },
+        });
+      } else {
+        // Create new inquiry
+        const count = await tx.gazeboInquiry.count();
+        const seq = (count + 101).toString().padStart(6, '0');
+        const inquiryNumber = `GZB-ADM-${seq}`;
+
+        inquiry = await tx.gazeboInquiry.create({
+          data: {
+            inquiryNumber,
+            gazeboId: id,
+            level: gazebo.level,
+            fullName,
+            phone,
+            notes: formattedNotes,
+            status: inquiryStatus,
+          },
+        });
+      }
+
+      // 3. Audit Log
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: targetStatus === GazeboStatus.CONFIRMED ? 'GAZEBO_DIRECT_BOOKED' : 'GAZEBO_DIRECT_HELD',
+          targetEntity: 'Gazebo',
+          targetId: id,
+          payload: {
+            gazeboNumber: gazebo.gazeboNumber,
+            level: gazebo.level,
+            fullName,
+            phone,
+            amount: data.amount || Number(gazebo.price),
+            status: targetStatus,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          gazebo: {
+            ...updatedGazebo,
+            inquiries: [inquiry],
+          },
+          inquiry,
+        },
+        message: `Gazebo ${gazebo.gazeboNumber} successfully marked as ${targetStatus}!`,
+      };
+    });
+  }
+
+  // ADMIN: Release a Gazebo back to Available
+  async releaseGazebo(id: string, actorId: string) {
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { id },
+      include: { inquiries: true },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Gazebo not found');
+    }
+
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Reset Gazebo status to AVAILABLE
+      const updatedGazebo = await tx.gazebo.update({
+        where: { id },
+        data: { status: GazeboStatus.AVAILABLE },
+      });
+
+      // 2. Mark active inquiries as CANCELLED
+      await tx.gazeboInquiry.updateMany({
+        where: {
+          gazeboId: id,
+          status: { in: [GazeboInquiryStatus.CONFIRMED, GazeboInquiryStatus.HOLD, GazeboInquiryStatus.APPROVED] },
+        },
+        data: {
+          status: GazeboInquiryStatus.CANCELLED,
+          notes: 'Released back to available inventory by Super Admin',
+        },
+      });
+
+      // 3. Audit Log
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: 'GAZEBO_RELEASED_TO_AVAILABLE',
+          targetEntity: 'Gazebo',
+          targetId: id,
+          payload: { gazeboNumber: gazebo.gazeboNumber, level: gazebo.level },
+        },
+      });
+
+      return {
+        success: true,
+        data: updatedGazebo,
+        message: `Gazebo ${gazebo.gazeboNumber} has been released and is now AVAILABLE.`,
+      };
+    });
   }
 
   // STAFF: Update Inquiry Status with PostgreSQL Row-Level Concurrency Locks

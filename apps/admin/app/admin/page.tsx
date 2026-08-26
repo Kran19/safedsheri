@@ -113,6 +113,25 @@ export default function SuperAdminDashboard() {
   const [selectedInquiry, setSelectedInquiry] = useState<any | null>(null);
   const [inquiryType, setInquiryType] = useState<'sponsor' | 'gazebo' | null>(null);
 
+  // Gazebo Direct Booking Modal State
+  const [selectedGazeboForBooking, setSelectedGazeboForBooking] = useState<any | null>(null);
+  const [bookingForm, setBookingForm] = useState<{
+    fullName: string;
+    phone: string;
+    email: string;
+    amount: number | string;
+    notes: string;
+    status: 'CONFIRMED' | 'HOLD';
+  }>({
+    fullName: '',
+    phone: '',
+    email: '',
+    amount: '',
+    notes: '',
+    status: 'CONFIRMED',
+  });
+  const [bookingLoading, setBookingLoading] = useState(false);
+
   // Helper: Colored status badge for inquiry status
   function getInquiryStatusBadge(status: string) {
     const map: Record<string, string> = {
@@ -461,6 +480,46 @@ export default function SuperAdminDashboard() {
       setError(res.error?.message || 'Failed to update status.');
     }
     setActionLoading(false);
+  }
+
+  async function handleDirectBookingSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedGazeboForBooking) return;
+    setBookingLoading(true);
+    setMessage('');
+    setError('');
+
+    const res = await apiRequest(`/gazebos/${selectedGazeboForBooking.id}/book`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ...bookingForm,
+        amount: bookingForm.amount ? Number(bookingForm.amount) : undefined,
+      }),
+    });
+
+    setBookingLoading(false);
+    if (res.success) {
+      setMessage(`✅ Gazebo ${selectedGazeboForBooking.gazeboNumber} (${bookingForm.status === 'CONFIRMED' ? 'Booked' : 'Placed on Hold'}) successfully!`);
+      setSelectedGazeboForBooking(null);
+      loadTabContent('gazebos');
+    } else {
+      setError(res.error?.message || 'Failed to book gazebo');
+    }
+  }
+
+  async function handleReleaseGazebo(gazeboId: string, gazeboNumber: string, num: number) {
+    if (!confirm(`Are you sure you want to release Gazebo #${num} (${gazeboNumber}) back to AVAILABLE inventory?`)) {
+      return;
+    }
+    setMessage('');
+    setError('');
+    const res = await apiRequest(`/gazebos/${gazeboId}/release`, { method: 'POST' });
+    if (res.success) {
+      setMessage(`✅ Gazebo #${num} (${gazeboNumber}) is now AVAILABLE for new allocations.`);
+      loadTabContent('gazebos');
+    } else {
+      setError(res.error?.message || 'Failed to release gazebo');
+    }
   }
 
   // Filtered applications for custom filter component
@@ -1028,29 +1087,188 @@ export default function SuperAdminDashboard() {
       {/* TAB 4: GAZEBOS & INQUIRIES */}
       {/* ========================================================================= */}
       {activeTab === 'gazebos' && (
-        <div className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            {gazebos.map((gz) => (
-              <div key={gz.id} className="p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-sm space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C6019]">
-                    LEVEL {gz.level}
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    gz.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {gz.status}
-                  </span>
-                </div>
-                <h4 className="text-xl font-serif font-bold text-[#2D1F0E]">{gz.name}</h4>
-                <div className="text-xs text-[#6E5336]">Capacity: {gz.capacity} VIP Guests</div>
-                <div className="text-xs font-serif font-bold text-[#D99427]">
-                  Level {gz.level} Spatial Cabana (Inquiry Only)
+        <div className="space-y-6 animate-fade-in">
+          {/* Header Summary Banner */}
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#FFF9EE] border-2 border-[#D99427]/40 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center space-x-2 text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
+                <Crown className="w-3.5 h-3.5 text-[#D99427]" />
+                <span>12 SPATIAL VIP GAZEBO CABANAS</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-serif font-bold text-[#2D1F0E]">
+                VIP Gazebo Inventory & Direct Allocation
+              </h2>
+              <p className="text-xs text-[#6E5336] mt-1 max-w-xl">
+                Manage all 12 physical luxury gazebos across 3 spatial levels. Directly allocate, hold, or assign guests with optional host contact details.
+              </p>
+            </div>
+
+            {/* Quick Stat Counter Badges */}
+            <div className="flex flex-wrap gap-2.5">
+              <div className="px-4 py-2 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center min-w-[75px]">
+                <div className="text-[9px] font-mono font-bold text-[#8C6019] uppercase">TOTAL</div>
+                <div className="text-lg font-serif font-bold text-[#2D1F0E]">12</div>
+              </div>
+              <div className="px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-300 shadow-sm text-center min-w-[75px]">
+                <div className="text-[9px] font-mono font-bold text-emerald-800 uppercase">AVAILABLE</div>
+                <div className="text-lg font-serif font-bold text-emerald-800">
+                  {gazebos.filter((g) => g.status === 'AVAILABLE').length}
                 </div>
               </div>
-            ))}
+              <div className="px-4 py-2 rounded-2xl bg-red-50 border border-red-300 shadow-sm text-center min-w-[75px]">
+                <div className="text-[9px] font-mono font-bold text-red-800 uppercase">BOOKED</div>
+                <div className="text-lg font-serif font-bold text-red-800">
+                  {gazebos.filter((g) => g.status === 'CONFIRMED').length}
+                </div>
+              </div>
+              <div className="px-4 py-2 rounded-2xl bg-amber-50 border border-amber-300 shadow-sm text-center min-w-[75px]">
+                <div className="text-[9px] font-mono font-bold text-amber-900 uppercase">ON HOLD</div>
+                <div className="text-lg font-serif font-bold text-amber-900">
+                  {gazebos.filter((g) => g.status === 'HELD').length}
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* 12 Visual Gazebo Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {gazebos.map((gz, index) => {
+              const gazeboIndex = index + 1; // 1 to 12
+              const levelName = gz.level === 1 ? 'Sheri Chowk' : gz.level === 2 ? 'The Royal Sheri Pavillion' : 'Sheri Rass';
+              const tierBadgeColor = gz.level === 2 ? 'bg-[#2D1F0E] text-[#F6C85F]' : 'bg-[#FAF6EE] text-[#8C6019] border border-[#EAD9B8]';
+              const isBooked = gz.status === 'CONFIRMED';
+              const isHeld = gz.status === 'HELD';
+              const activeInquiry = gz.inquiries?.[0];
+
+              return (
+                <div
+                  key={gz.id}
+                  className={`p-5 rounded-3xl border-2 transition-all flex flex-col justify-between space-y-4 shadow-sm hover:shadow-md ${
+                    gz.level === 2
+                      ? 'border-[#D99427] bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE]'
+                      : 'border-[#EAD9B8] bg-white'
+                  }`}
+                >
+                  {/* Top Bar */}
+                  <div>
+                    <div className="flex justify-between items-start mb-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className={`px-3 py-1 rounded-full text-xs font-mono font-extrabold shadow-sm ${tierBadgeColor}`}>
+                          GAZEBO #{gazeboIndex}
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-[#8C6019]">
+                          {gz.gazeboNumber}
+                        </span>
+                      </div>
+
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shadow-sm ${
+                          isBooked
+                            ? 'bg-red-100 text-red-800 border-red-300'
+                            : isHeld
+                            ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+                            : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        }`}
+                      >
+                        {isBooked ? 'CONFIRMED' : isHeld ? 'ON HOLD' : 'AVAILABLE'}
+                      </span>
+                    </div>
+
+                    <h4 className="text-base font-serif font-bold text-[#2D1F0E] truncate">
+                      {levelName}
+                    </h4>
+                    <div className="text-[11px] text-[#6E5336] flex items-center justify-between mt-0.5 font-medium">
+                      <span>Level {gz.level} Spatial Cabana</span>
+                      <span className="font-mono font-bold text-[#8C6019]">
+                        ₹{Number(gz.price).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Body: Guest Information or Available Status */}
+                  {(isBooked || isHeld) && activeInquiry ? (
+                    <div className="p-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs space-y-1">
+                      <div className="text-[9px] font-mono text-[#8C6019] uppercase tracking-wider font-bold">
+                        {isBooked ? 'BOOKED FOR GUEST' : 'RESERVED ON HOLD FOR'}
+                      </div>
+                      <div className="font-serif font-bold text-sm text-[#2D1F0E] truncate">
+                        {activeInquiry.fullName}
+                      </div>
+                      <div className="text-[11px] text-[#6E5336] font-mono flex items-center space-x-1">
+                        <Phone className="w-3 h-3 text-[#D99427]" />
+                        <span>{activeInquiry.phone}</span>
+                      </div>
+                      {activeInquiry.notes && (
+                        <div className="text-[10px] text-[#6E5336] italic truncate border-t border-[#EAD9B8]/60 pt-1">
+                          {activeInquiry.notes}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-[11px] text-emerald-900 space-y-1">
+                      <div className="font-bold flex items-center space-x-1 text-emerald-800">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Available for Booking</span>
+                      </div>
+                      <div className="text-[10px] text-emerald-700 leading-tight">
+                        14–20 VIP Guests Capacity • Private Butler
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="pt-2 border-t border-[#EAD9B8]/70">
+                    {gz.status === 'AVAILABLE' ? (
+                      <button
+                        onClick={() => {
+                          setSelectedGazeboForBooking(gz);
+                          setBookingForm({
+                            fullName: '',
+                            phone: '',
+                            email: '',
+                            amount: Number(gz.price),
+                            notes: '',
+                            status: 'CONFIRMED',
+                          });
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-[#2D1F0E] hover:bg-[#4A351B] text-[#F6C85F] text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1.5"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-[#F6C85F]" />
+                        <span>Book Gazebo #{gazeboIndex}</span>
+                      </button>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedGazeboForBooking(gz);
+                            setBookingForm({
+                              fullName: activeInquiry?.fullName || '',
+                              phone: activeInquiry?.phone || '',
+                              email: activeInquiry?.notes?.match(/Email:\s*([^|]+)/)?.[1]?.trim() || '',
+                              amount: Number(gz.price),
+                              notes: activeInquiry?.notes || '',
+                              status: gz.status === 'HELD' ? 'HOLD' : 'CONFIRMED',
+                            });
+                          }}
+                          className="py-2 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] text-[11px] font-bold transition flex items-center justify-center space-x-1"
+                        >
+                          <span>✏️ Edit Host</span>
+                        </button>
+                        <button
+                          onClick={() => handleReleaseGazebo(gz.id, gz.gazeboNumber, gazeboIndex)}
+                          className="py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[11px] font-bold transition flex items-center justify-center space-x-1"
+                        >
+                          <span>Release</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Incoming VIP Inquiries Table */}
           <AdvancedTabulatorTable
             data={gazeboInquiries}
             columns={[
@@ -1080,7 +1298,7 @@ export default function SuperAdminDashboard() {
               }
             ]}
             keyField="id"
-            title="VIP Gazebo Inquiries"
+            title="VIP Gazebo Inquiries & Requests"
             subtitle="Concierge inquiries tracking"
           />
         </div>
@@ -2303,6 +2521,149 @@ export default function SuperAdminDashboard() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUPER ADMIN GAZEBO DIRECT BOOKING & ALLOCATION MODAL */}
+      {/* ========================================================================= */}
+      {selectedGazeboForBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative text-[#2D1F0E]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-[#EAD9B8] bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#FFF9EE] flex justify-between items-start">
+              <div>
+                <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full bg-[#2D1F0E] text-[#F6C85F] text-[9px] font-mono font-bold tracking-widest uppercase mb-1">
+                  <span>✦ DIRECT VIP GAZEBO ALLOCATION ✦</span>
+                </div>
+                <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">
+                  Book {selectedGazeboForBooking.gazeboNumber} (Level {selectedGazeboForBooking.level})
+                </h3>
+                <p className="text-xs text-[#6E5336] mt-0.5">
+                  {selectedGazeboForBooking.level === 1 ? 'Sheri Chowk' : selectedGazeboForBooking.level === 2 ? 'The Royal Sheri Pavillion' : 'Sheri Rass'} • 14–20 VIP Guests Capacity
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedGazeboForBooking(null)}
+                className="w-8 h-8 rounded-full bg-white border border-[#EAD9B8] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleDirectBookingSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="space-y-3">
+                {/* Host Name */}
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
+                    VIP Host / Booker Full Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={bookingForm.fullName}
+                    onChange={(e) => setBookingForm({ ...bookingForm, fullName: e.target.value })}
+                    placeholder="e.g. Maharana Vikramaditya Solanki"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold text-[#2D1F0E] focus:border-[#D99427] outline-none"
+                  />
+                </div>
+
+                {/* WhatsApp Phone & Email */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
+                      WhatsApp Phone (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={bookingForm.phone}
+                      onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                      placeholder="e.g. 9876543210"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-mono text-[#2D1F0E] focus:border-[#D99427] outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
+                      Email Address (Optional)
+                    </label>
+                    <input
+                      type="email"
+                      value={bookingForm.email}
+                      onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                      placeholder="e.g. host@example.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-mono text-[#2D1F0E] focus:border-[#D99427] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Booking Status & Amount */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
+                      Allocation Status
+                    </label>
+                    <select
+                      value={bookingForm.status}
+                      onChange={(e) => setBookingForm({ ...bookingForm, status: e.target.value as any })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-bold text-[#2D1F0E] focus:border-[#D99427] outline-none"
+                    >
+                      <option value="CONFIRMED">🔴 CONFIRMED (Booked)</option>
+                      <option value="HOLD">🟡 ON HOLD (Reserved)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
+                      Agreed Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      value={bookingForm.amount}
+                      onChange={(e) => setBookingForm({ ...bookingForm, amount: e.target.value })}
+                      placeholder="100000"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-mono font-bold text-[#2D1F0E] focus:border-[#D99427] outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
+                    Special Concierge Notes & Arrangements (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={bookingForm.notes}
+                    onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                    placeholder="e.g. VIP Sponsor table arrangement, premium catering requested"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-[#EAD9B8] flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedGazeboForBooking(null)}
+                  className="px-5 py-2.5 rounded-full border border-[#EAD9B8] text-[#6E5336] hover:bg-[#FAF6EE] text-xs font-bold uppercase transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bookingLoading}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] text-xs font-bold uppercase tracking-wider hover:scale-105 transition shadow-md disabled:opacity-50 flex items-center space-x-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{bookingLoading ? 'Saving Booking...' : 'Confirm & Lock Gazebo'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

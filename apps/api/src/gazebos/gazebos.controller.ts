@@ -58,6 +58,39 @@ export class GazebosController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
+  @Post('gazebos/:id/book')
+  @ApiOperation({ summary: 'Directly book or place a physical gazebo on hold (Super Admin only)' })
+  async bookGazebo(
+    @Param('id') id: string,
+    @Request() req,
+    @Body()
+    body: {
+      fullName?: string;
+      phone?: string;
+      email?: string;
+      amount?: number;
+      notes?: string;
+      status?: 'CONFIRMED' | 'HOLD';
+    },
+  ) {
+    return this.gazebosService.bookGazeboDirect(id, body, req.user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Post('gazebos/:id/release')
+  @ApiOperation({ summary: 'Release a physical gazebo back to AVAILABLE (Super Admin only)' })
+  async releaseGazebo(
+    @Param('id') id: string,
+    @Request() req,
+  ) {
+    return this.gazebosService.releaseGazebo(id, req.user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
   @Patch('gazebos/inquiries/:id/status')
   @ApiOperation({ summary: 'Update gazebo inquiry status & assign physical gazebo with row locks (Super Admin only)' })
   async updateInquiryStatus(
