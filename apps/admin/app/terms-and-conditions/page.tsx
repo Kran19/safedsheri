@@ -1,17 +1,18 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import Footer from '../components/Footer';
 
 export default function TermsAndConditionsPage() {
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#2D1F0E] py-20 px-6 font-sans">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#2D1F0E] flex flex-col justify-between font-sans">
+      <div className="py-16 md:py-20 px-6 max-w-4xl mx-auto w-full flex-1">
         <Link href="/" className="inline-flex items-center text-[#D99427] font-bold hover:underline mb-8">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back to Home
         </Link>
         <h1 className="text-4xl font-serif font-bold text-[#2D1F0E] mb-8 border-b-2 border-[#EAD9B8] pb-4">Terms & Conditions</h1>
         
-        <div className="space-y-6 text-sm md:text-base leading-relaxed bg-white p-8 rounded-3xl shadow-sm border border-[#EAD9B8]">
+        <div className="space-y-6 text-sm md:text-base leading-relaxed bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-[#EAD9B8]">
           <h5 className="text-lg font-bold text-[#D99427]">1. General Policies</h5>
           <p>
             Entry is strictly restricted to ticket holders. Passes are non-transferable and non-refundable under any circumstances, including cancellation of the event due to unforeseen conditions.
@@ -52,6 +53,9 @@ export default function TermsAndConditionsPage() {
           </p>
         </div>
       </div>
+
+      {/* FOOTER */}
+      <Footer />
     </div>
   );
 }

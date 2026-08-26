@@ -1,16 +1,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import Footer from '../components/Footer';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#2D1F0E] py-20 px-6 font-sans">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#2D1F0E] flex flex-col justify-between font-sans">
+      <div className="py-16 md:py-20 px-6 max-w-4xl mx-auto w-full flex-1">
         <Link href="/" className="inline-flex items-center text-[#D99427] font-bold hover:underline mb-8">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back to Home
         </Link>
         <h1 className="text-4xl font-serif font-bold text-[#2D1F0E] mb-8 border-b-2 border-[#EAD9B8] pb-4">Privacy Policy</h1>
-        <div className="space-y-6 text-sm md:text-base leading-relaxed bg-white p-8 rounded-3xl shadow-sm border border-[#EAD9B8]">
+        <div className="space-y-6 text-sm md:text-base leading-relaxed bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-[#EAD9B8]">
           <p><strong>Last updated: August 25, 2026</strong></p>
           <p>Safed Sheri ("we," "us," or "our") operates the Safed Sheri service (the "Service"). This Privacy Policy outlines how we collect, use, and share your information through the services we provide.</p>
           
@@ -41,12 +42,17 @@ export default function PrivacyPolicyPage() {
           <h5 className="text-lg font-bold text-[#D99427] mt-8">9. Contact Us</h5>
           <p>If you have any questions about this Privacy Policy, please contact us:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li>Email: safedsheri9@gmail.com</li>
-            <li>Phone: +91 70169 77518</li>
-            <li>Address: HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, Gujarat 361006</li>
+            <li><strong>Legal Name:</strong> SONDARVA HARISH</li>
+            <li><strong>Pan No:</strong> BFPPH9298G</li>
+            <li><strong>Email:</strong> safedsheri9@gmail.com</li>
+            <li><strong>Phone:</strong> +91 70169 77518</li>
+            <li><strong>Address:</strong> HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, Gujarat 361006</li>
           </ul>
         </div>
       </div>
+
+      {/* FOOTER */}
+      <Footer />
     </div>
   );
 }
