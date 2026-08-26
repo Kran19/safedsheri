@@ -15,6 +15,12 @@ async function main() {
 
   const adminAccounts = [
     {
+      username: 'masteradmin@safedsheri.com',
+      fullName: 'Master Admin (Main Owner)',
+      role: 'SUPER_ADMIN',
+      password: process.env.MASTER_ADMIN_PASSWORD || 'MasterPass123!',
+    },
+    {
       username: 'admin1@safedsheri.com',
       fullName: 'Super Admin 1 (Vikramaditya Solanki)',
       role: 'SUPER_ADMIN',
@@ -41,7 +47,7 @@ async function main() {
     {
       username: 'gate1@safedsheri.com',
       fullName: 'Gate Verification Lead (Digvijay Jadeja)',
-      role: 'SECURITY_BOUNCER',
+      role: 'ENTRY_VERIFICATION',
       password: process.env.GATE_DEFAULT_PASSWORD || 'SecurityPass123!',
     },
   ];

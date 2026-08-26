@@ -501,6 +501,9 @@ export default function SafedSheriLandingPage() {
   const [termsError, setTermsError] = useState(false);
   const [showDressCode, setShowDressCode] = useState(true);
 
+
+
+
   // Auto-Save Draft to LocalStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -764,6 +767,8 @@ export default function SafedSheriLandingPage() {
     setBookingError(null);
     return true;
   };
+
+
 
   const handleNextStep = () => {
     if (wizardStep === 'ATTENDEE') {
@@ -2612,12 +2617,14 @@ export default function SafedSheriLandingPage() {
                               placeholder="98765 43210"
                               className="w-full px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"
                             />
+
                           </div>
 
                           <div>
                             <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Email Address *</label>
                             <input
                               type="email"
+                              required
                               value={attendees[currentAttendeeIndex]?.email || ''}
                               onChange={(e) => updateAttendeeField(currentAttendeeIndex, 'email', e.target.value)}
                               placeholder="you@example.com"

@@ -322,6 +322,8 @@ export class RegistrationsService {
       throw new BadRequestException('Primary contact email is mandatory.');
     }
 
+
+
     // RULE 1: Single Pass strictly for 1 Female attendee only
     if (data.passType === PassType.SINGLE) {
       if (data.attendees.length !== 1) {
@@ -879,7 +881,10 @@ export class RegistrationsService {
       (reg.credentials && reg.credentials.length > 0);
 
     if (isPaid) {
-      throw new BadRequestException('Cannot delete or move to trash an application where payment has already been completed.');
+      const user = await this.prisma.user.findUnique({ where: { id: adminId } });
+      if (!user || user.username !== 'masteradmin@safedsheri.com') {
+        throw new BadRequestException('Only the Master Admin has permission to delete paid applications.');
+      }
     }
     
     await this.prisma.registration.update({
@@ -941,7 +946,10 @@ export class RegistrationsService {
       (reg.credentials && reg.credentials.length > 0);
 
     if (isPaid) {
-      throw new BadRequestException('Cannot permanently delete an application where payment has already been completed.');
+      const user = await this.prisma.user.findUnique({ where: { id: adminId } });
+      if (!user || user.username !== 'masteradmin@safedsheri.com') {
+        throw new BadRequestException('Only the Master Admin has permission to permanently delete paid applications.');
+      }
     }
     
     await this.prisma.registration.delete({

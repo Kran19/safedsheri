@@ -1,14 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${process.env.INTERNAL_API_URL || 'http://api:4000/api/v1'}/:path*`,
-      },
-    ];
-  },
+  // NOTE: rewrites() was removed. It was dead code — Next.js App Router
+  // file-system routes (app/api/v1/[...path]/route.ts) take priority over
+  // rewrites(), so the rewrite never executed. The proxy is handled entirely
+  // by app/api/v1/[...path]/route.ts which reads INTERNAL_API_URL.
 };
 
 module.exports = nextConfig;

@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// This is the ONLY proxy mechanism for /api/v1/* → NestJS backend.
+// next.config.js rewrites() are dead code because App Router file-system routes
+// take priority over rewrites. This file IS the proxy.
+//
+// REQUIRED ENV VAR (server-side only, no NEXT_PUBLIC_ prefix):
+//   INTERNAL_API_URL=http://localhost:4000/api/v1      (local dev)
+//   INTERNAL_API_URL=https://api.safedsheri.com/api/v1  (production)
+
+const INTERNAL_API_URL = process.env.INTERNAL_API_URL;
+
+if (!INTERNAL_API_URL) {
+  console.error(
+    '[API Proxy] CRITICAL: INTERNAL_API_URL is not set. ' +
+    'All /api/v1/* requests will fail. ' +
+    'Set INTERNAL_API_URL in apps/admin/.env.local (local) or your deployment env vars (production).'
+  );
+}
+
 async function handleProxy(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const rawApiTarget = process.env.INTERNAL_API_URL || 'http://127.0.0.1:4000/api/v1';
+  // Resolve the API target — replace 'localhost' with '127.0.0.1' to avoid
+  // IPv6 resolution issues on Node.js 18+
+  const rawApiTarget = INTERNAL_API_URL || 'http://127.0.0.1:4000/api/v1';
   const API_TARGET = rawApiTarget.replace('localhost', '127.0.0.1');
+
   const subPath = params.path ? params.path.join('/') : '';
   const search = req.nextUrl.search || '';
   const targetUrl = `${API_TARGET}/${subPath}${search}`;
-  console.log('PROXYING TO:', targetUrl, 'using API_TARGET:', API_TARGET);
+
+  console.log(`[API Proxy] ${req.method} /api/v1/${subPath} → ${targetUrl}`);
 
   const headers = new Headers(req.headers);
   headers.delete('host');
@@ -30,6 +52,13 @@ async function handleProxy(req: NextRequest, { params }: { params: { path: strin
     const resHeaders = new Headers(backendRes.headers);
     resHeaders.delete('content-encoding');
 
+    // Always ensure content-type is JSON so the frontend can parse it safely
+    // (NestJS returns JSON for all API responses)
+    const contentType = backendRes.headers.get('content-type') || '';
+    if (!contentType.includes('application/json') && !contentType.includes('image') && !contentType.includes('octet')) {
+      resHeaders.set('content-type', 'application/json');
+    }
+
     const resData = await backendRes.arrayBuffer();
 
     return new NextResponse(resData, {
@@ -38,9 +67,13 @@ async function handleProxy(req: NextRequest, { params }: { params: { path: strin
       headers: resHeaders,
     });
   } catch (err: any) {
-    console.error(`[API Proxy Error] Failed to proxy ${req.method} ${targetUrl}:`, err);
+    const msg = err?.cause?.code === 'ECONNREFUSED'
+      ? `Cannot reach API server at ${API_TARGET}. Is the NestJS server running?`
+      : err.message;
+
+    console.error(`[API Proxy Error] ${req.method} ${targetUrl}: ${msg}`);
     return NextResponse.json(
-      { success: false, message: `Proxy error: ${err.message}` },
+      { success: false, message: msg },
       { status: 502 }
     );
   }

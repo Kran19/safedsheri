@@ -33,3 +33,7 @@ dist/
 .DS_Store
 Thumbs.db
 background/*.mov
+
+# Uploaded files
+uploads/
+**/uploads/

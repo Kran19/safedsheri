@@ -27,6 +27,8 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: safedsheri-api
     restart: always
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/safedsheri?schema=public
       PORT: 4000
@@ -35,6 +37,10 @@ services:
       JWT_EXPIRES_IN: 1d
       ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
       CORS_ORIGIN: http://localhost:3000
+      ZAPLE_API_KEY: ${ZAPLE_API_KEY}
+      ZAPLE_API_SECRET: ${ZAPLE_API_SECRET}
+      ZAPLE_API_URL: ${ZAPLE_API_URL}
+      ZAPLE_TEMPLATE_ID: ${ZAPLE_TEMPLATE_ID}
     ports:
       - "4000:4000"
     depends_on:
