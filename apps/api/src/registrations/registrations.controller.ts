@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -9,7 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { RegistrationsService } from './registrations.service';
-import { RegistrationStatus, PassType, Role } from '@prisma/client';
+import { RegistrationStatus, PassType, Role, PaymentMethod } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -131,5 +132,37 @@ export class RegistrationsController {
     @Request() req: any,
   ) {
     return this.registrationsService.rejectRegistration(id, req.user.id, body?.notes);
+  }
+
+  @Patch(':id/payment-method')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  updatePaymentMethod(
+    @Param('id') id: string,
+    @Body() body: { method: PaymentMethod },
+    @Request() req: any,
+  ) {
+    return this.registrationsService.updatePaymentMethod(id, body.method, req.user.id);
+  }
+
+  @Post(':id/approve-cashier-request')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  approveCashierRequest(
+    @Param('id') id: string,
+    @Request() req: any,
+  ) {
+    return this.registrationsService.approveCashierRequest(id, req.user.id);
+  }
+
+  @Post(':id/reject-cashier-request')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  rejectCashierRequest(
+    @Param('id') id: string,
+    @Body() body: { notes?: string },
+    @Request() req: any,
+  ) {
+    return this.registrationsService.rejectCashierRequest(id, req.user.id, body?.notes);
   }
 }

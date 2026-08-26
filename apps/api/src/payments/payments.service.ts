@@ -360,10 +360,14 @@ export class PaymentsService {
     const primaryEmail = dto.attendees[0]?.email || `desk_${Date.now()}@safedsheri.com`;
 
     return await this.prisma.$transaction(async (tx) => {
-      // 1. Get Active Event & Phase
+      // 1. Get Active Event & Phase & Staff User
       const event = await tx.event.findFirst({ where: { status: 'ACTIVE' } });
       const phase = await tx.pricingPhase.findFirst({ where: { isActive: true } });
+      const staffUser = await tx.user.findUnique({ where: { id: dto.staffUserId } });
       if (!event || !phase) throw new BadRequestException('Active event or pricing phase missing');
+      if (!staffUser) throw new BadRequestException('Staff user not found');
+
+      const isSuperAdmin = staffUser.role === 'SUPER_ADMIN';
 
       // 2. Generate Registration Number
       const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
@@ -377,7 +381,7 @@ export class PaymentsService {
           pricingPhaseId: phase.id,
           passType: dto.passType,
           amountDue: dto.customAmount,
-          status: dto.paymentMethod === PaymentMethod.UPI_QR ? RegistrationStatus.PAYMENT_PENDING : RegistrationStatus.PASS_ISSUED,
+          status: isSuperAdmin ? (dto.paymentMethod === PaymentMethod.UPI_QR ? RegistrationStatus.PAYMENT_PENDING : RegistrationStatus.PASS_ISSUED) : RegistrationStatus.CASHIER_PENDING,
           paymentLinkId,
           createdById: dto.staffUserId,
           reviewedById: dto.staffUserId,
@@ -482,7 +486,7 @@ export class PaymentsService {
             isRazorpayOrder: true,
             registration: {
               ...registration,
-              status: RegistrationStatus.PAYMENT_PENDING,
+              status: isSuperAdmin ? RegistrationStatus.PAYMENT_PENDING : RegistrationStatus.CASHIER_PENDING,
             },
             amountDue: dto.customAmount,
             paymentLinkId,
@@ -504,7 +508,7 @@ export class PaymentsService {
           registrationId: registration.id,
           amount: dto.customAmount,
           method: dto.paymentMethod,
-          status: PaymentStatus.CONFIRMED,
+          status: isSuperAdmin ? PaymentStatus.CONFIRMED : PaymentStatus.PENDING,
           receiptNumber,
           provider: 'CASH_BOX_OFFICE',
           providerReference: providerRef,
@@ -514,22 +518,25 @@ export class PaymentsService {
         },
       });
 
+      let fullCredentials: any[] = [];
       // 7. Mint Instant Credentials
-      await this.credentialsService.generateCredentialsForRegistration(registration.id, tx);
-      const fullCredentials = await tx.credential.findMany({
-        where: { registrationId: registration.id },
-        include: {
-          attendee: true,
-          registration: true,
-        },
-        orderBy: { createdAt: 'asc' },
-      });
+      if (isSuperAdmin) {
+        await this.credentialsService.generateCredentialsForRegistration(registration.id, tx);
+        fullCredentials = await tx.credential.findMany({
+          where: { registrationId: registration.id },
+          include: {
+            attendee: true,
+            registration: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        });
+      }
 
       // 8. Audit Log
       await tx.auditLog.create({
         data: {
           actorId: dto.staffUserId,
-          action: 'MANUAL_DESK_ENTRY_CREATED',
+          action: isSuperAdmin ? 'MANUAL_DESK_ENTRY_CREATED' : 'MANUAL_DESK_ENTRY_REQUESTED',
           targetEntity: 'Registration',
           targetId: registration.id,
           payload: {
@@ -537,6 +544,7 @@ export class PaymentsService {
             amount: dto.customAmount,
             method: dto.paymentMethod,
             credentialsCount: fullCredentials.length,
+            requiresAdminApproval: !isSuperAdmin,
           },
         },
       });
@@ -548,7 +556,9 @@ export class PaymentsService {
           payment,
           credentials: fullCredentials,
         },
-        message: `Manual entry created! Receipt #${receiptNumber} generated with ${fullCredentials.length} active pass(es).`,
+        message: isSuperAdmin 
+          ? `Manual entry created! Receipt #${receiptNumber} generated with ${fullCredentials.length} active pass(es).`
+          : `Booking request submitted! Waiting for admin approval before pass is issued.`,
       };
     });
   }
@@ -622,7 +632,8 @@ export class PaymentsService {
 
       if (
         lockedReg.status !== RegistrationStatus.APPROVED &&
-        lockedReg.status !== RegistrationStatus.PAYMENT_PENDING
+        lockedReg.status !== RegistrationStatus.PAYMENT_PENDING &&
+        lockedReg.status !== RegistrationStatus.CASHIER_PENDING
       ) {
         if (lockedReg.status === RegistrationStatus.PAYMENT_CONFIRMED || lockedReg.status === RegistrationStatus.PASS_ISSUED) {
           const existingPayment = await tx.payment.findFirst({
@@ -701,6 +712,91 @@ export class PaymentsService {
         },
         message: 'Online Payment Confirmed! Active Pass Credentials Issued.',
       };
+    });
+  }
+
+  async approveCashierRequest(registrationId: string, adminId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const reg = await tx.registration.findUnique({
+        where: { id: registrationId },
+        include: { payments: true },
+      });
+      if (!reg) throw new NotFoundException('Registration not found');
+      if (reg.status !== RegistrationStatus.CASHIER_PENDING) {
+        throw new BadRequestException('Registration is not pending cashier approval');
+      }
+
+      const pendingPayment = reg.payments.find(p => p.status === PaymentStatus.PENDING);
+      
+      if (pendingPayment) {
+        await tx.payment.update({
+          where: { id: pendingPayment.id },
+          data: { status: PaymentStatus.CONFIRMED },
+        });
+      }
+
+      await tx.registration.update({
+        where: { id: registrationId },
+        data: { status: RegistrationStatus.PASS_ISSUED },
+      });
+
+      await this.credentialsService.generateCredentialsForRegistration(registrationId, tx);
+      const fullCredentials = await tx.credential.findMany({
+        where: { registrationId: registrationId },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId: adminId,
+          action: 'CASHIER_REQUEST_APPROVED',
+          targetEntity: 'Registration',
+          targetId: registrationId,
+          payload: { credentialsCount: fullCredentials.length },
+        },
+      });
+
+      return { success: true, message: 'Request approved and passes issued' };
+    });
+  }
+
+  async rejectCashierRequest(registrationId: string, adminId: string, reason?: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const reg = await tx.registration.findUnique({
+        where: { id: registrationId },
+        include: { payments: true },
+      });
+      if (!reg) throw new NotFoundException('Registration not found');
+      if (reg.status !== RegistrationStatus.CASHIER_PENDING) {
+        throw new BadRequestException('Registration is not pending cashier approval');
+      }
+
+      const pendingPayment = reg.payments.find(p => p.status === PaymentStatus.PENDING);
+      if (pendingPayment) {
+        await tx.payment.update({
+          where: { id: pendingPayment.id },
+          data: { status: PaymentStatus.CANCELLED },
+        });
+      }
+
+      await tx.registration.update({
+        where: { id: registrationId },
+        data: { 
+          status: RegistrationStatus.REJECTED,
+          reviewNotes: reason || 'Rejected by Admin',
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId: adminId,
+          action: 'CASHIER_REQUEST_REJECTED',
+          targetEntity: 'Registration',
+          targetId: registrationId,
+          payload: { reason },
+        },
+      });
+
+      return { success: true, message: 'Request rejected' };
     });
   }
 }

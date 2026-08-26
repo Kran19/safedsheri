@@ -18,12 +18,31 @@ import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenanc
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'users'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [userForm, setUserForm] = useState({ username: '', password: '', fullName: '', role: 'TICKETING_FINANCE' });
+  const [userError, setUserError] = useState<string | null>(null);
+  const [userSuccess, setUserSuccess] = useState<string | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
   const [appToDelete, setAppToDelete] = useState<any | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [appToEdit, setAppToEdit] = useState<any | null>(null);
+  const [editFormAttendees, setEditFormAttendees] = useState<any[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
+
+  // Edit Staff User Modal States
+  const [editStaffModalOpen, setEditStaffModalOpen] = useState(false);
+  const [staffToEdit, setStaffToEdit] = useState<any | null>(null);
+  const [editStaffForm, setEditStaffForm] = useState({ username: '', password: '', fullName: '', role: 'TICKETING_FINANCE' });
+  const [editStaffError, setEditStaffError] = useState<string | null>(null);
+  const [editStaffSuccess, setEditStaffSuccess] = useState<string | null>(null);
+  const [editStaffLoading, setEditStaffLoading] = useState(false);
   
   const [overview, setOverview] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
@@ -256,6 +275,9 @@ export default function SuperAdminDashboard() {
     } else if (tab === 'trash') {
       const res = await apiRequest('/registrations/trash');
       if (res.success) setTrashApplications(res.data || []);
+    } else if (tab === 'users') {
+      const res = await apiRequest('/users');
+      if (res.success) setUsers(res.data || []);
     }
   }
 
@@ -392,6 +414,40 @@ export default function SuperAdminDashboard() {
     loadTabContent('applications');
   }
 
+  async function handleApproveCashierRequest(appId: string) {
+    if (!confirm('Approve this cashier booking and issue pass?')) return;
+    setActionLoading(true);
+    setError('');
+    const res = await apiRequest(`/registrations/${appId}/approve-cashier-request`, { method: 'POST' });
+    if (res.success) {
+      setMessage('Cashier booking approved successfully! Pass issued.');
+      loadOverviewData(true);
+      loadTabContent('applications', true);
+    } else {
+      setError(res.error?.message || 'Failed to approve cashier request');
+    }
+    setActionLoading(false);
+  }
+
+  async function handleRejectCashierRequest(appId: string) {
+    const reason = prompt('Reason for rejection? (Optional)');
+    if (reason === null) return;
+    setActionLoading(true);
+    setError('');
+    const res = await apiRequest(`/registrations/${appId}/reject-cashier-request`, {
+      method: 'POST',
+      body: JSON.stringify({ notes: reason }),
+    });
+    if (res.success) {
+      setMessage('Cashier booking rejected.');
+      loadOverviewData(true);
+      loadTabContent('applications', true);
+    } else {
+      setError(res.error?.message || 'Failed to reject cashier request');
+    }
+    setActionLoading(false);
+  }
+
   function isPaidApp(app: any): boolean {
     if (!app) return false;
     if (currentUser?.username === 'masteradmin@safedsheri.com') return false;
@@ -461,6 +517,149 @@ export default function SuperAdminDashboard() {
       setError(res.error?.message || 'Failed to permanently delete');
     }
     setActionLoading(false);
+  }
+
+  async function handleAddUser(e: React.FormEvent) {
+    e.preventDefault();
+    setUserError(null);
+    setUserSuccess(null);
+    setUserLoading(true);
+    const res = await apiRequest('/users', {
+      method: 'POST',
+      body: JSON.stringify(userForm),
+    });
+    if (res.success) {
+      setUserSuccess('User created successfully.');
+      setUserForm({ username: '', password: '', fullName: '', role: 'TICKETING_FINANCE' });
+      const listRes = await apiRequest('/users');
+      if (listRes.success) setUsers(listRes.data || []);
+    } else {
+      setUserError(res.error?.message || 'Failed to create user.');
+    }
+    setUserLoading(false);
+  }
+
+  async function handleToggleUserActive(userId: string, currentActive: boolean) {
+    setMessage('');
+    setError('');
+    const res = await apiRequest(`/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive: !currentActive }),
+    });
+    if (res.success) {
+      setMessage(res.message || 'User status updated.');
+      const listRes = await apiRequest('/users');
+      if (listRes.success) setUsers(listRes.data || []);
+    } else {
+      setError(res.error?.message || 'Failed to update user status.');
+    }
+  }
+
+  function openEditModal(app: any) {
+    setAppToEdit(app);
+    setEditError(null);
+    setEditSuccess(null);
+    const attList = app.attendees?.map((ra: any) => ({
+      id: ra.attendee.id,
+      fullName: ra.attendee.fullName || '',
+      phone: ra.attendee.phone || '',
+      email: ra.attendee.email || '',
+      gender: ra.attendee.gender || 'FEMALE',
+      aadhaarNumber: '', // Keep blank unless updating
+      isPrimary: ra.isPrimary,
+    })) || [];
+    setEditFormAttendees(attList);
+    setEditModalOpen(true);
+  }
+
+  async function handleSaveAttendeeEdits(e: React.FormEvent) {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError(null);
+    setEditSuccess(null);
+
+    try {
+      for (const att of editFormAttendees) {
+        const payload: any = {
+          fullName: att.fullName,
+          phone: att.phone,
+          email: att.email,
+          gender: att.gender,
+        };
+        if (att.aadhaarNumber && att.aadhaarNumber.trim().length > 0) {
+          payload.aadhaarNumber = att.aadhaarNumber;
+        }
+
+        const res = await apiRequest(`/attendees/${att.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.success) {
+          throw new Error(res.error?.message || `Failed to update attendee ${att.fullName}`);
+        }
+      }
+
+      setEditSuccess('Attendee details updated successfully!');
+      setTimeout(() => {
+        setEditModalOpen(false);
+        setAppToEdit(null);
+      }, 1500);
+      loadTabContent('applications', true);
+    } catch (err: any) {
+      setEditError(err.message || 'An error occurred while saving.');
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  function openEditStaffModal(userItem: any) {
+    setStaffToEdit(userItem);
+    setEditStaffError(null);
+    setEditStaffSuccess(null);
+    setEditStaffForm({
+      username: userItem.username || '',
+      password: '', // Keep empty unless updating
+      fullName: userItem.fullName || '',
+      role: userItem.role || 'TICKETING_FINANCE',
+    });
+    setEditStaffModalOpen(true);
+  }
+
+  async function handleSaveStaffEdits(e: React.FormEvent) {
+    e.preventDefault();
+    setEditStaffLoading(true);
+    setEditStaffError(null);
+    setEditStaffSuccess(null);
+
+    const payload: any = {
+      username: editStaffForm.username,
+      fullName: editStaffForm.fullName,
+      role: editStaffForm.role,
+    };
+    if (editStaffForm.password && editStaffForm.password.trim().length > 0) {
+      payload.password = editStaffForm.password;
+    }
+
+    const res = await apiRequest(`/users/${staffToEdit.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.success) {
+      setEditStaffSuccess('Staff user updated successfully!');
+      setTimeout(() => {
+        setEditStaffModalOpen(false);
+        setStaffToEdit(null);
+      }, 1500);
+      const listRes = await apiRequest('/users');
+      if (listRes.success) setUsers(listRes.data || []);
+    } else {
+      setEditStaffError(res.error?.message || 'Failed to update staff user.');
+    }
+    setEditStaffLoading(false);
   }
 
   async function handleUpdateInquiryStatus(id: string, type: 'sponsor' | 'gazebo', status: string) {
@@ -612,6 +811,55 @@ export default function SuperAdminDashboard() {
       ),
     },
     {
+      key: 'paymentMethod',
+      title: 'Payment Method',
+      sortable: true,
+      getValue: (row) => {
+        const confirmed = row.payments?.find((p: any) => p.status === 'CONFIRMED');
+        return confirmed ? confirmed.method : 'UNPAID';
+      },
+      render: (row) => {
+        const confirmed = row.payments?.find((p: any) => p.status === 'CONFIRMED');
+        const currentMethod = confirmed ? confirmed.method : 'UNPAID';
+
+        return (
+          <select
+            value={currentMethod}
+            onClick={(e) => e.stopPropagation()} // Prevent row click details modal
+            onChange={async (e) => {
+              const method = e.target.value;
+              if (method === 'UNPAID') return;
+              
+              setMessage('');
+              setError('');
+              
+              const res = await apiRequest(`/registrations/${row.id}/payment-method`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ method }),
+              });
+              
+              if (res.success) {
+                setMessage(res.message || 'Payment method updated successfully.');
+                loadOverviewData(true);
+                loadTabContent('applications', true);
+              } else {
+                setError(res.error?.message || 'Failed to update payment method.');
+              }
+            }}
+            className="px-2.5 py-1.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-[11px] text-[#2D1F0E] focus:border-[#D99427] focus:ring-1 focus:ring-[#D99427] outline-none transition font-medium shadow-sm cursor-pointer"
+          >
+            <option value="UNPAID" disabled={currentMethod !== 'UNPAID'}>Unpaid</option>
+            <option value="CASH">Cash</option>
+            <option value="CARD">Card</option>
+            <option value="UPI_QR">UPI QR</option>
+            <option value="ONLINE_GATEWAY">Online (Razorpay)</option>
+            <option value="CUSTOM_DIRECT">Custom Direct</option>
+          </select>
+        );
+      }
+    },
+    {
       key: 'status',
       title: 'Status',
       sortable: true,
@@ -619,13 +867,13 @@ export default function SuperAdminDashboard() {
         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
           row.status === 'PASS_ISSUED' || row.status === 'PAYMENT_CONFIRMED'
             ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-            : row.status === 'PAYMENT_PENDING' || row.status === 'APPROVED'
+            : row.status === 'PAYMENT_PENDING' || row.status === 'APPROVED' || row.status === 'CASHIER_PENDING'
             ? 'bg-amber-100 text-amber-800 border border-amber-300'
             : row.status === 'UNDER_REVIEW' || row.status === 'SUBMITTED'
             ? 'bg-blue-100 text-blue-800 border border-blue-300'
             : 'bg-red-100 text-red-800 border border-red-300'
         }`}>
-          {row.status}
+          {row.status === 'CASHIER_PENDING' ? 'CASHIER PENDING' : row.status}
         </span>
       ),
     },
@@ -657,6 +905,62 @@ export default function SuperAdminDashboard() {
             <Eye className="w-3 h-3 text-[#D99427]" />
             <span>Review</span>
           </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openEditModal(row);
+            }}
+            className="px-3 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+          >
+            <Sliders className="w-3 h-3 text-blue-600" />
+            <span>Edit</span>
+          </button>
+          
+          {row.status === 'CASHIER_PENDING' && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApproveCashierRequest(row.id);
+                }}
+                disabled={actionLoading}
+                className="px-3 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+              >
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Approve</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRejectCashierRequest(row.id);
+                }}
+                disabled={actionLoading}
+                className="px-3 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+              >
+                <AlertCircle className="w-3 h-3" />
+                <span>Reject</span>
+              </button>
+            </>
+          )}
+
+          {row.paymentLinkId && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const payUrl = `${window.location.origin}/order/${row.paymentLinkId}`;
+                navigator.clipboard.writeText(payUrl);
+                setMessage('Payment link copied to clipboard!');
+                setTimeout(() => setMessage(''), 3000);
+              }}
+              title="Copy Payment Link"
+              className="px-3 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+            >
+              <ExternalLink className="w-3 h-3" />
+              <span>Link</span>
+            </button>
+          )}
+
           {isPaidApp(row) ? (
             <span
               title="Paid applications cannot be deleted"
@@ -894,6 +1198,13 @@ export default function SuperAdminDashboard() {
 
         <div className="flex items-center space-x-3">
           <button
+            onClick={() => window.open('/cashier', '_blank')}
+            className="px-4 py-2 rounded-xl bg-[#2D1F0E] hover:bg-[#3D2B14] text-[#F6C85F] text-xs font-bold flex items-center space-x-2 transition shadow-sm"
+          >
+            <Ticket className="w-3.5 h-3.5 text-[#F6C85F]" />
+            <span>Open Cashier Desk</span>
+          </button>
+          <button
             onClick={() => { loadOverviewData(); loadTabContent(activeTab); }}
             className="px-4 py-2 rounded-xl bg-white hover:bg-[#F8F5EE] border border-[#EAD9B8] text-xs font-bold text-[#2D1F0E] flex items-center space-x-2 transition shadow-sm"
           >
@@ -975,6 +1286,7 @@ export default function SuperAdminDashboard() {
           { id: 'audit', label: 'Audit Log', icon: FileText },
           { id: 'settings', label: 'Account Settings', icon: Settings },
           { id: 'trash', label: 'Trash', icon: Trash2 },
+          { id: 'users', label: 'Staff Management', icon: Shield },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -1020,7 +1332,7 @@ export default function SuperAdminDashboard() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-[#8C6019]">Filter by Status:</span>
                 <div className="flex space-x-1 bg-[#FAF6EE] p-1 rounded-2xl border border-[#EAD9B8]">
-                  {['ALL', 'UNDER_REVIEW', 'PAYMENT_PENDING', 'PASS_ISSUED', 'REJECTED'].map((st) => (
+                  {['ALL', 'UNDER_REVIEW', 'PAYMENT_PENDING', 'CASHIER_PENDING', 'PASS_ISSUED', 'REJECTED'].map((st) => (
                     <button
                       key={st}
                       onClick={() => setAppStatusFilter(st)}
@@ -2193,6 +2505,313 @@ export default function SuperAdminDashboard() {
           onRefresh={() => loadTabContent('trash')}
           isLoading={loading}
         />
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: STAFF MANAGEMENT */}
+      {/* ========================================================================= */}
+      {activeTab === 'users' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* List Staff Users */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white rounded-3xl border border-[#EAD9B8] p-6 shadow-sm">
+              <div className="flex items-center justify-between border-b border-[#EAD9B8] pb-4 mb-4">
+                <div>
+                  <h3 className="text-lg font-serif font-bold text-[#2D1F0E]">Active Staff Accounts</h3>
+                  <p className="text-xs text-[#6E5336] mt-0.5">Manage operational roles and dashboard access credentials.</p>
+                </div>
+                <button
+                  onClick={() => loadTabContent('users')}
+                  className="p-2 rounded-full hover:bg-[#FAF6EE] text-[#D99427] transition"
+                  title="Reload staff list"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="py-12 text-center text-xs text-[#6E5336]">Loading staff accounts...</div>
+              ) : users.length === 0 ? (
+                <div className="py-12 text-center text-xs text-[#6E5336]">No staff accounts found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-[#EAD9B8] text-[#6E5336] font-bold">
+                        <th className="py-3 px-4">Full Name</th>
+                        <th className="py-3 px-4">Email / Username</th>
+                        <th className="py-3 px-4">Role</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((userItem) => (
+                        <tr key={userItem.id} className="border-b border-gray-100 hover:bg-[#FAF6EE]/50 transition">
+                          <td className="py-3 px-4 font-semibold text-[#2D1F0E]">{userItem.fullName}</td>
+                          <td className="py-3 px-4 font-mono text-[#6E5336]">{userItem.username}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              userItem.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-800' : userItem.role === 'TICKETING_FINANCE' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {userItem.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              userItem.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {userItem.isActive ? 'Active' : 'Disabled'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right space-x-2">
+                            <button
+                              onClick={() => handleToggleUserActive(userItem.id, userItem.isActive)}
+                              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase transition shadow-sm border ${
+                                userItem.isActive 
+                                  ? 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700'
+                              }`}
+                            >
+                              {userItem.isActive ? 'Disable' : 'Enable'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Add Staff User Form */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-[#EAD9B8] p-6 shadow-sm">
+              <h3 className="text-lg font-serif font-bold text-[#2D1F0E] border-b border-[#EAD9B8] pb-4 mb-4">Create New Account</h3>
+              
+              <form onSubmit={handleAddUser} className="space-y-4">
+                {userError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-xs shadow-sm">
+                    {userError}
+                  </div>
+                )}
+                {userSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs shadow-sm">
+                    {userSuccess}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={userForm.fullName}
+                    onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                    placeholder="e.g. Vikramaditya Solanki"
+                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Email / Username</label>
+                  <input
+                    type="email"
+                    required
+                    value={userForm.username}
+                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                    placeholder="e.g. cashier2@safedsheri.com"
+                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={userForm.password}
+                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Role & Permissions</label>
+                  <select
+                    value={userForm.role}
+                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm cursor-pointer"
+                  >
+                    <option value="TICKETING_FINANCE">Cashier / Box Office (TICKETING_FINANCE)</option>
+                    <option value="ENTRY_VERIFICATION">Security / Entry Gate (ENTRY_VERIFICATION)</option>
+                    <option value="SUPER_ADMIN">System Super Admin (SUPER_ADMIN)</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={userLoading}
+                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center justify-center transition disabled:opacity-50 mt-2"
+                >
+                  {userLoading ? 'Creating Account...' : 'Create Account'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ========================================================================= */}
+      {/* EDIT ATTENDEE DETAILS MODAL */}
+      {/* ========================================================================= */}
+      {editModalOpen && appToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border border-[#EAD9B8] my-8 flex flex-col">
+            <div className="p-6 bg-[#FAF6EE] border-b border-[#EAD9B8] flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Edit Attendee Details</h3>
+                <p className="text-xs text-[#6E5336] mt-0.5">Correct details submitted in application <strong className="font-mono">{appToEdit.registrationNumber}</strong>.</p>
+              </div>
+              <button
+                onClick={() => { setEditModalOpen(false); setAppToEdit(null); }}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+              >
+                <EyeOff className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAttendeeEdits} className="flex-1 overflow-y-auto p-6 space-y-6">
+              {editError && (
+                <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-xs font-semibold shadow-sm">
+                  {editError}
+                </div>
+              )}
+              {editSuccess && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-semibold shadow-sm">
+                  {editSuccess}
+                </div>
+              )}
+
+              <div className="space-y-6 divide-y divide-gray-100">
+                {editFormAttendees.map((att, index) => (
+                  <div key={att.id} className={`${index > 0 ? 'pt-6' : ''} space-y-4`}>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-[#2D1F0E] flex items-center space-x-2">
+                        <span className="w-6 h-6 bg-[#D99427] text-white rounded-full flex items-center justify-center text-xs font-mono font-bold">
+                          {index + 1}
+                        </span>
+                        <span>{att.isPrimary ? 'Primary Applicant' : `Co-Applicant #${index}`}</span>
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Full Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={att.fullName}
+                          onChange={(e) => {
+                            const copy = [...editFormAttendees];
+                            copy[index].fullName = e.target.value;
+                            setEditFormAttendees(copy);
+                          }}
+                          className="w-full px-4 py-2.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">WhatsApp Phone</label>
+                        <input
+                          type="text"
+                          required
+                          value={att.phone}
+                          onChange={(e) => {
+                            const copy = [...editFormAttendees];
+                            copy[index].phone = e.target.value;
+                            setEditFormAttendees(copy);
+                          }}
+                          className="w-full px-4 py-2.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Email Address</label>
+                        <input
+                          type="email"
+                          value={att.email}
+                          onChange={(e) => {
+                            const copy = [...editFormAttendees];
+                            copy[index].email = e.target.value;
+                            setEditFormAttendees(copy);
+                          }}
+                          placeholder="e.g. name@example.com"
+                          className="w-full px-4 py-2.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Gender</label>
+                        <select
+                          value={att.gender}
+                          onChange={(e) => {
+                            const copy = [...editFormAttendees];
+                            copy[index].gender = e.target.value;
+                            setEditFormAttendees(copy);
+                          }}
+                          className="w-full px-4 py-2.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition cursor-pointer"
+                        >
+                          <option value="MALE">MALE</option>
+                          <option value="FEMALE">FEMALE</option>
+                          <option value="OTHER">OTHER</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">
+                        Update Aadhaar Number (Leave blank to keep current)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={12}
+                        placeholder="12-digit Aadhaar Number (e.g. 512345678901)"
+                        value={att.aadhaarNumber}
+                        onChange={(e) => {
+                          const copy = [...editFormAttendees];
+                          copy[index].aadhaarNumber = e.target.value.replace(/\D/g, '');
+                          setEditFormAttendees(copy);
+                        }}
+                        className="w-full px-4 py-2.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => { setEditModalOpen(false); setAppToEdit(null); }}
+                  className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-6 py-2.5 rounded-full bg-[#2D1F0E] text-white hover:opacity-90 disabled:opacity-50 text-xs font-bold transition shadow-sm"
+                >
+                  {editLoading ? 'Saving Edits...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* ========================================================================= */}

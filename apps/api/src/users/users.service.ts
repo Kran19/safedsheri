@@ -74,4 +74,44 @@ export class UsersService {
 
     return { success: true, data: updated, message: `User status updated to ${isActive ? 'active' : 'disabled'}` };
   }
+
+  async update(id: string, data: { username?: string; password?: string; fullName?: string; role?: Role }) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (data.username && data.username !== user.username) {
+      const existing = await this.prisma.user.findUnique({
+        where: { username: data.username },
+      });
+      if (existing) {
+        throw new BadRequestException('Username already exists');
+      }
+    }
+
+    const updateData: any = {
+      username: data.username ?? user.username,
+      fullName: data.fullName ?? user.fullName,
+      role: data.role ?? user.role,
+    };
+
+    if (data.password && data.password.trim().length > 0) {
+      updateData.passwordHash = this.hashPassword(data.password);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    return { success: true, data: updated, message: 'User details updated successfully' };
+  }
 }

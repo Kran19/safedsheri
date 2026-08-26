@@ -27,8 +27,21 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Enable or disable staff user account (Super Admin only)' })
-  async toggleActive(@Param('id') id: string, @Body() body: { isActive: boolean }) {
-    return this.usersService.toggleActive(id, body.isActive);
+  @ApiOperation({ summary: 'Update staff user account details or status (Super Admin only)' })
+  async update(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      isActive?: boolean;
+      username?: string;
+      password?: string;
+      fullName?: string;
+      role?: Role;
+    },
+  ) {
+    if (body.isActive !== undefined) {
+      return this.usersService.toggleActive(id, body.isActive);
+    }
+    return this.usersService.update(id, body);
   }
 }

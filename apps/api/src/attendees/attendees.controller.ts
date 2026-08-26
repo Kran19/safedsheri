@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, Gender } from '@prisma/client';
 
 @ApiTags('Attendees')
 @ApiBearerAuth()
@@ -31,5 +31,14 @@ export class AttendeesController {
   @ApiOperation({ summary: 'Create new attendee' })
   async create(@Body() body: { fullName: string; phone: string; email?: string; aadhaarNumber: string }) {
     return this.attendeesService.create(body);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update attendee details (Super Admin / Ticketing only)' })
+  async update(
+    @Param('id') id: string,
+    @Body() body: { fullName?: string; phone?: string; email?: string; gender?: Gender; aadhaarNumber?: string }
+  ) {
+    return this.attendeesService.update(id, body);
   }
 }

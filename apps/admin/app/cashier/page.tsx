@@ -1063,30 +1063,39 @@ export default function CashierDeskTerminal() {
               </div>
               <div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                  Passes Minted Successfully!
+                  {manualSuccessResult.registration?.status === 'CASHIER_PENDING' ? 'Booking Request Submitted!' : 'Passes Minted Successfully!'}
                 </h3>
                 <p className="text-xs text-[#6E5336] mt-1 font-mono">
-                  Receipt #{manualSuccessResult.payment?.receiptNumber} • Application #{manualSuccessResult.registration?.registrationNumber}
+                  {manualSuccessResult.payment?.receiptNumber && `Receipt #${manualSuccessResult.payment?.receiptNumber} • `}Application #{manualSuccessResult.registration?.registrationNumber}
                 </p>
+                {manualSuccessResult.registration?.status === 'CASHIER_PENDING' && (
+                  <p className="text-sm font-bold text-amber-600 mt-2">
+                    Waiting for Admin Approval before passes can be issued.
+                  </p>
+                )}
               </div>
 
               <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-left max-w-lg mx-auto space-y-2.5">
                 <div className="flex justify-between">
                   <span className="text-[#6E5336]">Amount Settled:</span>
-                  <span className="font-bold text-emerald-800 font-serif text-sm">₹{Number(manualSuccessResult.payment?.amount).toLocaleString()}</span>
+                  <span className="font-bold text-emerald-800 font-serif text-sm">₹{Number(manualSuccessResult.payment?.amount || manualForm.customAmount).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6E5336]">Payment Method:</span>
-                  <span className="font-bold">{manualSuccessResult.payment?.method === 'CUSTOM_DIRECT' ? '💵 CASH AT DESK' : '📱 DYNAMIC UPI QR'}</span>
+                  <span className="font-bold">{manualSuccessResult.payment?.method === 'CUSTOM_DIRECT' || manualForm.paymentMethod === 'CUSTOM_DIRECT' ? '💵 CASH AT DESK' : '📱 DYNAMIC UPI QR'}</span>
                 </div>
                 <div className="flex justify-between border-t border-[#EAD9B8] pt-2">
-                  <span className="text-[#6E5336]">Issued Passes:</span>
-                  <span className="font-bold text-[#D99427]">{manualSuccessResult.credentials?.length || 1} Active Digital Pass(es)</span>
+                  <span className="text-[#6E5336]">{manualSuccessResult.registration?.status === 'CASHIER_PENDING' ? 'Status:' : 'Issued Passes:'}</span>
+                  <span className="font-bold text-[#D99427]">
+                    {manualSuccessResult.registration?.status === 'CASHIER_PENDING'
+                      ? 'Pending Admin Approval'
+                      : `${manualSuccessResult.credentials?.length || 1} Active Digital Pass(es)`}
+                  </span>
                 </div>
               </div>
 
               {/* OFFICIAL SAFED SHERI 2026 MINTED PASSES */}
-              {manualSuccessResult.credentials && (
+              {manualSuccessResult.credentials && manualSuccessResult.credentials.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-2">
                   {manualSuccessResult.credentials.map((cred: any, idx: number) => {
                     const attendeeName = cred.attendee?.fullName || cashierAttendees[idx]?.fullName || 'Guest Attendee';

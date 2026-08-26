@@ -589,6 +589,13 @@ export default function SafedSheriLandingPage() {
 
   useEffect(() => {
     fetchPricing();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const payId = params.get('pay');
+      if (payId) {
+        openPaymentModal(payId);
+      }
+    }
   }, []);
 
   const fetchPricing = async () => {

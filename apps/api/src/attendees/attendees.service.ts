@@ -102,4 +102,37 @@ export class AttendeesService {
 
     return { success: true, data: attendee, message: 'Attendee created successfully' };
   }
+
+  async update(id: string, data: {
+    fullName?: string;
+    phone?: string;
+    email?: string;
+    gender?: Gender;
+    aadhaarNumber?: string;
+  }) {
+    const attendee = await this.prisma.attendee.findUnique({ where: { id } });
+    if (!attendee) {
+      throw new NotFoundException('Attendee not found');
+    }
+
+    const updateData: any = {
+      fullName: data.fullName !== undefined ? data.fullName : attendee.fullName,
+      phone: data.phone !== undefined ? data.phone : attendee.phone,
+      email: data.email !== undefined ? data.email : attendee.email,
+      gender: data.gender !== undefined ? data.gender : attendee.gender,
+    };
+
+    if (data.aadhaarNumber !== undefined && data.aadhaarNumber.trim().length > 0) {
+      updateData.aadhaarMasked = this.encryptionService.maskAadhaar(data.aadhaarNumber);
+      updateData.aadhaarEncrypted = this.encryptionService.encrypt(data.aadhaarNumber);
+      updateData.aadhaarHmac = this.encryptionService.computeAadhaarHmac(data.aadhaarNumber);
+    }
+
+    const updated = await this.prisma.attendee.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return { success: true, data: updated, message: 'Attendee updated successfully' };
+  }
 }

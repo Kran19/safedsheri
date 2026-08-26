@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegistrationStatus, PassType, Gender, Role, PaymentStatus } from '@prisma/client';
+import { RegistrationStatus, PassType, Gender, Role, PaymentStatus, PaymentMethod } from '@prisma/client';
 import { EncryptionService } from '../common/encryption.service';
 import { PaymentGatewayService } from '../payments/payment-gateway.service';
 import { EmailService } from '../common/email.service';
+import { PaymentsService } from '../payments/payments.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class RegistrationsService {
     private encryptionService: EncryptionService,
     private paymentGatewayService: PaymentGatewayService,
     private emailService: EmailService,
+    private paymentsService: PaymentsService,
   ) {}
 
   async generateUniqueRegistrationNumber(tx?: any): Promise<string> {
@@ -967,5 +969,74 @@ export class RegistrationsService {
     });
     
     return { success: true, message: 'Application permanently deleted' };
+  }
+
+  async updatePaymentMethod(id: string, method: PaymentMethod, adminId: string) {
+    const reg = await this.prisma.registration.findUnique({
+      where: { id },
+      include: {
+        payments: {
+          where: { status: PaymentStatus.CONFIRMED },
+        },
+      },
+    });
+    if (!reg) throw new NotFoundException('Registration not found');
+
+    const confirmedPayment = reg.payments?.[0];
+
+    if (confirmedPayment) {
+      // If already paid, just change the payment method of the confirmed transaction
+      const oldMethod = confirmedPayment.method;
+      const updatedPayment = await this.prisma.payment.update({
+        where: { id: confirmedPayment.id },
+        data: { method },
+      });
+      await this.prisma.auditLog.create({
+        data: {
+          actorId: adminId,
+          action: 'PAYMENT_METHOD_UPDATED',
+          targetEntity: 'Registration',
+          targetId: id,
+          payload: {
+            registrationNumber: reg.registrationNumber,
+            oldMethod,
+            newMethod: method,
+          },
+        },
+      });
+      return { success: true, message: 'Payment method updated successfully', data: updatedPayment };
+    } else {
+      // If not paid yet, trigger a manual settlement using confirmGatewayPayment from PaymentsService!
+      let paymentLinkId = reg.paymentLinkId;
+      if (!paymentLinkId) {
+        paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;
+        await this.prisma.registration.update({
+          where: { id: reg.id },
+          data: { paymentLinkId },
+        });
+      }
+
+      // Call paymentsService.confirmGatewayPayment
+      const res = await this.paymentsService.confirmGatewayPayment({
+        paymentLinkId,
+        providerReference: `ADMIN-MANUAL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+        notes: `Confirmed by Admin (ID: ${adminId})`,
+        method,
+      });
+
+      return {
+        success: true,
+        message: 'Payment confirmed and method set successfully',
+        data: res.data,
+      };
+    }
+  }
+
+  async approveCashierRequest(id: string, adminId: string) {
+    return this.paymentsService.approveCashierRequest(id, adminId);
+  }
+
+  async rejectCashierRequest(id: string, adminId: string, notes?: string) {
+    return this.paymentsService.rejectCashierRequest(id, adminId, notes);
   }
 }

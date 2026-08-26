@@ -31,6 +31,7 @@ enum RegistrationStatus {
   SUBMITTED
   UNDER_REVIEW
   APPROVED
+  CASHIER_PENDING
   PAYMENT_PENDING
   PAYMENT_CONFIRMED
   PASS_ISSUED
@@ -43,6 +44,8 @@ enum PaymentMethod {
   ONLINE_GATEWAY
   UPI_QR
   CUSTOM_DIRECT
+  CASH
+  CARD
 }
 
 enum PaymentStatus {
