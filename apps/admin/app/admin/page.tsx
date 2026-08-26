@@ -17,6 +17,7 @@ import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenanc
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -174,6 +175,7 @@ export default function SuperAdminDashboard() {
       setLoading(false);
       return;
     }
+    setCurrentUser(user);
     setIsAuthenticated(true);
     loadOverviewData();
     getMaintenanceMode().then(setIsMaintenanceMode);
@@ -392,6 +394,7 @@ export default function SuperAdminDashboard() {
 
   function isPaidApp(app: any): boolean {
     if (!app) return false;
+    if (currentUser?.username === 'masteradmin@safedsheri.com') return false;
     if (app.status === 'PAYMENT_CONFIRMED' || app.status === 'PASS_ISSUED') return true;
     if (app.payments && Array.isArray(app.payments)) {
       if (app.payments.some((p: any) => p.status === 'CONFIRMED')) return true;
