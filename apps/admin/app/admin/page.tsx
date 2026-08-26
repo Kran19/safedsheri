@@ -45,22 +45,39 @@ export default function SuperAdminDashboard() {
     e.preventDefault();
     setCredentialsError('');
     setCredentialsSuccess('');
+    
     if (!credentialsForm.currentPassword) {
       setCredentialsError('Current password is required to save changes.');
       return;
     }
+
+    if (!credentialsForm.newUsername?.trim() && !credentialsForm.newPassword?.trim()) {
+      setCredentialsError('Please enter a new email/username or a new password.');
+      return;
+    }
+
     setCredentialsLoading(true);
+    const payload: any = {
+      currentPassword: credentialsForm.currentPassword,
+    };
+    if (credentialsForm.newUsername?.trim()) {
+      payload.newUsername = credentialsForm.newUsername.trim();
+    }
+    if (credentialsForm.newPassword?.trim()) {
+      payload.newPassword = credentialsForm.newPassword.trim();
+    }
+
     const res = await apiRequest('/auth/update-credentials', {
       method: 'PATCH',
-      body: JSON.stringify(credentialsForm)
+      body: JSON.stringify(payload)
     });
     setCredentialsLoading(false);
     if (res.success) {
-      setCredentialsSuccess('Credentials updated successfully. You will be logged out in 3 seconds to re-authenticate.');
+      setCredentialsSuccess('Credentials updated successfully! Redirecting to login in 2 seconds...');
       setTimeout(() => {
         clearAuthToken();
-        window.location.reload();
-      }, 3000);
+        window.location.href = '/login';
+      }, 2000);
     } else {
       setCredentialsError(res.error?.message || 'Failed to update credentials.');
     }

@@ -149,45 +149,54 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('User not found or session expired');
     }
 
     const hashedInput = this.hashPassword(dto.currentPassword);
     if (user.passwordHash !== hashedInput) {
-      throw new BadRequestException('Incorrect current password');
+      throw new BadRequestException('Incorrect current password.');
     }
 
     const data: any = {};
-    if (dto.newUsername) {
-      // Check if new username exists for another user
-      const existing = await this.prisma.user.findUnique({
-        where: { username: dto.newUsername },
-      });
-      if (existing && existing.id !== userId) {
-        throw new BadRequestException('Username/Email is already taken');
+    if (dto.newUsername && dto.newUsername.trim().length > 0) {
+      const cleanUsername = dto.newUsername.trim();
+      // Check if new username is different from current
+      if (cleanUsername !== user.username) {
+        const existing = await this.prisma.user.findUnique({
+          where: { username: cleanUsername },
+        });
+        if (existing && existing.id !== userId) {
+          throw new BadRequestException('Username/Email is already taken by another account.');
+        }
+        data.username = cleanUsername;
       }
-      data.username = dto.newUsername;
     }
 
     if (dto.newPassword && dto.newPassword.trim().length > 0) {
-      data.passwordHash = this.hashPassword(dto.newPassword);
+      const cleanPassword = dto.newPassword.trim();
+      if (cleanPassword.length < 6) {
+        throw new BadRequestException('New password must be at least 6 characters long.');
+      }
+      data.passwordHash = this.hashPassword(cleanPassword);
     }
 
-    if (Object.keys(data).length > 0) {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data,
-      });
-
-      await this.prisma.auditLog.create({
-        data: {
-          actorId: user.id,
-          action: 'CREDENTIALS_UPDATED',
-          targetEntity: 'USER',
-          targetId: user.id,
-        }
-      });
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Please provide a new email or a new password to update.');
     }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: 'CREDENTIALS_UPDATED',
+        targetEntity: 'USER',
+        targetId: user.id,
+      }
+    });
 
     return {
       success: true,
