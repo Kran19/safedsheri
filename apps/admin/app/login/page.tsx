@@ -8,8 +8,8 @@ import { Lock, User, KeyRound, AlertCircle, ArrowRight, ShieldCheck, CreditCard,
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState('admin1@safedsheri.com');
-  const [password, setPassword] = useState('AdminPass123!');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,19 +43,6 @@ export default function LoginPage() {
       setError('Connection failed. Ensure API service is reachable.');
     } finally {
       setLoading(false);
-    }
-  }
-
-  function handleDemoSelect(role: 'admin' | 'cashier' | 'security') {
-    if (role === 'admin') {
-      setUsername('admin1@safedsheri.com');
-      setPassword('AdminPass123!');
-    } else if (role === 'cashier') {
-      setUsername('cashier1@safedsheri.com');
-      setPassword('CashierPass123!');
-    } else if (role === 'security') {
-      setUsername('gate1@safedsheri.com');
-      setPassword('SecurityPass123!');
     }
   }
 
@@ -124,36 +111,6 @@ export default function LoginPage() {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        {/* 1-Click Demo Login Shortcuts */}
-        <div className="pt-4 border-t border-[#EAD9B8] space-y-2.5">
-          <span className="text-[10px] font-mono font-bold tracking-widest text-[#8C6019] uppercase block text-center">
-            Demo 1-Click Credentials
-          </span>
-          <div className="grid grid-cols-3 gap-2 text-[11px]">
-            <button
-              type="button"
-              onClick={() => handleDemoSelect('admin')}
-              className="p-2.5 rounded-xl bg-[#FFF9EE] hover:bg-[#FFF5DC] border border-[#EAD9B8] text-center font-bold text-[#8C6019] transition"
-            >
-              👑 Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoSelect('cashier')}
-              className="p-2.5 rounded-xl bg-[#FFF9EE] hover:bg-[#FFF5DC] border border-[#EAD9B8] text-center font-bold text-[#8C6019] transition"
-            >
-              💳 Cashier
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoSelect('security')}
-              className="p-2.5 rounded-xl bg-[#FFF9EE] hover:bg-[#FFF5DC] border border-[#EAD9B8] text-center font-bold text-[#8C6019] transition"
-            >
-              🛡️ Gate
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
