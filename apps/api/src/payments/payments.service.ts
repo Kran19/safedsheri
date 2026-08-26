@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Inject } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { CredentialsService } from '../credentials/credentials.service';
 import { EncryptionService } from '../common/encryption.service';
-import { PaymentMethod, PaymentStatus, RegistrationStatus, PassType, Gender } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, RegistrationStatus, PassType, Gender, CredentialStatus } from '@prisma/client';
 import { PaymentGatewayService } from './payment-gateway.service';
 import { EmailService } from '../common/email.service';
 import * as crypto from 'crypto';
@@ -841,6 +841,58 @@ export class PaymentsService {
       });
 
       return { success: true, message: 'Request rejected' };
+    });
+  }
+
+  async deletePayment(id: string, adminId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({
+        where: { id },
+        include: { registration: true }
+      });
+      if (!payment) throw new NotFoundException('Payment record not found');
+
+      // Delete payment
+      await tx.payment.delete({ where: { id } });
+
+      // Audit Log
+      await tx.auditLog.create({
+        data: {
+          actorId: adminId,
+          action: 'PAYMENT_RECORD_DELETED',
+          targetEntity: 'Payment',
+          targetId: id,
+          payload: {
+            receiptNumber: payment.receiptNumber,
+            amount: Number(payment.amount),
+            registrationNumber: payment.registration?.registrationNumber,
+          }
+        }
+      });
+
+      // Check if there are other confirmed payments for this registration
+      const regId = payment.registrationId;
+      if (regId) {
+        const remainingConfirmedPayments = await tx.payment.findMany({
+          where: { registrationId: regId, status: PaymentStatus.CONFIRMED },
+        });
+
+        if (remainingConfirmedPayments.length === 0) {
+          // Revert registration status to PAYMENT_PENDING
+          await tx.registration.update({
+            where: { id: regId },
+            data: { status: RegistrationStatus.PAYMENT_PENDING },
+          });
+
+          // Cancel credentials if any exist
+          await tx.credential.updateMany({
+            where: { registrationId: regId },
+            data: { status: CredentialStatus.CANCELLED },
+          });
+        }
+      }
+
+      return { success: true, message: 'Payment record deleted successfully.' };
     });
   }
 }

@@ -961,7 +961,7 @@ export default function SuperAdminDashboard() {
             </button>
           )}
 
-          {isPaidApp(row) ? (
+          {isPaidApp(row) && currentUser?.username !== 'masteradmin@safedsheri.com' ? (
             <span
               title="Paid applications cannot be deleted"
               className="p-1.5 rounded-xl bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed select-none"
@@ -1174,6 +1174,37 @@ export default function SuperAdminDashboard() {
       getValue: (r) => new Date(r.createdAt).toISOString(),
       render: (r) => <span className="font-mono text-[11px] text-[#6E5336]">{new Date(r.createdAt).toLocaleDateString()} {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>,
     },
+    {
+      key: 'actions',
+      title: 'Action',
+      sortable: false,
+      align: 'right',
+      render: (row) => (
+        currentUser?.username === 'masteradmin@safedsheri.com' ? (
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (window.confirm(`Are you sure you want to permanently delete receipt ${row.receiptNumber}? This will revert the application status if no other payments exist.`)) {
+                setError('');
+                setMessage('');
+                const res = await apiRequest(`/payments/${row.id}`, { method: 'DELETE' });
+                if (res.success) {
+                  setMessage(`Payment ${row.receiptNumber} deleted successfully.`);
+                  const refreshRes = await apiRequest('/payments');
+                  if (refreshRes.success) setPayments(refreshRes.data || []);
+                } else {
+                  setError(res.error?.message || 'Failed to delete payment');
+                }
+              }
+            }}
+            title="Delete Payment Record"
+            className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 transition shadow-sm"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        ) : null
+      )
+    }
   ];
 
   return (

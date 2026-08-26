@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
+  ForbiddenException,
   Body,
   Param,
   Query,
@@ -172,5 +174,17 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Get payment details by ID or Receipt Number' })
   findOne(@Param('id') id: string) {
     return this.paymentsService.findOne(id);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Permanently delete a payment record (Master Admin Only)' })
+  deletePayment(@Param('id') id: string, @Request() req: any) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Only the Master Admin has permission to delete payment records.');
+    }
+    return this.paymentsService.deletePayment(id, req.user.id);
   }
 }
