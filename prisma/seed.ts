@@ -111,17 +111,6 @@ async function main() {
     },
   });
 
-  // Alias default admin
-  await prisma.user.create({
-    data: {
-      username: 'admin@safedsheri.com',
-      passwordHash: adminPassHash,
-      fullName: 'Master Admin (Super Admin)',
-      role: Role.SUPER_ADMIN,
-      isActive: true,
-    },
-  });
-
   // Super Admin 2
   const superAdmin2 = await prisma.user.create({
     data: {

@@ -31,12 +31,19 @@ async function main() {
       fullName: 'Super Admin 3 (Harshvardhan Jadeja)',
       role: Role.SUPER_ADMIN,
     },
-    {
-      username: 'admin@safedsheri.com',
-      fullName: 'Master Super Admin',
-      role: Role.SUPER_ADMIN,
-    },
   ];
+
+  // Remove legacy master admin if present
+  try {
+    const deleted = await prisma.user.deleteMany({
+      where: { username: 'admin@safedsheri.com' },
+    });
+    if (deleted.count > 0) {
+      console.log('✓ Removed legacy master admin account (admin@safedsheri.com)');
+    }
+  } catch (e) {
+    // ignore
+  }
 
   for (const account of adminAccounts) {
     const user = await prisma.user.upsert({

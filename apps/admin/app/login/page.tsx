@@ -8,7 +8,7 @@ import { Lock, User, KeyRound, AlertCircle, ArrowRight, ShieldCheck, CreditCard,
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState('admin@safedsheri.com');
+  const [username, setUsername] = useState('admin1@safedsheri.com');
   const [password, setPassword] = useState('AdminPass123!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
   function handleDemoSelect(role: 'admin' | 'cashier' | 'security') {
     if (role === 'admin') {
-      setUsername('admin@safedsheri.com');
+      setUsername('admin1@safedsheri.com');
       setPassword('AdminPass123!');
     } else if (role === 'cashier') {
       setUsername('cashier1@safedsheri.com');
