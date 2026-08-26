@@ -14,11 +14,12 @@ import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
 import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
 import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenance';
+import BookingDesk from '../components/BookingDesk';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'users'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [userForm, setUserForm] = useState({ username: '', password: '', fullName: '', role: 'TICKETING_FINANCE' });
@@ -900,10 +901,10 @@ export default function SuperAdminDashboard() {
               e.stopPropagation();
               openReviewModal(row);
             }}
-            className="px-3 py-1 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+            title="Review Application"
+            className="p-1.5 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] transition shadow-sm"
           >
-            <Eye className="w-3 h-3 text-[#D99427]" />
-            <span>Review</span>
+            <Eye className="w-4 h-4 text-[#D99427]" />
           </button>
 
           <button
@@ -911,10 +912,10 @@ export default function SuperAdminDashboard() {
               e.stopPropagation();
               openEditModal(row);
             }}
-            className="px-3 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+            title="Edit Application"
+            className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 transition shadow-sm"
           >
-            <Sliders className="w-3 h-3 text-blue-600" />
-            <span>Edit</span>
+            <Sliders className="w-4 h-4 text-blue-600" />
           </button>
           
           {row.status === 'CASHIER_PENDING' && (
@@ -925,10 +926,10 @@ export default function SuperAdminDashboard() {
                   handleApproveCashierRequest(row.id);
                 }}
                 disabled={actionLoading}
-                className="px-3 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+                title="Approve Booking"
+                className="p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition shadow-sm"
               >
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Approve</span>
+                <CheckCircle2 className="w-4 h-4" />
               </button>
               <button
                 onClick={(e) => {
@@ -936,10 +937,10 @@ export default function SuperAdminDashboard() {
                   handleRejectCashierRequest(row.id);
                 }}
                 disabled={actionLoading}
-                className="px-3 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+                title="Reject Booking"
+                className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 transition shadow-sm"
               >
-                <AlertCircle className="w-3 h-3" />
-                <span>Reject</span>
+                <AlertCircle className="w-4 h-4" />
               </button>
             </>
           )}
@@ -954,20 +955,18 @@ export default function SuperAdminDashboard() {
                 setTimeout(() => setMessage(''), 3000);
               }}
               title="Copy Payment Link"
-              className="px-3 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+              className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 transition shadow-sm"
             >
-              <ExternalLink className="w-3 h-3" />
-              <span>Link</span>
+              <ExternalLink className="w-4 h-4" />
             </button>
           )}
 
           {isPaidApp(row) ? (
             <span
               title="Paid applications cannot be deleted"
-              className="px-2.5 py-1 rounded-xl bg-gray-100 border border-gray-200 text-gray-400 font-medium text-[11px] inline-flex items-center space-x-1 cursor-not-allowed select-none"
+              className="p-1.5 rounded-xl bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed select-none"
             >
-              <Lock className="w-3 h-3 text-gray-400" />
-              <span>Paid</span>
+              <Lock className="w-4 h-4 text-gray-400" />
             </span>
           ) : (
             <button
@@ -976,10 +975,10 @@ export default function SuperAdminDashboard() {
                 setAppToDelete(row);
                 setDeleteModalOpen(true);
               }}
-              className="px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-[11px] inline-flex items-center space-x-1 transition shadow-sm"
+              title="Move to Trash"
+              className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 transition shadow-sm"
             >
-              <Trash2 className="w-3 h-3" />
-              <span>Trash</span>
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -1198,13 +1197,6 @@ export default function SuperAdminDashboard() {
 
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => window.open('/cashier', '_blank')}
-            className="px-4 py-2 rounded-xl bg-[#2D1F0E] hover:bg-[#3D2B14] text-[#F6C85F] text-xs font-bold flex items-center space-x-2 transition shadow-sm"
-          >
-            <Ticket className="w-3.5 h-3.5 text-[#F6C85F]" />
-            <span>Open Cashier Desk</span>
-          </button>
-          <button
             onClick={() => { loadOverviewData(); loadTabContent(activeTab); }}
             className="px-4 py-2 rounded-xl bg-white hover:bg-[#F8F5EE] border border-[#EAD9B8] text-xs font-bold text-[#2D1F0E] flex items-center space-x-2 transition shadow-sm"
           >
@@ -1286,7 +1278,7 @@ export default function SuperAdminDashboard() {
           { id: 'audit', label: 'Audit Log', icon: FileText },
           { id: 'settings', label: 'Account Settings', icon: Settings },
           { id: 'trash', label: 'Trash', icon: Trash2 },
-          { id: 'users', label: 'Staff Management', icon: Shield },
+          { id: 'book_pass', label: 'Book Pass', icon: Ticket },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -1995,6 +1987,13 @@ export default function SuperAdminDashboard() {
         />
       )}
 
+      {/* ========================================================================= */}
+      {/* TAB: BOOK PASS */}
+      {/* ========================================================================= */}
+      {activeTab === 'book_pass' && (
+        <BookingDesk hideHeader={true} />
+      )}
+
       {activeTab === 'settings' && (
         <div className="space-y-6 animate-fade-in">
           {/* ACCOUNT SETTINGS - CREDENTIALS */}
@@ -2507,162 +2506,7 @@ export default function SuperAdminDashboard() {
         />
       )}
 
-      {/* ========================================================================= */}
-      {/* TAB: STAFF MANAGEMENT */}
-      {/* ========================================================================= */}
-      {activeTab === 'users' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* List Staff Users */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-3xl border border-[#EAD9B8] p-6 shadow-sm">
-              <div className="flex items-center justify-between border-b border-[#EAD9B8] pb-4 mb-4">
-                <div>
-                  <h3 className="text-lg font-serif font-bold text-[#2D1F0E]">Active Staff Accounts</h3>
-                  <p className="text-xs text-[#6E5336] mt-0.5">Manage operational roles and dashboard access credentials.</p>
-                </div>
-                <button
-                  onClick={() => loadTabContent('users')}
-                  className="p-2 rounded-full hover:bg-[#FAF6EE] text-[#D99427] transition"
-                  title="Reload staff list"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-              </div>
 
-              {loading ? (
-                <div className="py-12 text-center text-xs text-[#6E5336]">Loading staff accounts...</div>
-              ) : users.length === 0 ? (
-                <div className="py-12 text-center text-xs text-[#6E5336]">No staff accounts found.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-[#EAD9B8] text-[#6E5336] font-bold">
-                        <th className="py-3 px-4">Full Name</th>
-                        <th className="py-3 px-4">Email / Username</th>
-                        <th className="py-3 px-4">Role</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((userItem) => (
-                        <tr key={userItem.id} className="border-b border-gray-100 hover:bg-[#FAF6EE]/50 transition">
-                          <td className="py-3 px-4 font-semibold text-[#2D1F0E]">{userItem.fullName}</td>
-                          <td className="py-3 px-4 font-mono text-[#6E5336]">{userItem.username}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              userItem.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-800' : userItem.role === 'TICKETING_FINANCE' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {userItem.role}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              userItem.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                              {userItem.isActive ? 'Active' : 'Disabled'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right space-x-2">
-                            <button
-                              onClick={() => handleToggleUserActive(userItem.id, userItem.isActive)}
-                              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase transition shadow-sm border ${
-                                userItem.isActive 
-                                  ? 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
-                                  : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700'
-                              }`}
-                            >
-                              {userItem.isActive ? 'Disable' : 'Enable'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Add Staff User Form */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-3xl border border-[#EAD9B8] p-6 shadow-sm">
-              <h3 className="text-lg font-serif font-bold text-[#2D1F0E] border-b border-[#EAD9B8] pb-4 mb-4">Create New Account</h3>
-              
-              <form onSubmit={handleAddUser} className="space-y-4">
-                {userError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-xs shadow-sm">
-                    {userError}
-                  </div>
-                )}
-                {userSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs shadow-sm">
-                    {userSuccess}
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={userForm.fullName}
-                    onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
-                    placeholder="e.g. Vikramaditya Solanki"
-                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Email / Username</label>
-                  <input
-                    type="email"
-                    required
-                    value={userForm.username}
-                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                    placeholder="e.g. cashier2@safedsheri.com"
-                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={userForm.password}
-                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#6E5336] mb-1.5 uppercase tracking-wider">Role & Permissions</label>
-                  <select
-                    value={userForm.role}
-                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#FAF6EE] border border-[#EAD9B8] rounded-2xl text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none transition shadow-sm cursor-pointer"
-                  >
-                    <option value="TICKETING_FINANCE">Cashier / Box Office (TICKETING_FINANCE)</option>
-                    <option value="ENTRY_VERIFICATION">Security / Entry Gate (ENTRY_VERIFICATION)</option>
-                    <option value="SUPER_ADMIN">System Super Admin (SUPER_ADMIN)</option>
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={userLoading}
-                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 shadow-md shadow-[#D99427]/20 flex items-center justify-center transition disabled:opacity-50 mt-2"
-                >
-                  {userLoading ? 'Creating Account...' : 'Create Account'}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* ========================================================================= */}

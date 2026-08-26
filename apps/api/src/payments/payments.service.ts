@@ -457,8 +457,8 @@ export class PaymentsService {
         });
       }
 
-      // 5. IF UPI_QR: Create Real Razorpay Order for live customer payment directly to merchant bank account
-      if (dto.paymentMethod === PaymentMethod.UPI_QR) {
+      // 5. IF UPI_QR AND SUPER_ADMIN: Create Real Razorpay Order for live customer payment directly to merchant bank account
+      if (dto.paymentMethod === PaymentMethod.UPI_QR && isSuperAdmin) {
         const orderData = await this.paymentGatewayService.createPaymentOrder({
           registrationId: registration.id,
           registrationNumber: registration.registrationNumber,
@@ -498,10 +498,14 @@ export class PaymentsService {
         };
       }
 
-      // 6. IF CASH (CUSTOM_DIRECT): Create Confirmed Payment Record Immediately
+      // 6. IF CASH (CUSTOM_DIRECT) or non-admin UPI_QR: Create PENDING/CONFIRMED Payment Record
       const receiptSeq = (await tx.payment.count() + 1001).toString();
       const receiptNumber = `RCP-2026-${receiptSeq}`;
-      const providerRef = `DESK-CASH-${Date.now().toString().slice(-6)}`;
+      
+      const isUpi = dto.paymentMethod === PaymentMethod.UPI_QR;
+      const providerRef = isUpi 
+        ? `DESK-UPI-PENDING-${Date.now().toString().slice(-6)}`
+        : `DESK-CASH-${Date.now().toString().slice(-6)}`;
 
       const payment = await tx.payment.create({
         data: {
@@ -510,11 +514,11 @@ export class PaymentsService {
           method: dto.paymentMethod,
           status: isSuperAdmin ? PaymentStatus.CONFIRMED : PaymentStatus.PENDING,
           receiptNumber,
-          provider: 'CASH_BOX_OFFICE',
+          provider: isUpi ? 'RAZORPAY_UPI' : 'CASH_BOX_OFFICE',
           providerReference: providerRef,
           paymentLinkId,
           collectedById: dto.staffUserId,
-          notes: dto.notes || 'Cash payment collected at box office counter',
+          notes: dto.notes || (isUpi ? 'UPI QR payment requested' : 'Cash payment collected at box office counter'),
         },
       });
 
@@ -632,8 +636,7 @@ export class PaymentsService {
 
       if (
         lockedReg.status !== RegistrationStatus.APPROVED &&
-        lockedReg.status !== RegistrationStatus.PAYMENT_PENDING &&
-        lockedReg.status !== RegistrationStatus.CASHIER_PENDING
+        lockedReg.status !== RegistrationStatus.PAYMENT_PENDING
       ) {
         if (lockedReg.status === RegistrationStatus.PAYMENT_CONFIRMED || lockedReg.status === RegistrationStatus.PASS_ISSUED) {
           const existingPayment = await tx.payment.findFirst({
@@ -658,19 +661,37 @@ export class PaymentsService {
       const receiptNumber = `RCP-2026-${receiptSeq}`;
       const providerRef = data.providerReference || `PG-UPI-${Date.now().toString().slice(-6)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
-      const payment = await tx.payment.create({
-        data: {
-          registrationId: lockedReg.id,
-          amount: lockedReg.amountDue,
-          method: data.method || PaymentMethod.UPI_QR,
-          status: PaymentStatus.CONFIRMED,
-          receiptNumber,
-          provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
-          providerReference: providerRef,
-          paymentLinkId: data.paymentLinkId,
-          notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
-        },
+      // Check if there is an existing pending payment (e.g. from cashier request) to update
+      const existingPendingPayment = await tx.payment.findFirst({
+        where: { registrationId: lockedReg.id, status: PaymentStatus.PENDING },
       });
+
+      let payment;
+      if (existingPendingPayment) {
+        payment = await tx.payment.update({
+          where: { id: existingPendingPayment.id },
+          data: {
+            status: PaymentStatus.CONFIRMED,
+            provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
+            providerReference: providerRef,
+            notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
+          },
+        });
+      } else {
+        payment = await tx.payment.create({
+          data: {
+            registrationId: lockedReg.id,
+            amount: lockedReg.amountDue,
+            method: data.method || PaymentMethod.UPI_QR,
+            status: PaymentStatus.CONFIRMED,
+            receiptNumber,
+            provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
+            providerReference: providerRef,
+            paymentLinkId: data.paymentLinkId,
+            notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
+          },
+        });
+      }
 
       await tx.registration.update({
         where: { id: lockedReg.id },
@@ -728,34 +749,57 @@ export class PaymentsService {
 
       const pendingPayment = reg.payments.find(p => p.status === PaymentStatus.PENDING);
       
-      if (pendingPayment) {
-        await tx.payment.update({
-          where: { id: pendingPayment.id },
-          data: { status: PaymentStatus.CONFIRMED },
+      const isUpi = pendingPayment && pendingPayment.method === PaymentMethod.UPI_QR;
+
+      if (isUpi) {
+        // For UPI QR request: Set status to PAYMENT_PENDING so customer can scan and pay
+        await tx.registration.update({
+          where: { id: registrationId },
+          data: { status: RegistrationStatus.PAYMENT_PENDING },
         });
+
+        await tx.auditLog.create({
+          data: {
+            actorId: adminId,
+            action: 'CASHIER_REQUEST_APPROVED_FOR_UPI',
+            targetEntity: 'Registration',
+            targetId: registrationId,
+            payload: { notes: 'Approved for UPI QR payment. Awaiting customer scan.' },
+          },
+        });
+
+        return { success: true, message: 'UPI request approved. Registration is now pending payment.' };
+      } else {
+        // For Cash request: Confirm payment and issue pass immediately
+        if (pendingPayment) {
+          await tx.payment.update({
+            where: { id: pendingPayment.id },
+            data: { status: PaymentStatus.CONFIRMED },
+          });
+        }
+
+        await tx.registration.update({
+          where: { id: registrationId },
+          data: { status: RegistrationStatus.PASS_ISSUED },
+        });
+
+        await this.credentialsService.generateCredentialsForRegistration(registrationId, tx);
+        const fullCredentials = await tx.credential.findMany({
+          where: { registrationId: registrationId },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorId: adminId,
+            action: 'CASHIER_REQUEST_APPROVED',
+            targetEntity: 'Registration',
+            targetId: registrationId,
+            payload: { credentialsCount: fullCredentials.length },
+          },
+        });
+
+        return { success: true, message: 'Cash request approved and passes issued' };
       }
-
-      await tx.registration.update({
-        where: { id: registrationId },
-        data: { status: RegistrationStatus.PASS_ISSUED },
-      });
-
-      await this.credentialsService.generateCredentialsForRegistration(registrationId, tx);
-      const fullCredentials = await tx.credential.findMany({
-        where: { registrationId: registrationId },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          actorId: adminId,
-          action: 'CASHIER_REQUEST_APPROVED',
-          targetEntity: 'Registration',
-          targetId: registrationId,
-          payload: { credentialsCount: fullCredentials.length },
-        },
-      });
-
-      return { success: true, message: 'Request approved and passes issued' };
     });
   }
 
