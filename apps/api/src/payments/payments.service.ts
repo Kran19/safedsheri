@@ -463,7 +463,15 @@ export class PaymentsService {
       });
 
       // 6. Mint Instant Credentials
-      const credentials = await this.credentialsService.generateCredentialsForRegistration(registration.id, tx);
+      await this.credentialsService.generateCredentialsForRegistration(registration.id, tx);
+      const fullCredentials = await tx.credential.findMany({
+        where: { registrationId: registration.id },
+        include: {
+          attendee: true,
+          registration: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
 
       // 7. Audit Log
       await tx.auditLog.create({
@@ -476,7 +484,7 @@ export class PaymentsService {
             receiptNumber,
             amount: dto.customAmount,
             method: dto.paymentMethod,
-            credentialsCount: credentials.length,
+            credentialsCount: fullCredentials.length,
           },
         },
       });
@@ -486,9 +494,9 @@ export class PaymentsService {
         data: {
           registration,
           payment,
-          credentials,
+          credentials: fullCredentials,
         },
-        message: `Manual entry created! Receipt #${receiptNumber} generated with ${credentials.length} active pass(es).`,
+        message: `Manual entry created! Receipt #${receiptNumber} generated with ${fullCredentials.length} active pass(es).`,
       };
     });
   }

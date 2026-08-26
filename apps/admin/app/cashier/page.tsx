@@ -1029,21 +1029,82 @@ export default function CashierDeskTerminal() {
                 </div>
               </div>
 
-              {/* MINTED PASSES DISPLAY */}
+              {/* OFFICIAL SAFED SHERI 2026 MINTED PASSES */}
               {manualSuccessResult.credentials && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
-                  {manualSuccessResult.credentials.map((cred: any, idx: number) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-white border-2 border-[#EAD9B8] text-center space-y-2 shadow-md">
-                      <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">
-                        PASS #{idx + 1} • {manualSuccessResult.registration?.passType}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-2">
+                  {manualSuccessResult.credentials.map((cred: any, idx: number) => {
+                    const attendeeName = cred.attendee?.fullName || cashierAttendees[idx]?.fullName || 'Guest Attendee';
+                    const attendeePhone = cred.attendee?.phone || cashierAttendees[idx]?.phone || '';
+                    const aadhaarMasked = cred.attendee?.aadhaarMasked || (cashierAttendees[idx]?.aadhaarNumber ? `XXXX XXXX ${cashierAttendees[idx]?.aadhaarNumber.replace(/\D/g, '').slice(-4)}` : 'XXXX XXXX XXXX');
+                    const passType = manualSuccessResult.registration?.passType || manualForm.passType;
+                    const passCode = cred.passCode || cred.credentialNumber || `SS26-${passType}-${cred.id?.slice(0, 4)?.toUpperCase()}`;
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-6 rounded-3xl bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE] border-2 border-[#D99427] text-[#2D1F0E] text-center space-y-3.5 shadow-xl relative overflow-hidden"
+                      >
+                        {/* Top Watermark / Brand Header */}
+                        <div className="flex justify-center mb-1">
+                          <LogoSlot size="sm" />
+                        </div>
+                        <div className="text-[10px] tracking-[0.25em] font-extrabold uppercase text-[#8C6019]">
+                          SAFED SHERI 2026 • OFFICIAL ENTRY PASS
+                        </div>
+
+                        <div className="flex justify-center">
+                          <span className="px-3.5 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C] shadow-sm">
+                            {passType === 'SINGLE' ? '💃 SINGLE PASS (FEMALE)' : passType === 'COUPLE' ? `👫 COUPLE PASS (${idx + 1}/2)` : passType === 'KIDS' ? '👶 KIDS PASS' : '👑 GAZEBO VIP'}
+                          </span>
+                        </div>
+
+                        {/* High-Resolution Gate QR Code */}
+                        <div className="flex justify-center p-3 bg-white rounded-2xl border-2 border-[#D99427]/40 shadow-inner inline-block mx-auto">
+                          <QRCodeSVG
+                            value={cred.secureToken || cred.qrPayload || `SS26-${cred.id}`}
+                            size={175}
+                            level="H"
+                            includeMargin={true}
+                          />
+                        </div>
+
+                        {/* Pass Code */}
+                        <div className="text-xl font-mono font-extrabold tracking-widest text-[#2D1F0E] bg-white py-1.5 px-4 rounded-xl border border-[#EAD9B8] inline-block shadow-sm">
+                          {passCode}
+                        </div>
+
+                        {/* Attendee Details Card */}
+                        <div className="bg-[#FAF6EE] p-3.5 rounded-2xl border border-[#EAD9B8] text-xs space-y-1.5 text-left">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-[9px] font-mono text-[#8C6019] uppercase tracking-wider">ATTENDEE NAME</div>
+                              <div className="font-serif font-bold text-sm text-[#2D1F0E]">{attendeeName}</div>
+                            </div>
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              ACTIVE ✓
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[10px] font-mono pt-1 border-t border-[#EAD9B8]/60 text-[#6E5336]">
+                            <div>
+                              <span className="text-[#8C6019]">PHONE:</span> {attendeePhone || '—'}
+                            </div>
+                            <div>
+                              <span className="text-[#8C6019]">AADHAAR:</span> {aadhaarMasked}
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-[#8C6019]">APP NO:</span> {manualSuccessResult.registration?.registrationNumber}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Event Guidance */}
+                        <div className="text-[10px] text-[#6E5336] bg-white/70 p-2.5 rounded-xl border border-[#EAD9B8] leading-relaxed">
+                          Present this digital pass at the Security Gate on <strong>09 October 2026</strong> • Regency Lagoon Resort, Rajkot.
+                        </div>
                       </div>
-                      <div className="flex justify-center p-2 bg-[#FAF6EE] rounded-xl border border-[#EAD9B8] inline-block mx-auto">
-                        <QRCodeSVG value={cred.qrPayload || `SS26-PASS-${cred.id}`} size={120} level="M" />
-                      </div>
-                      <div className="text-[11px] font-bold text-[#2D1F0E]">{cred.attendee?.fullName || 'Guest Pass'}</div>
-                      <div className="text-[9px] font-mono text-[#6E5336]">{cred.passNumber || cred.id?.slice(0, 10)}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
