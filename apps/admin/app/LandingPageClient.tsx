@@ -3027,7 +3027,7 @@ export default function SafedSheriLandingPage() {
                         </div>
 
                         {/* 1. ACTIVE QR PASS DISPLAY */}
-                        {p.hasActivePass && p.credential && (
+                        {p.hasActivePass && p.credential && p.passType !== 'GAZEBO' && (
                           <div className="p-6 rounded-2xl bg-gradient-to-b from-[#FFFDF9] to-white border-2 border-[#D99427] text-[#2D1F0E] text-center space-y-3 shadow-xl">
                             <div className="flex justify-center mb-1">
                               <LogoSlot size="sm" />
@@ -3051,6 +3051,72 @@ export default function SafedSheriLandingPage() {
 
                             <div className="text-xs text-[#6E5336] bg-[#FAF6EE] p-2.5 rounded-xl border border-[#EAD9B8]">
                               Present this digital pass at the Security Gate on <strong>09 October 2026</strong> • Regency Lagoon Resort, Rajkot.
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 1B. GAZEBO PREMIUM PASS DISPLAY */}
+                        {p.hasActivePass && p.credential && p.passType === 'GAZEBO' && (
+                          <div className="p-6 rounded-2xl bg-gradient-to-br from-[#0F0F0F] via-[#1A1A1A] to-[#0A0A0A] border-2 border-[#D99427] text-[#F6C85F] relative overflow-hidden shadow-2xl">
+                            {/* Decorative background lines */}
+                            <div className="absolute inset-0 opacity-10 pointer-events-none">
+                              <div className="absolute -top-[50%] -left-[20%] w-[150%] h-[150%] rounded-full border-[1px] border-[#D99427] opacity-20 transform -rotate-45" />
+                              <div className="absolute top-[20%] -right-[30%] w-[100%] h-[100%] rounded-full border-[1px] border-[#D99427] opacity-10 transform rotate-12" />
+                            </div>
+
+                            <div className="relative z-10 space-y-5 pr-6">
+                              {/* Header */}
+                              <div className="flex items-center space-x-3">
+                                <div className="p-1.5 rounded-lg bg-[#D99427]/20 border border-[#D99427]/50">
+                                  <Sparkles className="w-5 h-5 text-[#F6C85F]" />
+                                </div>
+                                <div>
+                                  <div className="text-lg font-serif font-bold tracking-widest">GAZEBO®</div>
+                                  <div className="text-[7px] tracking-[0.3em] opacity-70 uppercase">Real Estate Management Suite</div>
+                                </div>
+                              </div>
+
+                              <div className="pt-2 pb-1 border-t border-b border-[#D99427]/30 text-left">
+                                <div className="text-2xl font-serif font-bold tracking-wider text-[#FFF5DC]">ALL ACCESS PASS</div>
+                                <div className="text-[10px] tracking-[0.25em] font-medium mt-1 uppercase opacity-80 text-[#D99427]">PREMIUM MEMBER</div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-left">
+                                <div>
+                                  <div className="text-[8px] uppercase tracking-wider opacity-60">Pass ID</div>
+                                  <div className="text-xs font-mono font-bold tracking-wider">{p.credential.passCode}</div>
+                                </div>
+                                <div>
+                                  <div className="text-[8px] uppercase tracking-wider opacity-60">Member</div>
+                                  <div className="text-[11px] font-bold uppercase truncate pr-2">{p.attendeeName}</div>
+                                </div>
+                                <div>
+                                  <div className="text-[8px] uppercase tracking-wider opacity-60">Valid Till</div>
+                                  <div className="text-xs font-mono font-bold tracking-wider">09 OCT 2026</div>
+                                </div>
+                              </div>
+
+                              <div className="pt-3 flex items-center justify-between">
+                                <div className="p-1.5 rounded-xl bg-white flex-shrink-0">
+                                  <QRCodeSVG
+                                    value={p.credential.secureToken}
+                                    size={64}
+                                    level="M"
+                                    includeMargin={false}
+                                  />
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-serif text-2xl italic opacity-90 text-[#D99427]">Safed Sheri</div>
+                                  <div className="text-[7px] uppercase tracking-[0.2em] opacity-50 mt-1 border-t border-[#D99427]/20 pt-1">Authorized Signature</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Gold Side Ribbon */}
+                            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-b from-[#D99427] via-[#F6C85F] to-[#8C6019] border-l border-[#FFF5DC]/30 flex flex-col items-center justify-center opacity-90 shadow-inner z-0">
+                               <div className="transform -rotate-90 text-[9px] tracking-[0.3em] font-bold text-[#2D1F0E] uppercase whitespace-nowrap mt-8">
+                                  PREMIUM
+                               </div>
                             </div>
                           </div>
                         )}

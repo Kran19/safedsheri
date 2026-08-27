@@ -105,4 +105,30 @@ export class GazebosController {
   ) {
     return this.gazebosService.updateInquiryStatus(id, body, req.user.id);
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  @Post('gazebos/:id/guests')
+  @ApiOperation({ summary: 'Add up to 14 guests to a physical Gazebo and instantly mint passes (Staff only)' })
+  async addGuestsToGazebo(
+    @Param('id') id: string,
+    @Request() req,
+    @Body()
+    body: {
+      attendees: Array<{
+        fullName: string;
+        phone: string;
+        email?: string;
+        gender: string;
+        aadhaarNumber?: string;
+        documentFrontKey?: string;
+        documentFrontName?: string;
+        documentBackKey?: string;
+        documentBackName?: string;
+      }>;
+    },
+  ) {
+    return this.gazebosService.addGuestsToGazebo(id, body, req.user.id);
+  }
 }

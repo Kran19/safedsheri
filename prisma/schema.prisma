@@ -229,6 +229,7 @@ model Registration {
   reviewNotes        String?
   reviewedById       String?
   reviewedAt         DateTime?
+  gazeboId           String?            // Optional link for GAZEBO pass types
   createdById        String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -236,6 +237,7 @@ model Registration {
 
   event        Event                  @relation(fields: [eventId], references: [id])
   pricingPhase PricingPhase           @relation(fields: [pricingPhaseId], references: [id])
+  gazebo       Gazebo?                @relation(fields: [gazeboId], references: [id])
   createdBy    User                   @relation("CreatedBy", fields: [createdById], references: [id])
   reviewedBy   User?                  @relation("ReviewedBy", fields: [reviewedById], references: [id])
   attendees    RegistrationAttendee[]
@@ -387,7 +389,8 @@ model Gazebo {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  inquiries GazeboInquiry[]
+  inquiries    GazeboInquiry[]
+  registrations Registration[]
 
   @@index([level])
   @@index([status])

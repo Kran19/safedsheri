@@ -15,6 +15,7 @@ import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedT
 import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
 import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenance';
 import BookingDesk from '../components/BookingDesk';
+import GazeboManageGuestsModal from '../components/GazeboManageGuestsModal';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
@@ -136,6 +137,7 @@ export default function SuperAdminDashboard() {
 
   // Gazebo Direct Booking Modal State
   const [selectedGazeboForBooking, setSelectedGazeboForBooking] = useState<any | null>(null);
+  const [manageGuestsGazebo, setManageGuestsGazebo] = useState<any | null>(null);
   const [bookingForm, setBookingForm] = useState<{
     fullName: string;
     phone: string;
@@ -1549,7 +1551,7 @@ export default function SuperAdminDashboard() {
                         <span>Available for Booking</span>
                       </div>
                       <div className="text-[10px] text-emerald-700 leading-tight">
-                        14–20 VIP Guests Capacity • Private Butler
+                        14 VIP Guests Capacity • Private Butler
                       </div>
                     </div>
                   )}
@@ -1575,30 +1577,41 @@ export default function SuperAdminDashboard() {
                         <span>Book Gazebo #{gazeboIndex}</span>
                       </button>
                     ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedGazeboForBooking(gz);
-                            setBookingForm({
-                              fullName: activeInquiry?.fullName || '',
-                              phone: activeInquiry?.phone || '',
-                              email: activeInquiry?.notes?.match(/Email:\s*([^|]+)/)?.[1]?.trim() || '',
-                              amount: Number(gz.price),
-                              notes: activeInquiry?.notes || '',
-                              status: gz.status === 'HELD' ? 'HOLD' : 'CONFIRMED',
-                            });
-                          }}
-                          className="py-2 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] text-[11px] font-bold transition flex items-center justify-center space-x-1"
-                        >
-                          <span>✏️ Edit Host</span>
-                        </button>
-                        <button
-                          onClick={() => handleReleaseGazebo(gz.id, gz.gazeboNumber, gazeboIndex)}
-                          className="py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[11px] font-bold transition flex items-center justify-center space-x-1"
-                        >
-                          <span>Release</span>
-                        </button>
-                      </div>
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedGazeboForBooking(gz);
+                              setBookingForm({
+                                fullName: activeInquiry?.fullName || '',
+                                phone: activeInquiry?.phone || '',
+                                email: activeInquiry?.notes?.match(/Email:\s*([^|]+)/)?.[1]?.trim() || '',
+                                amount: Number(gz.price),
+                                notes: activeInquiry?.notes || '',
+                                status: gz.status === 'HELD' ? 'HOLD' : 'CONFIRMED',
+                              });
+                            }}
+                            className="py-2 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] text-[11px] font-bold transition flex items-center justify-center space-x-1"
+                          >
+                            <span>✏️ Edit Host</span>
+                          </button>
+                          <button
+                            onClick={() => handleReleaseGazebo(gz.id, gz.gazeboNumber, gazeboIndex)}
+                            className="py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[11px] font-bold transition flex items-center justify-center space-x-1"
+                          >
+                            <span>Release</span>
+                          </button>
+                        </div>
+                        <div className="mt-2">
+                          <button
+                            onClick={() => setManageGuestsGazebo(gz)}
+                            className="w-full py-2.5 rounded-xl bg-[#2D1F0E] hover:bg-[#4A351B] text-[#F6C85F] text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1.5"
+                          >
+                            <Users className="w-3.5 h-3.5 text-[#F6C85F]" />
+                            <span>👥 Manage Guests</span>
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -3038,7 +3051,7 @@ export default function SuperAdminDashboard() {
                   Book {selectedGazeboForBooking.gazeboNumber} (Level {selectedGazeboForBooking.level})
                 </h3>
                 <p className="text-xs text-[#6E5336] mt-0.5">
-                  {selectedGazeboForBooking.level === 1 ? 'Sheri Chowk' : selectedGazeboForBooking.level === 2 ? 'The Royal Sheri Pavillion' : 'Sheri Rass'} • 14–20 VIP Guests Capacity
+                  {selectedGazeboForBooking.level === 1 ? 'Sheri Chowk' : selectedGazeboForBooking.level === 2 ? 'The Royal Sheri Pavillion' : 'Sheri Rass'} • 14 VIP Guests Capacity
                 </p>
               </div>
 
@@ -3163,6 +3176,20 @@ export default function SuperAdminDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUPER ADMIN GAZEBO MANAGE GUESTS MODAL */}
+      {/* ========================================================================= */}
+      {manageGuestsGazebo && (
+        <GazeboManageGuestsModal
+          gazebo={manageGuestsGazebo}
+          onClose={() => setManageGuestsGazebo(null)}
+          onSuccess={() => {
+            setManageGuestsGazebo(null);
+            loadTabContent('gazebos');
+          }}
+        />
       )}
     </div>
   );

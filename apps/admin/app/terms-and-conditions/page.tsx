@@ -31,7 +31,7 @@ export default function TermsAndConditionsPage() {
           
           <h5 className="text-lg font-bold text-[#D99427] mt-8">3. Gazebo & VIP Experience</h5>
           <p>
-            Gazebos accommodate up to 20 guests. Catering services must be confirmed at least 24 hours in advance. Additional guests beyond the 20-person limit will require separate Single or Couple passes.
+            Gazebos accommodate exactly 14 guests. Catering services must be confirmed at least 24 hours in advance. Additional guests beyond the 14-person limit will require separate Single or Couple passes.
           </p>
           
           <h5 className="text-lg font-bold text-[#D99427] mt-8">4. Zero Tolerance Policy</h5>

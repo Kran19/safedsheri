@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { GazeboStatus, GazeboInquiryStatus } from '@prisma/client';
+import { GazeboStatus, GazeboInquiryStatus, RegistrationStatus, PassType } from '@prisma/client';
+import { CredentialsService } from '../credentials/credentials.service';
+import { EncryptionService } from '../common/encryption.service';
 
 @Injectable()
 export class GazebosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private credentialsService: CredentialsService,
+    private encryptionService: EncryptionService,
+  ) {}
 
   // PUBLIC: Get real backend spatial inventory counts
   async getAvailability() {
@@ -432,6 +438,183 @@ export class GazebosService {
       success: true,
       data: updatedInquiry,
       message: `Inquiry ${updatedInquiry.inquiryNumber} status updated to ${updatedInquiry.status}`,
+    };
+  }
+
+  // ADMIN: Add up to 14 guests directly to a physical Gazebo and mint passes
+  async addGuestsToGazebo(
+    id: string,
+    data: {
+      attendees: Array<{
+        fullName: string;
+        phone: string;
+        email?: string;
+        gender: string;
+        aadhaarNumber?: string;
+        documentFrontKey?: string;
+        documentFrontName?: string;
+        documentBackKey?: string;
+        documentBackName?: string;
+      }>;
+    },
+    actorId: string,
+  ) {
+    if (!data.attendees || data.attendees.length === 0) {
+      throw new BadRequestException('At least one attendee is required');
+    }
+    if (data.attendees.length > 14) {
+      throw new BadRequestException('A Gazebo can only accommodate a maximum of 14 guests.');
+    }
+
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { id },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Gazebo not found');
+    }
+
+    if (gazebo.status === GazeboStatus.AVAILABLE) {
+      throw new ConflictException('Cannot add guests to an AVAILABLE Gazebo. It must be HELD or CONFIRMED first.');
+    }
+
+    // 1. Create the Registration and Attendees
+    const registrationResult = await this.prisma.$transaction(async (tx) => {
+      // Find the active event
+      const event = await tx.event.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { eventDate: 'desc' },
+      });
+      if (!event) throw new BadRequestException('No active event found');
+
+      // Find an active pricing phase (fallback if needed, though amount is 0)
+      const pricingPhase = await tx.pricingPhase.findFirst({
+        where: { isActive: true },
+      });
+      if (!pricingPhase) throw new BadRequestException('No active pricing phase found');
+
+      // Generate Registration Number
+      const count = await tx.registration.count();
+      const seq = (count + 1).toString().padStart(6, '0');
+      const registrationNumber = `REG-26-${seq}`;
+
+      // Create Registration linked to Gazebo
+      const registration = await tx.registration.create({
+        data: {
+          registrationNumber,
+          eventId: event.id,
+          pricingPhaseId: pricingPhase.id,
+          passType: 'GAZEBO',
+          status: 'PASS_ISSUED',
+          amountDue: 0,
+          createdById: actorId,
+          reviewedById: actorId,
+          reviewedAt: new Date(),
+          gazeboId: gazebo.id,
+          reviewNotes: 'Guests dynamically added to Gazebo via Admin Direct Allocation',
+        },
+      });
+
+      // Create Attendees (Processing Aadhaar securely)
+      const attendeeConnectData = [];
+      for (const [index, att] of data.attendees.entries()) {
+        if (!att.aadhaarNumber) {
+          throw new BadRequestException(`Aadhaar number is mandatory for guest #${index + 1}`);
+        }
+        
+        const cleanAadhaar = att.aadhaarNumber.replace(/\D/g, '');
+        if (cleanAadhaar.length !== 12) {
+          throw new BadRequestException(`Aadhaar number must be 12 digits for guest #${index + 1}`);
+        }
+
+        const aadhaarMasked = this.encryptionService.maskAadhaar(cleanAadhaar);
+        const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
+        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
+
+        const attendeeRecord = await tx.attendee.upsert({
+          where: { aadhaarHmac },
+          update: {
+            fullName: att.fullName,
+            phone: att.phone,
+            email: att.email || null,
+            gender: att.gender === 'MALE' ? 'MALE' : 'FEMALE',
+            aadhaarMasked,
+            aadhaarEncrypted,
+          },
+          create: {
+            fullName: att.fullName,
+            phone: att.phone,
+            email: att.email || null,
+            gender: att.gender === 'MALE' ? 'MALE' : 'FEMALE',
+            aadhaarHmac,
+            aadhaarMasked,
+            aadhaarEncrypted,
+          },
+        });
+
+        // Link Aadhaar Document if Front Upload exists
+        if (att.documentFrontKey) {
+          await tx.aadhaarDocument.upsert({
+            where: { attendeeId: attendeeRecord.id },
+            update: {
+              storageKey: att.documentFrontKey,
+              originalFilename: att.documentFrontName || 'aadhaar_front.jpg',
+              storageKeyBack: att.documentBackKey || null,
+              originalFilenameBack: att.documentBackName || null,
+            },
+            create: {
+              attendeeId: attendeeRecord.id,
+              storageKey: att.documentFrontKey,
+              originalFilename: att.documentFrontName || 'aadhaar_front.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 1024,
+              checksum: 'dummy-checksum',
+              storageKeyBack: att.documentBackKey || null,
+              originalFilenameBack: att.documentBackName || null,
+            },
+          });
+        }
+
+        attendeeConnectData.push({
+          attendeeId: attendeeRecord.id,
+          isPrimary: index === 0,
+          status: 'PASS_ISSUED',
+          reviewedAt: new Date(),
+        });
+      }
+
+      await tx.registrationAttendee.createMany({
+        data: attendeeConnectData.map((d) => ({
+          ...d,
+          registrationId: registration.id,
+        })),
+      });
+
+      return { registrationId: registration.id };
+    });
+
+    // 2. Mint the passes using CredentialsService!
+    const mintRes = await this.credentialsService.generateCredentialsForRegistration(registrationResult.registrationId);
+
+    // 3. Log Audit
+    await this.prisma.auditLog.create({
+      data: {
+        actorId,
+        action: 'GAZEBO_GUESTS_ADDED',
+        targetEntity: 'Gazebo',
+        targetId: id,
+        payload: {
+          guestCount: data.attendees.length,
+          registrationId: registrationResult.registrationId,
+          gazeboNumber: gazebo.gazeboNumber,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: `Successfully minted passes for ${data.attendees.length} guests for Gazebo ${gazebo.gazeboNumber}`,
+      data: mintRes,
     };
   }
 }

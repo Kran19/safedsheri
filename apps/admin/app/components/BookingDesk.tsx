@@ -134,6 +134,10 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
       newAttendees = [
         { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null, kidsAgeGroup: 'UNDER_10' },
       ];
+    } else if (newType === 'GAZEBO') {
+      newAttendees = [
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null },
+      ];
     } else {
       newAttendees = [
         { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null },
@@ -200,6 +204,10 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
       });
       const json = await res.json();
 
+      if (!res.ok || json.success === false) {
+        throw new Error(json.message || 'Failed to extract Aadhaar data');
+      }
+
       setCashierAttendees(prev => {
         const copy = [...prev];
         if (side === 'front') {
@@ -243,7 +251,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
         const copy = [...prev];
         if (side === 'front') copy[index].isUploadingFront = false;
         if (side === 'back') copy[index].isUploadingBack = false;
-        copy[index].uploadError = 'Failed to extract Aadhaar data. Please fill details manually.';
+        copy[index].uploadError = err.message || 'Failed to extract Aadhaar data. Please fill details manually.';
         return copy;
       });
     }
@@ -760,7 +768,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
               {/* PASS CATEGORY SELECTOR */}
               <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] space-y-3">
                 <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider">Select Pass Category *</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => handlePassTypeChange('SINGLE')}
@@ -966,6 +974,31 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                   </div>
                 </div>
               ))}
+
+              {/* DYNAMIC ATTENDEE ADDITION FOR GAZEBO */}
+              {manualForm.passType === 'GAZEBO' && (
+                <div className="flex items-center space-x-3 pt-2">
+                  {cashierAttendees.length < 14 && (
+                    <button
+                      type="button"
+                      onClick={() => setCashierAttendees([...cashierAttendees, { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', dob: '', age: null }])}
+                      className="px-4 py-2 rounded-xl bg-[#FAF6EE] border border-[#D99427] text-[#D99427] text-xs font-bold uppercase hover:bg-[#F3ECE0] transition flex items-center space-x-2"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Add Guest ({cashierAttendees.length}/14)</span>
+                    </button>
+                  )}
+                  {cashierAttendees.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setCashierAttendees(cashierAttendees.slice(0, -1))}
+                      className="px-4 py-2 rounded-xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold uppercase hover:bg-rose-100 transition flex items-center space-x-2"
+                    >
+                      <span>Remove Last Guest</span>
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* PAYMENT CONFIGURATION: CASH VS UPI QR */}
               <div className="p-5 rounded-2xl bg-[#FAF6EE] border-2 border-[#EAD9B8] space-y-4">
