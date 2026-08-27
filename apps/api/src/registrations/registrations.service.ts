@@ -230,7 +230,7 @@ export class RegistrationsService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 150,
+      take: 500,
     });
 
     return { success: true, data: registrations };
@@ -378,48 +378,48 @@ export class RegistrationsService {
 
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
 
-      // Check global DB uniqueness for Aadhaar
-      const existingAadhaarAttendee = await this.prisma.attendee.findFirst({
-        where: { aadhaarHmac },
-        include: {
-          registrations: { include: { registration: true } },
+      // Check global DB uniqueness for Aadhaar — directly query for any active (non-deleted, non-terminal) registration
+      const existingActiveAadhaarReg = await this.prisma.registration.findFirst({
+        where: {
+          deletedAt: null,
+          status: {
+            notIn: [
+              RegistrationStatus.REJECTED,
+              RegistrationStatus.CANCELLED,
+              RegistrationStatus.PAYMENT_FAILED,
+            ],
+          },
+          attendees: {
+            some: {
+              attendee: { aadhaarHmac },
+            },
+          },
         },
       });
-
-      if (existingAadhaarAttendee) {
-        const hasActiveRegistration = existingAadhaarAttendee.registrations.some(
-          (r) =>
-            r.registration &&
-            !r.registration.deletedAt &&
-            r.registration.status !== RegistrationStatus.REJECTED &&
-            r.registration.status !== RegistrationStatus.CANCELLED &&
-            r.registration.status !== RegistrationStatus.PAYMENT_FAILED,
-        );
-        if (hasActiveRegistration) {
-          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are strictly not allowed.`);
-        }
+      if (existingActiveAadhaarReg) {
+        throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are strictly not allowed.`);
       }
 
-      // Check global DB uniqueness for Phone
-      const existingPhoneAttendee = await this.prisma.attendee.findFirst({
-        where: { phone: att.phone },
-        include: {
-          registrations: { include: { registration: true } },
+      // Check global DB uniqueness for Phone — directly query for any active registration
+      const existingActivePhoneReg = await this.prisma.registration.findFirst({
+        where: {
+          deletedAt: null,
+          status: {
+            notIn: [
+              RegistrationStatus.REJECTED,
+              RegistrationStatus.CANCELLED,
+              RegistrationStatus.PAYMENT_FAILED,
+            ],
+          },
+          attendees: {
+            some: {
+              attendee: { phone: att.phone },
+            },
+          },
         },
       });
-
-      if (existingPhoneAttendee) {
-        const hasActiveRegistration = existingPhoneAttendee.registrations.some(
-          (r) =>
-            r.registration &&
-            !r.registration.deletedAt &&
-            r.registration.status !== RegistrationStatus.REJECTED &&
-            r.registration.status !== RegistrationStatus.CANCELLED &&
-            r.registration.status !== RegistrationStatus.PAYMENT_FAILED,
-        );
-        if (hasActiveRegistration) {
-          throw new BadRequestException(`Phone number ${att.phone} is already registered with an active booking. Duplicate passes are strictly not allowed.`);
-        }
+      if (existingActivePhoneReg) {
+        throw new BadRequestException(`Phone number ${att.phone} is already registered with an active booking. Duplicate passes are strictly not allowed.`);
       }
     }
 

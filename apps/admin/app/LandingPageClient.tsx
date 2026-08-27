@@ -3011,12 +3011,13 @@ export default function SafedSheriLandingPage() {
                                 <span>PAYMENT PENDING</span>
                               </span>
                             ) : (p.isUnderReview || p.registrationStatus === 'UNDER_REVIEW' || p.registrationStatus === 'SUBMITTED') ? (
-                              <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 shadow-sm">
-                                â³ UNDER REVIEW
+                              <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-blue-100 text-blue-900 border border-blue-300 shadow-sm flex items-center space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>UNDER REVIEW</span>
                               </span>
                             ) : p.hasUsedPass ? (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-gray-100 text-gray-800 border border-gray-300 shadow-sm flex items-center space-x-1">
-                                <span>âŒ USED PASS</span>
+                                <span>✕ USED PASS</span>
                               </span>
                             ) : (
                               <span className="px-3.5 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300 shadow-sm flex items-center space-x-1">
