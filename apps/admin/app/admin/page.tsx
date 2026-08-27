@@ -8,7 +8,7 @@ import {
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
-  Tag, MapPin, Settings, Trash2, Lock, Flag
+  Tag, MapPin, Settings, Trash2, Lock, Flag, X
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -45,6 +45,9 @@ export default function SuperAdminDashboard() {
   const [editStaffError, setEditStaffError] = useState<string | null>(null);
   const [editStaffSuccess, setEditStaffSuccess] = useState<string | null>(null);
   const [editStaffLoading, setEditStaffLoading] = useState(false);
+  
+  const [paymentAction, setPaymentAction] = useState<{ row: any, method: string } | null>(null);
+  const [paymentActionLoading, setPaymentActionLoading] = useState(false);
   
   const [overview, setOverview] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
@@ -833,21 +836,24 @@ export default function SuperAdminDashboard() {
               const method = e.target.value;
               if (method === 'UNPAID') return;
               
-              setMessage('');
-              setError('');
-              
-              const res = await apiRequest(`/registrations/${row.id}/payment-method`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ method }),
-              });
-              
-              if (res.success) {
-                setMessage(res.message || 'Payment method updated successfully.');
-                loadOverviewData(true);
-                loadTabContent('applications', true);
+              if (confirmed) {
+                setMessage('');
+                setError('');
+                const res = await apiRequest(`/registrations/${row.id}/payment-method`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ method }),
+                });
+                
+                if (res.success) {
+                  setMessage(res.message || 'Payment method updated successfully.');
+                  loadOverviewData(true);
+                  loadTabContent('applications', true);
+                } else {
+                  setError(res.error?.message || 'Failed to update payment method.');
+                }
               } else {
-                setError(res.error?.message || 'Failed to update payment method.');
+                setPaymentAction({ row, method });
               }
             }}
             className="px-2.5 py-1.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-[11px] text-[#2D1F0E] focus:border-[#D99427] focus:ring-1 focus:ring-[#D99427] outline-none transition font-medium shadow-sm cursor-pointer"
@@ -3190,6 +3196,84 @@ export default function SuperAdminDashboard() {
             loadTabContent('gazebos');
           }}
         />
+      )}
+
+      {/* ========================================================================= */}
+      {/* PAYMENT CONFIRMATION MODAL */}
+      {/* ========================================================================= */}
+      {paymentAction && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl p-6 border border-[#EAD9B8]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Confirm Payment Status</h3>
+              <button onClick={() => setPaymentAction(null)} className="text-gray-500 hover:text-black">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-[#6E5336] mb-6">
+              Has the payment via <strong className="uppercase">{paymentAction.method.replace('_', ' ')}</strong> been completed by the user?
+            </p>
+            <div className="flex flex-col space-y-3">
+              <button
+                disabled={paymentActionLoading}
+                onClick={async () => {
+                  setPaymentActionLoading(true);
+                  setMessage('');
+                  setError('');
+                  const res = await apiRequest(`/registrations/${paymentAction.row.id}/payment-method`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: paymentAction.method, isPaymentDone: true }),
+                  });
+                  setPaymentActionLoading(false);
+                  setPaymentAction(null);
+                  if (res.success) {
+                    setMessage(res.message || 'Payment confirmed successfully.');
+                    loadOverviewData(true);
+                    loadTabContent('applications', true);
+                  } else {
+                    setError(res.error?.message || 'Failed to update payment method.');
+                  }
+                }}
+                className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition"
+              >
+                {paymentActionLoading ? 'Processing...' : 'Yes, payment is done'}
+              </button>
+              <button
+                disabled={paymentActionLoading}
+                onClick={async () => {
+                  setPaymentActionLoading(true);
+                  setMessage('');
+                  setError('');
+                  const res = await apiRequest(`/registrations/${paymentAction.row.id}/payment-method`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: paymentAction.method, isPaymentDone: false }),
+                  });
+                  setPaymentActionLoading(false);
+                  setPaymentAction(null);
+                  if (res.success) {
+                    setMessage(res.message || 'Payment requested successfully.');
+                    loadOverviewData(true);
+                    loadTabContent('applications', true);
+                  } else {
+                    setError(res.error?.message || 'Failed to update payment method.');
+                  }
+                }}
+                className="w-full py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition"
+              >
+                {paymentActionLoading ? 'Processing...' : 'No, request payment'}
+              </button>
+              <button
+                disabled={paymentActionLoading}
+                onClick={() => setPaymentAction(null)}
+                className="w-full py-2.5 rounded-xl border border-[#EAD9B8] text-[#6E5336] font-bold hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

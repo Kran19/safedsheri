@@ -99,7 +99,8 @@ export class EmailService {
         <div style="padding: 20px; background-color: #FAFAFA; color: #2D1F0E;">
           <h2 style="margin-top: 0; color: #278A22;">Payment Confirmed</h2>
           <p>We have successfully received your payment (Receipt: <strong>${receiptNumber}</strong>) for application <strong>${registrationNumber}</strong>.</p>
-          <p>Your digital entry passes have been securely minted. You will receive your passes via WhatsApp shortly.</p>
+          <p>Your digital entry passes have been securely minted. Please view your pass at <a href="https://safedsheri.com/#passes" style="color: #D99427; font-weight: bold; text-decoration: underline;">https://safedsheri.com/#passes</a></p>
+          <p>You will also receive your passes via WhatsApp shortly.</p>
           <p>Please keep your digital passes secure and bring them to the gate on the day of the event along with your original Aadhaar ID.</p>
         </div>
         <div style="background-color: #2D1F0E; color: white; padding: 10px; text-align: center; font-size: 12px;">

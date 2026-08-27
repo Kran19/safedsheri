@@ -971,10 +971,11 @@ export class RegistrationsService {
     return { success: true, message: 'Application permanently deleted' };
   }
 
-  async updatePaymentMethod(id: string, method: PaymentMethod, adminId: string) {
+  async updatePaymentMethod(id: string, method: PaymentMethod, adminId: string, isPaymentDone?: boolean) {
     const reg = await this.prisma.registration.findUnique({
       where: { id },
       include: {
+        attendees: { include: { attendee: true } },
         payments: {
           where: { status: PaymentStatus.CONFIRMED },
         },
@@ -1006,7 +1007,7 @@ export class RegistrationsService {
       });
       return { success: true, message: 'Payment method updated successfully', data: updatedPayment };
     } else {
-      // If not paid yet, trigger a manual settlement using confirmGatewayPayment from PaymentsService!
+      // Generate paymentLinkId if not exists
       let paymentLinkId = reg.paymentLinkId;
       if (!paymentLinkId) {
         paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;
@@ -1016,19 +1017,84 @@ export class RegistrationsService {
         });
       }
 
-      // Call paymentsService.confirmGatewayPayment
-      const res = await this.paymentsService.confirmGatewayPayment({
-        paymentLinkId,
-        providerReference: `ADMIN-MANUAL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
-        notes: `Confirmed by Admin (ID: ${adminId})`,
-        method,
-      });
+      if (isPaymentDone) {
+        // Auto-approve if needed so confirmGatewayPayment succeeds
+        if (reg.status === RegistrationStatus.SUBMITTED || reg.status === RegistrationStatus.UNDER_REVIEW) {
+          await this.prisma.registration.update({
+            where: { id: reg.id },
+            data: { status: RegistrationStatus.APPROVED },
+          });
+        }
 
-      return {
-        success: true,
-        message: 'Payment confirmed and method set successfully',
-        data: res.data,
-      };
+        // Call paymentsService.confirmGatewayPayment
+        const res = await this.paymentsService.confirmGatewayPayment({
+          paymentLinkId,
+          providerReference: `ADMIN-MANUAL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+          notes: `Confirmed by Admin (ID: ${adminId})`,
+          method,
+        });
+
+        // Send Success Email
+        const primaryAtt = reg.attendees.find(a => a.isPrimary);
+        if (primaryAtt && primaryAtt.attendee.email && res.data?.payment) {
+          this.emailService.sendPaymentSuccess(
+            primaryAtt.attendee.email,
+            reg.registrationNumber,
+            res.data.payment.receiptNumber
+          ).catch(e => console.error('Failed to send payment success email:', e));
+        }
+
+        return {
+          success: true,
+          message: 'Payment confirmed and method set successfully',
+          data: res.data,
+        };
+      } else {
+        // Request payment, mark as PAYMENT_PENDING
+        await this.prisma.registration.update({
+          where: { id: reg.id },
+          data: { status: RegistrationStatus.PAYMENT_PENDING },
+        });
+
+        // Create or update a pending payment
+        const existingPending = await this.prisma.payment.findFirst({
+          where: { registrationId: reg.id, status: PaymentStatus.PENDING }
+        });
+
+        if (existingPending) {
+          await this.prisma.payment.update({
+            where: { id: existingPending.id },
+            data: { method }
+          });
+        } else {
+          await this.prisma.payment.create({
+            data: {
+              registrationId: reg.id,
+              amount: reg.amountDue,
+              method,
+              status: PaymentStatus.PENDING,
+              receiptNumber: `RCP-PENDING-${Date.now().toString().slice(-6)}`,
+              paymentLinkId,
+            }
+          });
+        }
+
+        // Send Request Payment Email
+        const primaryAtt = reg.attendees.find(a => a.isPrimary);
+        if (primaryAtt && primaryAtt.attendee.email) {
+          this.emailService.sendRegistrationApproved(
+            primaryAtt.attendee.email,
+            reg.registrationNumber,
+            `${process.env.FRONTEND_URL || 'http://localhost:3000'}/order/${paymentLinkId}`
+          ).catch(e => console.error('Failed to send payment request email:', e));
+        }
+
+        return {
+          success: true,
+          message: 'Payment requested successfully',
+          data: { paymentLinkId },
+        };
+      }
     }
   }
 

@@ -139,10 +139,10 @@ export class RegistrationsController {
   @Roles(Role.SUPER_ADMIN)
   updatePaymentMethod(
     @Param('id') id: string,
-    @Body() body: { method: PaymentMethod },
+    @Body() body: { method: PaymentMethod; isPaymentDone?: boolean },
     @Request() req: any,
   ) {
-    return this.registrationsService.updatePaymentMethod(id, body.method, req.user.id);
+    return this.registrationsService.updatePaymentMethod(id, body.method, req.user.id, body.isPaymentDone);
   }
 
   @Post(':id/approve-cashier-request')
