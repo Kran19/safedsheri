@@ -147,17 +147,8 @@ export class CredentialsService {
     }
 
     const registrationIds = Array.from(
-      new Set(
-        initialAttendees.flatMap((att) =>
-          att.registrations
-            .map((r) => r.registrationId)
-        )
-      )
+      new Set(initialAttendees.flatMap((att) => att.registrations.map((r) => r.registrationId)))
     );
-
-    if (registrationIds.length === 0) {
-      return { success: true, data: [], message: `No booking records found for "${query}".` };
-    }
 
     const attendees = await this.prisma.attendee.findMany({
       where: {
@@ -167,10 +158,7 @@ export class CredentialsService {
       },
       include: {
         registrations: {
-          where: {
-            registrationId: { in: registrationIds },
-            registration: { deletedAt: null }, // Exclude soft-deleted registrations
-          },
+          where: { registrationId: { in: registrationIds } },
           include: {
             registration: {
               include: {
@@ -193,16 +181,9 @@ export class CredentialsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Filter out attendees who have NO non-deleted registrations at all
-    const attendeesWithRegistrations = attendees.filter((att) => att.registrations.length > 0);
-
-    if (!attendeesWithRegistrations || attendeesWithRegistrations.length === 0) {
-      return { success: true, data: [], message: `No booking records found for "${query}".` };
-    }
-
     const passes = [];
 
-    for (const att of attendeesWithRegistrations) {
+    for (const att of attendees) {
       const regAttList = att.registrations || [];
 
       // Check if this attendee has any active or used credential
