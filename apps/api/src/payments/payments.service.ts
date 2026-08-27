@@ -499,8 +499,19 @@ export class PaymentsService {
       }
 
       // 6. IF CASH (CUSTOM_DIRECT) or non-admin UPI_QR: Create PENDING/CONFIRMED Payment Record
-      const receiptSeq = (await tx.payment.count() + 1001).toString();
-      const receiptNumber = `RCP-2026-${receiptSeq}`;
+      let receiptSeqNum = await tx.payment.count() + 1001;
+      const latestReceipt = await tx.payment.findFirst({
+        where: { receiptNumber: { startsWith: 'RCP-2026-' } },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (latestReceipt && latestReceipt.receiptNumber) {
+        const match = latestReceipt.receiptNumber.match(/\d+$/);
+        if (match) {
+          const num = parseInt(match[0], 10);
+          if (!isNaN(num) && num >= receiptSeqNum) receiptSeqNum = num + 1;
+        }
+      }
+      const receiptNumber = `RCP-2026-${receiptSeqNum}`;
       
       const isUpi = dto.paymentMethod === PaymentMethod.UPI_QR;
       const providerRef = isUpi 
@@ -657,8 +668,19 @@ export class PaymentsService {
         );
       }
 
-      const receiptSeq = (await tx.payment.count() + 1001).toString();
-      const receiptNumber = `RCP-2026-${receiptSeq}`;
+      let receiptSeqNum = await tx.payment.count() + 1001;
+      const latestReceipt = await tx.payment.findFirst({
+        where: { receiptNumber: { startsWith: 'RCP-2026-' } },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (latestReceipt && latestReceipt.receiptNumber) {
+        const match = latestReceipt.receiptNumber.match(/\d+$/);
+        if (match) {
+          const num = parseInt(match[0], 10);
+          if (!isNaN(num) && num >= receiptSeqNum) receiptSeqNum = num + 1;
+        }
+      }
+      const receiptNumber = `RCP-2026-${receiptSeqNum}`;
       const providerRef = data.providerReference || `PG-UPI-${Date.now().toString().slice(-6)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
       // Check if there is an existing pending payment (e.g. from cashier request) to update

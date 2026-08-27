@@ -1073,7 +1073,8 @@ export class RegistrationsService {
               amount: reg.amountDue || 0,
               method,
               status: PaymentStatus.PENDING,
-              receiptNumber: `RCP-PENDING-${Date.now().toString().slice(-6)}`,
+              receiptNumber: `RCP-PENDING-${require('crypto').randomBytes(4).toString('hex').toUpperCase()}`,
+              provider: 'ADMIN_MANUAL',
               paymentLinkId,
             }
           });
