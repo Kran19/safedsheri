@@ -1070,7 +1070,7 @@ export class RegistrationsService {
           await this.prisma.payment.create({
             data: {
               registrationId: reg.id,
-              amount: reg.amountDue,
+              amount: reg.amountDue || 0,
               method,
               status: PaymentStatus.PENDING,
               receiptNumber: `RCP-PENDING-${Date.now().toString().slice(-6)}`,

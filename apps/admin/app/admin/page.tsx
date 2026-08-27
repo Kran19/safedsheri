@@ -822,11 +822,14 @@ export default function SuperAdminDashboard() {
       sortable: true,
       getValue: (row) => {
         const confirmed = row.payments?.find((p: any) => p.status === 'CONFIRMED');
-        return confirmed ? confirmed.method : 'UNPAID';
+        if (confirmed) return confirmed.method;
+        const pending = row.payments?.find((p: any) => p.status === 'PENDING');
+        return pending ? pending.method : 'UNPAID';
       },
       render: (row) => {
         const confirmed = row.payments?.find((p: any) => p.status === 'CONFIRMED');
-        const currentMethod = confirmed ? confirmed.method : 'UNPAID';
+        const pending = row.payments?.find((p: any) => p.status === 'PENDING');
+        const currentMethod = confirmed ? confirmed.method : (pending ? pending.method : 'UNPAID');
 
         return (
           <select

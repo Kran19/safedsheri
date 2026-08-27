@@ -675,6 +675,7 @@ export class PaymentsService {
             provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
             providerReference: providerRef,
             notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
+            ...(data.method ? { method: data.method } : {}),
           },
         });
       } else {
