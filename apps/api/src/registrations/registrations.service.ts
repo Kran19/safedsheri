@@ -584,7 +584,7 @@ export class RegistrationsService {
 
     // Send Email Notification
     if (data.attendees[0].email) {
-      this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registration.registrationNumber).catch(e => console.error(e));
+      // this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registration.registrationNumber).catch(e => console.error(e));
     }
 
     return {
