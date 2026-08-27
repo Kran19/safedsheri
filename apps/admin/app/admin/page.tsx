@@ -3202,18 +3202,36 @@ export default function SuperAdminDashboard() {
       {/* PAYMENT CONFIRMATION MODAL */}
       {/* ========================================================================= */}
       {paymentAction && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl p-6 border border-[#EAD9B8]">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-serif font-bold text-[#2D1F0E]">Confirm Payment Status</h3>
-              <button onClick={() => setPaymentAction(null)} className="text-gray-500 hover:text-black">
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#2D1F0E]/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-[#FDFBF7] max-w-md w-full rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-8 border border-[#EAD9B8] relative overflow-hidden flex flex-col transform transition-all scale-100 animate-in zoom-in-95 duration-300">
+            
+            {/* Premium Header Decoration */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427]" />
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#D99427]/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#F6C85F]/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex justify-between items-start mb-6 relative z-10">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFF5DC] to-[#FAF6EE] border border-[#EAD9B8] shadow-sm flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-[#D99427] animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-serif font-bold text-[#2D1F0E] leading-tight">Payment Status</h3>
+                  <p className="text-[11px] font-bold text-[#D99427] uppercase tracking-wider">Action Required</p>
+                </div>
+              </div>
+              <button onClick={() => setPaymentAction(null)} className="w-8 h-8 rounded-full flex items-center justify-center text-[#6E5336] hover:bg-[#EAD9B8]/30 transition-colors">
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-sm text-[#6E5336] mb-6">
-              Has the payment via <strong className="uppercase">{paymentAction.method.replace('_', ' ')}</strong> been completed by the user?
-            </p>
-            <div className="flex flex-col space-y-3">
+            
+            <div className="relative z-10 mb-8 p-4 bg-white rounded-2xl border border-[#EAD9B8] shadow-inner text-center">
+              <p className="text-sm text-[#6E5336] leading-relaxed">
+                Has the payment via <strong className="px-2 py-0.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded text-[#D99427] mx-1 uppercase">{paymentAction.method.replace('_', ' ')}</strong> been successfully completed by the user?
+              </p>
+            </div>
+
+            <div className="flex flex-col space-y-3 relative z-10">
               <button
                 disabled={paymentActionLoading}
                 onClick={async () => {
@@ -3235,10 +3253,16 @@ export default function SuperAdminDashboard() {
                     setError(res.error?.message || 'Failed to update payment method.');
                   }
                 }}
-                className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] hover:scale-[1.02] transform transition-all duration-200 flex items-center justify-center space-x-2"
               >
-                {paymentActionLoading ? 'Processing...' : 'Yes, payment is done'}
+                {paymentActionLoading ? <span className="animate-pulse">Processing...</span> : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Yes, payment is done</span>
+                  </>
+                )}
               </button>
+              
               <button
                 disabled={paymentActionLoading}
                 onClick={async () => {
@@ -3260,14 +3284,20 @@ export default function SuperAdminDashboard() {
                     setError(res.error?.message || 'Failed to update payment method.');
                   }
                 }}
-                className="w-full py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-white font-bold text-sm shadow-[0_4px_14px_0_rgba(251,191,36,0.39)] hover:shadow-[0_6px_20px_rgba(251,191,36,0.23)] hover:scale-[1.02] transform transition-all duration-200 flex items-center justify-center space-x-2"
               >
-                {paymentActionLoading ? 'Processing...' : 'No, request payment'}
+                {paymentActionLoading ? <span className="animate-pulse">Processing...</span> : (
+                  <>
+                    <ArrowRight className="w-4 h-4" />
+                    <span>No, request payment</span>
+                  </>
+                )}
               </button>
+              
               <button
                 disabled={paymentActionLoading}
                 onClick={() => setPaymentAction(null)}
-                className="w-full py-2.5 rounded-xl border border-[#EAD9B8] text-[#6E5336] font-bold hover:bg-gray-50 transition"
+                className="w-full py-3 rounded-xl bg-transparent border border-[#EAD9B8] text-[#6E5336] font-bold text-sm hover:bg-[#FAF6EE] transition-colors"
               >
                 Cancel
               </button>
