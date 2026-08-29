@@ -960,7 +960,7 @@ export default function SuperAdminDashboard() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const payUrl = `${window.location.origin}/order/${row.paymentLinkId}`;
+                const payUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://safedsheri.com'}/order/${row.paymentLinkId}`;
                 navigator.clipboard.writeText(payUrl);
                 setMessage('Payment link copied to clipboard!');
                 setTimeout(() => setMessage(''), 3000);

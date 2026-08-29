@@ -776,7 +776,7 @@ export class RegistrationsService {
         this.emailService.sendRegistrationApproved(
           primaryAtt.attendee.email,
           reg.registrationNumber,
-          `http://localhost:3000/order/${paymentOrder.paymentLinkId}`
+          `${process.env.FRONTEND_URL || 'https://safedsheri.com'}/order/${paymentOrder.paymentLinkId}`
         ).catch(e => console.error(e));
       }
 
@@ -1086,7 +1086,7 @@ export class RegistrationsService {
           this.emailService.sendRegistrationApproved(
             primaryAtt.attendee.email,
             reg.registrationNumber,
-            `${process.env.FRONTEND_URL || 'http://localhost:3000'}/order/${paymentLinkId}`
+            `${process.env.FRONTEND_URL || 'https://safedsheri.com'}/order/${paymentLinkId}`
           ).catch(e => console.error('Failed to send payment request email:', e));
         }
 
