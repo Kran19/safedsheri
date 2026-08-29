@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "deploy": "bash deploy.sh",
     "dev": "concurrently -n \"API,ADMIN\" -c \"cyan,magenta\" \"npm run dev:api\" \"npm run dev:admin\"",
     "dev:all": "npm run dev",
     "dev:api": "npm run start:dev --workspace=apps/api",
