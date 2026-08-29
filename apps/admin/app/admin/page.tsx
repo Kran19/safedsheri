@@ -1178,6 +1178,16 @@ export default function SuperAdminDashboard() {
         </span>
       ),
     },
+    {
+      key: 'handledBy',
+      title: 'Handled By',
+      sortable: true,
+      render: (r) => r.collectedBy ? (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-[#F5EDDF] text-[#6E5336] border border-[#D99427]/30">
+          {r.collectedBy.fullName}
+        </span>
+      ) : <span className="text-gray-400 text-[10px] italic">System</span>,
+    },
     { key: 'providerReference', title: 'Gateway Ref / TXN', sortable: true, render: (r) => <span className="font-mono text-[11px] text-[#6E5336]">{r.providerReference || '—'}</span> },
     {
       key: 'status',

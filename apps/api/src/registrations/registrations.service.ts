@@ -999,7 +999,10 @@ export class RegistrationsService {
 
       const updatedPayment = await this.prisma.payment.update({
         where: { id: confirmedPayment.id },
-        data: { method },
+        data: { 
+          method,
+          collectedById: adminId, // Track which admin changed the payment method
+        },
       });
       await this.prisma.auditLog.create({
         data: {
