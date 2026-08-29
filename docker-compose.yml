@@ -46,6 +46,7 @@ services:
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-"*"}
+      FRONTEND_URL: ${FRONTEND_URL:-https://safedsheri.com}
       ZAPLE_API_KEY: ${ZAPLE_API_KEY}
       ZAPLE_API_SECRET: ${ZAPLE_API_SECRET}
       ZAPLE_API_URL: ${ZAPLE_API_URL}
@@ -71,7 +72,8 @@ services:
     environment:
       INTERNAL_API_URL: http://api:4000/api/v1
       NEXT_PUBLIC_API_URL: /api/v1
-      NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-rzp_test_TU3glApQtNIVtN}
+      NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-rzp_live_TU4INjTFN1KTHl}
+      NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL:-https://safedsheri.com}
     ports:
       - "3000:3000"
     depends_on:
