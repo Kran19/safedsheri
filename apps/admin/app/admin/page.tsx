@@ -1151,6 +1151,13 @@ export default function SuperAdminDashboard() {
       render: (r) => <span className="font-mono">{r.registration?.registrationNumber || '—'}</span>,
     },
     {
+      key: 'mobileNumber',
+      title: 'Mobile Number',
+      sortable: true,
+      getValue: (r) => r.registration?.attendees?.[0]?.attendee?.phone || '',
+      render: (r) => <span className="font-mono">{r.registration?.attendees?.[0]?.attendee?.phone || '—'}</span>,
+    },
+    {
       key: 'amount',
       title: 'Amount (₹)',
       sortable: true,
