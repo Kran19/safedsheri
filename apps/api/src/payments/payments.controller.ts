@@ -31,6 +31,15 @@ export class PaymentsController {
     return this.paymentsService.findAll(status);
   }
 
+  @Get('finance-fundamental')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  @ApiOperation({ summary: 'Get finance fundamental stats (separated cash, manual QR, real razorpay)' })
+  getFinanceFundamentalStats() {
+    return this.paymentsService.getFinanceFundamentalStats();
+  }
+
   @Get('stats')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)

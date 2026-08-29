@@ -53,6 +53,57 @@ export class PaymentsService {
     return `SS-2026-${randomHex}`;
   }
 
+  async getFinanceFundamentalStats() {
+    const payments = await this.prisma.payment.findMany({
+      where: { status: 'CONFIRMED' },
+      select: { method: true, amount: true, providerReference: true },
+    });
+
+    let totalCash = 0;
+    let totalRazorpayActual = 0;
+    let totalAdminManualQr = 0;
+
+    for (const p of payments) {
+      const amt = Number(p.amount) || 0;
+      if (p.method === 'CASH') {
+        totalCash += amt;
+      } else if (p.method === 'ONLINE_GATEWAY') {
+        if (p.providerReference && p.providerReference.startsWith('ADMIN-MANUAL')) {
+          totalAdminManualQr += amt;
+        } else {
+          totalRazorpayActual += amt;
+        }
+      }
+    }
+
+    const recentTransactions = await this.prisma.payment.findMany({
+      take: 100,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        registration: {
+          include: {
+            attendees: {
+              include: { attendee: true },
+            },
+          },
+        },
+        collectedBy: {
+          select: { fullName: true, role: true },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        totalCash,
+        totalRazorpayActual,
+        totalAdminManualQr,
+        recentTransactions,
+      },
+    };
+  }
+
   async findAll(status?: PaymentStatus) {
     const where: any = {};
     if (status) where.status = status;

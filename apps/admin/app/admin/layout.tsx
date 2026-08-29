@@ -43,6 +43,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p className="font-semibold text-[#1C160F]">{user.fullName}</p>
             <p className="text-amber-800 uppercase font-mono tracking-wider font-bold">{user.role}</p>
           </div>
+          
+          <button
+            onClick={() => router.push('/admin/finance-fundamental')}
+            className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-900 rounded-lg transition-colors shadow-xs flex items-center gap-1 text-xs font-bold"
+            title="Finance Fundamental"
+          >
+            <span>Finance Fundamental</span>
+          </button>
+
           <button
             onClick={handleLogout}
             className="p-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg transition-colors shadow-xs flex items-center gap-1 text-xs font-bold"
