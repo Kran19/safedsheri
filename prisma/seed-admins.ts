@@ -18,17 +18,17 @@ async function main() {
   const adminAccounts = [
     {
       username: 'admin1@safedsheri.com',
-      fullName: 'Super Admin 1 (Vikramaditya Solanki)',
+      fullName: 'Super Admin 1 (VIMMI)',
       role: Role.SUPER_ADMIN,
     },
     {
       username: 'admin2@safedsheri.com',
-      fullName: 'Super Admin 2 (Rudra Pratap Singh)',
+      fullName: 'Super Admin 2 (PRIYANKA)',
       role: Role.SUPER_ADMIN,
     },
     {
       username: 'admin3@safedsheri.com',
-      fullName: 'Super Admin 3 (Harshvardhan Jadeja)',
+      fullName: 'Super Admin 3 (DELISHA)',
       role: Role.SUPER_ADMIN,
     },
   ];

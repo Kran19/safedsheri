@@ -37,3 +37,14 @@ background/*.mov
 # Uploaded files
 uploads/
 **/uploads/
+
+# One-off Debug & Patch Scripts
+/*.js
+/*.ts
+!tsconfig.json
+/*.tsx
+/*.sql
+/*.txt
+/*.md
+!README.md
+!vps_deployment_guide.md

@@ -39,7 +39,13 @@ echo "✅ Old backups cleaned up!"
 
 echo ""
 echo "================================================="
-echo "🚀 3. Rebuilding & Starting Docker Containers..."
+echo "📥 3. Pulling latest code from GitHub..."
+echo "================================================="
+git pull origin main
+
+echo ""
+echo "================================================="
+echo "🚀 4. Rebuilding & Starting Docker Containers..."
 echo "================================================="
 docker compose up --build -d
 

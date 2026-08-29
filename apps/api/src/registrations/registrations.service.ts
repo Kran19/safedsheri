@@ -400,26 +400,30 @@ export class RegistrationsService {
         throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are strictly not allowed.`);
       }
 
-      // Check global DB uniqueness for Phone — directly query for any active registration
-      const existingActivePhoneReg = await this.prisma.registration.findFirst({
-        where: {
-          deletedAt: null,
-          status: {
-            notIn: [
-              RegistrationStatus.REJECTED,
-              RegistrationStatus.CANCELLED,
-              RegistrationStatus.PAYMENT_FAILED,
-            ],
-          },
-          attendees: {
-            some: {
-              attendee: { phone: att.phone },
+      // Check global DB uniqueness for Phone — ONLY IF booking an Adult pass (SINGLE, COUPLE, GAZEBO)
+      // We allow multiple kids passes on the same phone, and 1 adult pass on the same phone.
+      if (data.passType !== PassType.KIDS) {
+        const existingActivePhoneReg = await this.prisma.registration.findFirst({
+          where: {
+            deletedAt: null,
+            passType: { not: PassType.KIDS }, // only check against existing adult passes
+            status: {
+              notIn: [
+                RegistrationStatus.REJECTED,
+                RegistrationStatus.CANCELLED,
+                RegistrationStatus.PAYMENT_FAILED,
+              ],
+            },
+            attendees: {
+              some: {
+                attendee: { phone: att.phone },
+              },
             },
           },
-        },
-      });
-      if (existingActivePhoneReg) {
-        throw new BadRequestException(`Phone number ${att.phone} is already registered with an active booking. Duplicate passes are strictly not allowed.`);
+        });
+        if (existingActivePhoneReg) {
+          throw new BadRequestException(`Phone number ${att.phone} is already registered with an active ADULT booking. Duplicate adult passes are strictly not allowed.`);
+        }
       }
     }
 
@@ -988,6 +992,11 @@ export class RegistrationsService {
     if (confirmedPayment) {
       // If already paid, just change the payment method of the confirmed transaction
       const oldMethod = confirmedPayment.method;
+      
+      if (oldMethod === PaymentMethod.ONLINE_GATEWAY && method === PaymentMethod.CASH) {
+        throw new BadRequestException('Action denied: You cannot convert an authenticated Razorpay online payment into a manual Cash payment.');
+      }
+
       const updatedPayment = await this.prisma.payment.update({
         where: { id: confirmedPayment.id },
         data: { method },
