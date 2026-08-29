@@ -125,11 +125,11 @@ export class CredentialsService {
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
       attendeeWhereOr.push({ aadhaarHmac });
       attendeeWhereOr.push({ aadhaarMasked: { contains: cleanDigits.slice(-4) } });
+    } else {
+      // Search by 10-digit mobile number
+      const last10 = cleanDigits.slice(-10);
+      attendeeWhereOr.push({ phone: { contains: last10 } });
     }
-
-    // Search by 10-digit mobile number
-    const last10 = cleanDigits.slice(-10);
-    attendeeWhereOr.push({ phone: { contains: last10 } });
 
     const initialAttendees = await this.prisma.attendee.findMany({
       where: {

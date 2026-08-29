@@ -2923,7 +2923,7 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">My Safed Sheri Pass</h3>
                 <p className="text-xs text-[#6E5336] mt-1">
-                  Enter your registered <strong>WhatsApp Mobile Number</strong> or <strong>12-digit Aadhaar Number</strong> to retrieve your live pass & status.
+                  Enter your <strong>10-digit WhatsApp Mobile Number</strong> or <strong>12-digit Aadhaar Number</strong> to retrieve your live pass & status.
                 </p>
               </div>
 
@@ -2931,7 +2931,7 @@ export default function SafedSheriLandingPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Mobile (98765 43210) or Aadhaar (1234 5678 9012)"
+                  placeholder="10-digit Mobile (98765 43210) or 12-digit Aadhaar"
                   value={formatSearchInput(walletPhone)}
                   onChange={(e) => setWalletPhone(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"

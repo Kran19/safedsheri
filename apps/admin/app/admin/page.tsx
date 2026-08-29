@@ -1392,6 +1392,7 @@ export default function SuperAdminDashboard() {
                   <option value="ALL">All Categories</option>
                   <option value="SINGLE">Single Pass</option>
                   <option value="COUPLE">Couple Pass</option>
+                  <option value="KIDS">Kids Pass</option>
                   <option value="GAZEBO">Gazebo VIP</option>
                 </select>
               </div>

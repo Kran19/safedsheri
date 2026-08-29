@@ -1,0 +1,405 @@
+Showing 1-10 Items
+
+Payment ID
+Bank RRN
+Customer detail
+Created on
+Amount
+Status
+Actions
+
+pay_TUpMwxgJDJzdFF
+623914621500
+Credit Card
++91 9978 689707
+NA
+Thu Aug 27, 8:00pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVUnwzB765LPOn
+624100127587
+UPI
++91 9426 936148
+NA
+Sat Aug 29, 12:32pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVUdifMdKNlqdJ
+128682403608
+UPI
++91 8767 959536
+NA
+Sat Aug 29, 12:22pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVUdPBRowrNmJO
+624106337724
+Credit Card
++91 9723 611790
+NA
+Sat Aug 29, 12:22pm
+₹
+100.00
+Captured
+Details
+
+pay_TVUbMSkjjNUaaV
+660709705766
+UPI
++91 8780 230805
+devangipambhar14@gmail.com
+Sat Aug 29, 12:20pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVUZqUr4jNr4EE
+624187993931
+UPI
++91 8780 230805
+devangipambhar14@gmail.com
+Sat Aug 29, 12:18pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVUTjGhJw0FgMT
+624163513996
+UPI
++91 9099 005131
+NA
+Sat Aug 29, 12:13pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVUOht5EMv9uhH
+624106331927
+Credit Card
++91 9723 611790
+NA
+Sat Aug 29, 12:08pm
+₹
+6,400.00
+Captured
+Details
+
+pay_TVULjzBLLlccqH
+624124296806
+UPI
++91 8460 609656
+NA
+Sat Aug 29, 12:05pm
+₹
+6,500.00
+Captured
+Details
+
+pay_TVTUPfFr1myNXW
+910665620061
+UPI
++91 9913 193704
+NA
+Sat Aug 29, 11:15am
+₹
+6,500.00
+Captured
+Details
+
+pay_TVSzt9PAxaa3Gd
+128677381556
+UPI
++91 9879 456553
+NA
+Sat Aug 29, 10:46am
+₹
+3,500.00
+Captured
+Details
+
+pay_TVSAjlbB3QV3Oi
+539547996450
+UPI
++91 8511 691531
+NA
+Sat Aug 29, 9:57am
+₹
+6,500.00
+Captured
+Details
+
+pay_TVQsvxpM1zn5UZ
+624103264502
+Credit Card
++91 9099 500109
+NA
+Sat Aug 29, 8:42am
+₹
+6,500.00
+Captured
+Details
+
+pay_TVQqdO4DpifoIM
+624103263995
+Credit Card
++91 9712 309999
+NA
+Sat Aug 29, 8:40am
+₹
+6,500.00
+Captured
+Details
+
+pay_TVHQYxfPtl7q8k
+624001609824
+UPI
++91 9727 713771
+NA
+Fri Aug 28, 11:27pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVH45wf7M0Z4Te
+624093223016
+UPI
++91 9737 301118
+NA
+Fri Aug 28, 11:05pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVFloWvs4Krrv9
+624021831595
+UPI
++91 9909 987875
+NA
+Fri Aug 28, 9:49pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVDwESntWrko4J
+128658112326
+UPI
++91 9313 617167
+NA
+Fri Aug 28, 8:02pm
+₹
+6,500.00
+Captured
+Details
+
+pay_TVDdWDl75U5wfy
+624019574063
+UPI
++91 8866 440377
+NA
+Fri Aug 28, 7:44pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVDNMvge2iIbrJ
+313447276298
+UPI
++91 9099 078671
+NA
+Fri Aug 28, 7:29pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVDBgU917C48Bm
+128654795193
+UPI
++91 9879 503627
+NA
+Fri Aug 28, 7:18pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVCzJ8CPuCTiod
+128653890855
+UPI
++91 9712 800044
+NA
+Fri Aug 28, 7:06pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TVC5kRfeeXCywH
+128650165335
+UPI
++91 9033 582433
+NA
+Fri Aug 28, 6:13pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TV9EOrIUZIToXR
+128641303103
+UPI
++91 9825 754646
+NA
+Fri Aug 28, 3:26pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TV4piPuOoQvpAB
+624052868182
+UPI
++91 9909 982819
+NA
+Fri Aug 28, 11:07am
+₹
+1,200.00
+Captured
+Details
+
+pay_TUrejRepTmdFJh
+623936109809
+UPI
++91 9099 091034
+NA
+Thu Aug 27, 10:14pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TUpMwxgJDJzdFF
+623914621500
+Credit Card
++91 9978 689707
+NA
+Thu Aug 27, 8:00pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TUpAX4HGsulo1C
+623914616670
+Credit Card
++91 9879 559089
+NA
+Thu Aug 27, 7:48pm
+₹
+6,500.00
+Captured
+Details
+
+pay_TUp8YqfwXuJOMl
+623914615990
+Credit Card
++91 9067 323834
+NA
+Thu Aug 27, 7:46pm
+₹
+6,500.00
+Captured
+Details
+
+pay_TUp6P6wY6ZxHMF
+623914615112
+Credit Card
++91 9158 900415
+NA
+Thu Aug 27, 7:44pm
+₹
+6,500.00
+Captured
+Details
+
+pay_TUlyY9BEEOrQgK
+003969486325
+Credit Card
++91 9879 572880
+NA
+Thu Aug 27, 4:41pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TUiRk896vBhd7l
+313341923029
+UPI
++91 9898 818181
+NA
+Thu Aug 27, 1:13pm
+₹
+3,500.00
+Captured
+Details
+
+pay_TUfqrGNa7YPckh
+128569782153
+UPI
++91 9726 296983
+NA
+Thu Aug 27, 10:41am
+₹
+3,500.00
+Captured
+Details
+
+pay_TUV5UDElP6sGmk
+623978003041
+UPI
++91 9909 082810
+NA
+Thu Aug 27, 12:09am
+₹
+6,500.00
+Captured
+Details
+
+pay_TU5EeryVGpd1A0
+660334272505
+UPI
++91 6359 120081
+--
+Tue Aug 25, 10:52pm
+₹
+1.00
+Captured
+Details
+
+pay_TU56i5zRoQzNxa
+660328586744
+UPI
++91 7265 098626
+--
+Tue Aug 25, 10:45pm
+₹
+1.00
+Captured
+Details
