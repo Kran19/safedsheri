@@ -1682,9 +1682,6 @@ export default function SuperAdminDashboard() {
                     </h4>
                     <div className="text-[11px] text-[#6E5336] flex items-center justify-between mt-0.5 font-medium">
                       <span>Level {gz.level} Spatial Cabana</span>
-                      <span className="font-mono font-bold text-[#8C6019]">
-                        ₹{Number(gz.price).toLocaleString()}
-                      </span>
                     </div>
                   </div>
 
@@ -3372,8 +3369,8 @@ export default function SuperAdminDashboard() {
                   </div>
                 </div>
 
-                {/* Booking Status & Amount */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Booking Status */}
+                <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
                       Allocation Status
@@ -3386,19 +3383,6 @@ export default function SuperAdminDashboard() {
                       <option value="CONFIRMED">🔴 CONFIRMED (Booked)</option>
                       <option value="HOLD">🟡 ON HOLD (Reserved)</option>
                     </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] uppercase tracking-wider mb-1">
-                      Agreed Price (₹)
-                    </label>
-                    <input
-                      type="number"
-                      value={bookingForm.amount}
-                      onChange={(e) => setBookingForm({ ...bookingForm, amount: e.target.value })}
-                      placeholder="100000"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-mono font-bold text-[#2D1F0E] focus:border-[#D99427] outline-none"
-                    />
                   </div>
                 </div>
 
