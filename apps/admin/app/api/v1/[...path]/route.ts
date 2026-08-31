@@ -52,11 +52,31 @@ async function handleProxy(req: NextRequest, { params }: { params: { path: strin
     const resHeaders = new Headers(backendRes.headers);
     resHeaders.delete('content-encoding');
 
-    // Always ensure content-type is JSON so the frontend can parse it safely
-    // (NestJS returns JSON for all API responses)
     const contentType = backendRes.headers.get('content-type') || '';
-    if (!contentType.includes('application/json') && !contentType.includes('image') && !contentType.includes('octet')) {
-      resHeaders.set('content-type', 'application/json');
+
+    // If the backend returned a non-JSON text response (e.g. an HTML error page
+    // from nginx/reverse-proxy when the API server is down), wrap it in a
+    // proper JSON error so the frontend doesn't choke on `res.json()`.
+    if (
+      !contentType.includes('application/json') &&
+      !contentType.includes('image') &&
+      !contentType.includes('octet')
+    ) {
+      const textBody = await backendRes.text();
+      console.error(
+        `[API Proxy] Backend returned non-JSON response (${contentType || 'no content-type'}): ${textBody.slice(0, 200)}`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'UPSTREAM_ERROR',
+            statusCode: backendRes.status,
+            message: 'API server returned an unexpected response. It may be down or unreachable.',
+          },
+        },
+        { status: backendRes.status >= 400 ? backendRes.status : 502 }
+      );
     }
 
     const resData = await backendRes.arrayBuffer();

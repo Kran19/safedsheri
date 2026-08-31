@@ -59,7 +59,20 @@ export async function apiRequest<T = any>(
       };
     }
 
-    const json = await res.json();
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseErr) {
+      // The response was not valid JSON (e.g. HTML error page from server)
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_RESPONSE',
+          statusCode: res.status,
+          message: 'API server returned an invalid response. Please try again later.',
+        },
+      };
+    }
     return json;
   } catch (err: any) {
     return {
