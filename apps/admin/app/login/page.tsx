@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiRequest, setStoredAuth } from '../../lib/api';
+import { apiRequest, setStoredAuth, getStoredUser } from '../../lib/api';
 import LogoSlot from '../components/LogoSlot';
 import { Lock, User, KeyRound, AlertCircle, ArrowRight, ShieldCheck, CreditCard, Sparkles } from 'lucide-react';
 
@@ -12,6 +12,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const user = getStoredUser();
+    if (user && user.role) {
+      const role = user.role;
+      if (role === 'SUPER_ADMIN') {
+        router.replace('/admin');
+      } else if (role === 'TICKETING_FINANCE' || role === 'CASHIER') {
+        router.replace('/cashier');
+      } else if (role === 'ENTRY_VERIFICATION' || role === 'SECURITY') {
+        router.replace('/security');
+      }
+    }
+  }, [router]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -28,13 +42,13 @@ export default function LoginPage() {
         setStoredAuth(res.data.accessToken, res.data.user);
         const role = res.data.user.role;
         if (role === 'SUPER_ADMIN') {
-          router.push('/admin');
+          router.replace('/admin');
         } else if (role === 'TICKETING_FINANCE' || role === 'CASHIER') {
-          router.push('/cashier');
+          router.replace('/cashier');
         } else if (role === 'ENTRY_VERIFICATION' || role === 'SECURITY') {
-          router.push('/security');
+          router.replace('/security');
         } else {
-          router.push('/');
+          router.replace('/');
         }
       } else {
         setError(res.error?.message || 'Invalid username or password. Please verify credentials.');
