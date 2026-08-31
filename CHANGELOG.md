@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented glassmorphism WhatsApp OTP verification Modal UI in `LandingPageClient.tsx` with a modern 6-box auto-focusing split digit input design (and removed the text badge pill from the top).
 - Replaced ugly browser alert dialogues with a clean 1-line inline form error notification under the My Pass search form.
 - Added Zaple API credentials variables to `.env` and `.env.example`.
+- Added `OtpBypass` database model and management endpoints (`GET /users/otp-bypass`, `POST /users/otp-bypass`, `DELETE /users/otp-bypass/:phone`) for the Super Admin to exempt individual phone numbers from WhatsApp OTP verification.
+- Added public check endpoint `GET /auth/otp-bypass-check/:phone` to let the frontend verify if a number is exempted.
+- Added "OTP Bypass List" tab and settings form to the Admin Dashboard for easy addition/removal of exempted numbers.
+- Updated registration and wallet search flows in the landing page client to bypass the OTP modal if the phone number is exempted.
 
 ### Changed
 - Replaced the old Twilio OTP dispatch logic with Zaple API inside `AuthService.sendWhatsAppOtp`.

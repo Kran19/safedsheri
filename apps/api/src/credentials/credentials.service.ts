@@ -111,37 +111,61 @@ export class CredentialsService {
   }
 
   async findMyPass(query: string, otpToken?: string) {
-    if (!otpToken) {
-      throw new BadRequestException('Verification required. Please verify your phone number via WhatsApp OTP.');
-    }
-    const verified = await this.authService.verifyOtpToken(otpToken);
-    if (!verified || !verified.verified) {
-      throw new BadRequestException('Session expired or invalid verification token. Please verify again.');
-    }
-
     const cleanDigits = query.replace(/\D/g, '');
-    const verifiedPhone = verified.phone.replace(/\D/g, '');
-    
-    // Enforce that verified phone matches the query.
+    let targetPhone = '';
+
     if (cleanDigits.length === 10) {
-      const last10Query = cleanDigits.slice(-10);
-      const last10Verified = verifiedPhone.slice(-10);
-      if (last10Query !== last10Verified) {
-        throw new BadRequestException('The verified phone number does not match your search query.');
-      }
+      targetPhone = cleanDigits;
     } else if (cleanDigits.length === 12) {
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
       const attendee = await this.prisma.attendee.findUnique({
         where: { aadhaarHmac },
       });
-      if (!attendee) {
-        throw new NotFoundException('No active booking found for this Aadhaar number.');
+      if (attendee) {
+        targetPhone = attendee.phone.replace(/\D/g, '').slice(-10);
       }
-      const attendeePhone = attendee.phone.replace(/\D/g, '');
-      const last10Attendee = attendeePhone.slice(-10);
-      const last10Verified = verifiedPhone.slice(-10);
-      if (last10Attendee !== last10Verified) {
-        throw new BadRequestException('The verified phone number does not match the phone number registered for this Aadhaar card.');
+    }
+
+    let isBypassed = false;
+    if (targetPhone && targetPhone.length === 10) {
+      const checkBypass = await this.prisma.otpBypass.findUnique({
+        where: { phone: targetPhone },
+      });
+      isBypassed = !!checkBypass;
+    }
+
+    if (!isBypassed) {
+      if (!otpToken) {
+        throw new BadRequestException('Verification required. Please verify your phone number via WhatsApp OTP.');
+      }
+      const verified = await this.authService.verifyOtpToken(otpToken);
+      if (!verified || !verified.verified) {
+        throw new BadRequestException('Session expired or invalid verification token. Please verify again.');
+      }
+
+      const verifiedPhone = verified.phone.replace(/\D/g, '');
+
+      // Enforce that verified phone matches the query.
+      if (cleanDigits.length === 10) {
+        const last10Query = cleanDigits.slice(-10);
+        const last10Verified = verifiedPhone.slice(-10);
+        if (last10Query !== last10Verified) {
+          throw new BadRequestException('The verified phone number does not match your search query.');
+        }
+      } else if (cleanDigits.length === 12) {
+        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
+        const attendee = await this.prisma.attendee.findUnique({
+          where: { aadhaarHmac },
+        });
+        if (!attendee) {
+          throw new NotFoundException('No active booking found for this Aadhaar number.');
+        }
+        const attendeePhone = attendee.phone.replace(/\D/g, '');
+        const last10Attendee = attendeePhone.slice(-10);
+        const last10Verified = verifiedPhone.slice(-10);
+        if (last10Attendee !== last10Verified) {
+          throw new BadRequestException('The verified phone number does not match the phone number registered for this Aadhaar card.');
+        }
       }
     } else {
       throw new BadRequestException('Invalid query length. Must be 10-digit phone or 12-digit Aadhaar.');
@@ -376,6 +400,18 @@ export class CredentialsService {
       throw new BadRequestException('Please enter a valid 10-digit mobile number or 12-digit Aadhaar number');
     }
 
+    const bypassPhoneKey = targetPhone.replace(/\D/g, '').slice(-10);
+    const checkBypass = await this.prisma.otpBypass.findUnique({
+      where: { phone: bypassPhoneKey },
+    });
+    if (checkBypass) {
+      return {
+        success: true,
+        data: { bypassed: true, maskedPhone: 'Bypassed', phone: targetPhone },
+        message: 'OTP verification bypassed for this number.',
+      };
+    }
+
     const otpResult = await this.authService.sendWhatsAppOtp(targetPhone);
     if (!otpResult.success) {
       throw new BadRequestException(otpResult.message || 'Failed to send OTP');
@@ -416,6 +452,22 @@ export class CredentialsService {
       targetPhone = attendee.phone;
     } else {
       throw new BadRequestException('Please enter a valid 10-digit mobile number or 12-digit Aadhaar number');
+    }
+
+    const cleanTargetPhone = targetPhone.replace(/\D/g, '').slice(-10);
+    const checkBypass = await this.prisma.otpBypass.findUnique({
+      where: { phone: cleanTargetPhone },
+    });
+    if (checkBypass) {
+      const passesResult = await this.findMyPass(query);
+      return {
+        success: true,
+        data: {
+          otpToken: '',
+          passes: passesResult.data,
+        },
+        message: 'OTP verified successfully (bypassed).',
+      };
     }
 
     const verifyResult = await this.authService.verifyWhatsAppOtp(targetPhone, code);

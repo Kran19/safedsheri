@@ -1081,9 +1081,17 @@ export default function SafedSheriLandingPage() {
       setOtpSent(false);
       setOtpCode('');
       setOtpDigits(['', '', '', '', '', '']);
-      setOtpModalOpen(true);
-      
+
       try {
+        // Check if phone number is exempted from OTP verification
+        const bypassCheck = await fetch(`${API_BASE}/auth/otp-bypass-check/${cleanPhone.replace(/\D/g, '').slice(-10)}`);
+        const bypassJson = await bypassCheck.json();
+        if (bypassJson.success && bypassJson.bypassed) {
+          await submitRegistrationWithToken('');
+          return;
+        }
+
+        setOtpModalOpen(true);
         const res = await fetch(`${API_BASE}/auth/whatsapp-otp/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1131,6 +1139,22 @@ export default function SafedSheriLandingPage() {
       });
       const json = await res.json();
       if (json.success && json.data) {
+        if (json.data.bypassed) {
+          const passRes = await fetch(`${API_BASE}/credentials/my-pass`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: cleanDigits, otpToken: '' }),
+          });
+          const passJson = await passRes.json();
+          if (passJson.success && passJson.data) {
+            setWalletPasses(passJson.data);
+            setWalletSearched(true);
+          } else {
+            setWalletError(passJson.message || 'Failed to retrieve passes.');
+          }
+          return;
+        }
+
         setOtpPhone(json.data.maskedPhone);
         setOtpSent(true);
         setOtpModalOpen(true);

@@ -291,23 +291,30 @@ export class RegistrationsService {
       ocrMismatch?: boolean;
     }>;
   }) {
-    if (!data.otpToken) {
-      throw new BadRequestException('Verification required. Please verify your phone number via WhatsApp OTP.');
-    }
-    const verified = await this.authService.verifyOtpToken(data.otpToken);
-    if (!verified || !verified.verified) {
-      throw new BadRequestException('Session expired or invalid verification token. Please verify again.');
-    }
-
-    // Ensure the verified phone matches the primary attendee's phone
     const primaryPhone = data.attendees[0]?.phone;
     if (!primaryPhone) {
       throw new BadRequestException('Primary attendee phone is required.');
     }
     const cleanPrimaryPhone = primaryPhone.replace(/\D/g, '').slice(-10);
-    const cleanVerifiedPhone = verified.phone.replace(/\D/g, '').slice(-10);
-    if (cleanPrimaryPhone !== cleanVerifiedPhone) {
-      throw new BadRequestException('The verified phone number does not match the primary attendee phone number.');
+
+    // Check if phone number is exempted from OTP verification
+    const isBypassed = await this.prisma.otpBypass.findUnique({
+      where: { phone: cleanPrimaryPhone },
+    });
+
+    if (!isBypassed) {
+      if (!data.otpToken) {
+        throw new BadRequestException('Verification required. Please verify your phone number via WhatsApp OTP.');
+      }
+      const verified = await this.authService.verifyOtpToken(data.otpToken);
+      if (!verified || !verified.verified) {
+        throw new BadRequestException('Session expired or invalid verification token. Please verify again.');
+      }
+
+      const cleanVerifiedPhone = verified.phone.replace(/\D/g, '').slice(-10);
+      if (cleanPrimaryPhone !== cleanVerifiedPhone) {
+        throw new BadRequestException('The verified phone number does not match the primary attendee phone number.');
+      }
     }
 
     try {

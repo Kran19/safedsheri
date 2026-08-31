@@ -1,4 +1,4 @@
-import { Controller, Post, Patch, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -52,5 +52,11 @@ export class AuthController {
   @ApiOperation({ summary: 'Update email/username and password' })
   async updateCredentials(@Request() req, @Body() dto: UpdateCredentialsDto) {
     return this.authService.updateCredentials(req.user.id, dto);
+  }
+
+  @Get('otp-bypass-check/:phone')
+  @ApiOperation({ summary: 'Check if a phone number is exempted from OTP verification' })
+  async checkOtpBypass(@Param('phone') phone: string) {
+    return this.authService.checkOtpBypass(phone);
   }
 }

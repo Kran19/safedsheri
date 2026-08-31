@@ -114,4 +114,53 @@ export class UsersService {
 
     return { success: true, data: updated, message: 'User details updated successfully' };
   }
+
+  async findAllBypassed() {
+    const list = await this.prisma.otpBypass.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return { success: true, data: list };
+  }
+
+  async addBypassed(phone: string) {
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      throw new BadRequestException('Invalid phone number. Must be a 10-digit number.');
+    }
+
+    const existing = await this.prisma.otpBypass.findUnique({
+      where: { phone: cleanPhone },
+    });
+
+    if (existing) {
+      return { success: true, data: existing, message: 'Phone number already bypassed.' };
+    }
+
+    const created = await this.prisma.otpBypass.create({
+      data: { phone: cleanPhone },
+    });
+
+    return { success: true, data: created, message: `OTP verification bypassed for number: ${cleanPhone}` };
+  }
+
+  async removeBypassed(phone: string) {
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      throw new BadRequestException('Invalid phone number. Must be a 10-digit number.');
+    }
+
+    const existing = await this.prisma.otpBypass.findUnique({
+      where: { phone: cleanPhone },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Phone number not found in bypass list.');
+    }
+
+    await this.prisma.otpBypass.delete({
+      where: { phone: cleanPhone },
+    });
+
+    return { success: true, message: `Bypass removed for number: ${cleanPhone}` };
+  }
 }

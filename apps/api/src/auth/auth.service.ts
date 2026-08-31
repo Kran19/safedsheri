@@ -215,4 +215,17 @@ export class AuthService {
       return null;
     }
   }
+
+  async checkOtpBypass(phone: string) {
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      return { success: true, bypassed: false };
+    }
+
+    const bypassed = await this.prisma.otpBypass.findUnique({
+      where: { phone: cleanPhone },
+    });
+
+    return { success: true, bypassed: !!bypassed };
+  }
 }

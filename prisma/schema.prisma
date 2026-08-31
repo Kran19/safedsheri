@@ -478,3 +478,11 @@ model OtpVerification {
 
   @@index([phone])
 }
+
+model OtpBypass {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}

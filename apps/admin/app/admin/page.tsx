@@ -20,9 +20,16 @@ import GazeboManageGuestsModal from '../components/GazeboManageGuestsModal';
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+
+  // OTP Bypass State
+  const [bypassedPhones, setBypassedPhones] = useState<any[]>([]);
+  const [newBypassPhone, setNewBypassPhone] = useState('');
+  const [bypassLoading, setBypassLoading] = useState(false);
+  const [bypassError, setBypassError] = useState<string | null>(null);
+  const [bypassSuccess, setBypassSuccess] = useState<string | null>(null);
   const [userForm, setUserForm] = useState({ username: '', password: '', fullName: '', role: 'TICKETING_FINANCE' });
   const [userError, setUserError] = useState<string | null>(null);
   const [userSuccess, setUserSuccess] = useState<string | null>(null);
@@ -284,6 +291,56 @@ export default function SuperAdminDashboard() {
     } else if (tab === 'users') {
       const res = await apiRequest('/users');
       if (res.success) setUsers(res.data || []);
+    } else if (tab === 'otp_bypass') {
+      await loadBypassedPhones();
+    }
+  }
+
+  async function loadBypassedPhones() {
+    setBypassError(null);
+    const res = await apiRequest('/users/otp-bypass');
+    if (res.success) {
+      setBypassedPhones(res.data || []);
+    } else {
+      setBypassError(res.error?.message || 'Failed to load OTP bypass list.');
+    }
+  }
+
+  async function handleAddBypassPhone(e: React.FormEvent) {
+    e.preventDefault();
+    setBypassLoading(true);
+    setBypassError(null);
+    setBypassSuccess(null);
+
+    const res = await apiRequest('/users/otp-bypass', {
+      method: 'POST',
+      body: JSON.stringify({ phone: newBypassPhone }),
+    });
+
+    setBypassLoading(false);
+    if (res.success) {
+      setBypassSuccess('Phone number added to OTP bypass list successfully.');
+      setNewBypassPhone('');
+      await loadBypassedPhones();
+    } else {
+      setBypassError(res.error?.message || 'Failed to add phone number.');
+    }
+  }
+
+  async function handleRemoveBypassPhone(phone: string) {
+    if (!confirm(`Are you sure you want to remove ${phone} from the OTP bypass list?`)) return;
+    setBypassError(null);
+    setBypassSuccess(null);
+
+    const res = await apiRequest(`/users/otp-bypass/${phone}`, {
+      method: 'DELETE',
+    });
+
+    if (res.success) {
+      setBypassSuccess('Phone number removed from OTP bypass list.');
+      await loadBypassedPhones();
+    } else {
+      setBypassError(res.error?.message || 'Failed to remove phone number.');
     }
   }
 
@@ -1343,6 +1400,7 @@ export default function SuperAdminDashboard() {
           { id: 'scans', label: 'Security Scans', icon: Shield },
           { id: 'audit', label: 'Audit Log', icon: FileText },
           { id: 'settings', label: 'Account Settings', icon: Settings },
+          { id: 'otp_bypass', label: 'OTP Bypass List', icon: Phone },
           { id: 'trash', label: 'Trash', icon: Trash2 },
           { id: 'book_pass', label: 'Book Pass', icon: Ticket },
         ].map((tab) => {
@@ -2070,6 +2128,89 @@ export default function SuperAdminDashboard() {
       {/* ========================================================================= */}
       {activeTab === 'book_pass' && (
         <BookingDesk hideHeader={true} />
+      )}
+
+      {activeTab === 'otp_bypass' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#EAD9B8]">
+            <h2 className="text-2xl font-serif text-[#2D1F0E] mb-2 flex items-center gap-3">
+              <Phone className="w-6 h-6 text-[#8C6019]" />
+              WhatsApp OTP Bypass List
+            </h2>
+            <p className="text-sm text-[#6E5336] mb-6">
+              Enter phone numbers here to exempt them from WhatsApp OTP verification. Bypassed numbers will bypass OTP during registration and pass search.
+            </p>
+
+            <form onSubmit={handleAddBypassPhone} className="flex gap-3 max-w-lg mb-8">
+              <input
+                type="text"
+                required
+                maxLength={10}
+                placeholder="Enter 10-digit mobile number (e.g. 9876543210)"
+                value={newBypassPhone}
+                onChange={(e) => setNewBypassPhone(e.target.value.replace(/\D/g, ''))}
+                className="flex-1 px-4 py-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono tracking-wider focus:border-[#D99427] outline-none"
+              />
+              <button
+                type="submit"
+                disabled={bypassLoading}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs tracking-wider uppercase hover:opacity-95 transition disabled:opacity-50 shadow-md"
+              >
+                {bypassLoading ? 'Adding...' : 'Add Phone'}
+              </button>
+            </form>
+
+            {bypassSuccess && (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2 mb-6 max-w-lg">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                {bypassSuccess}
+              </div>
+            )}
+            {bypassError && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2 mb-6 max-w-lg">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                {bypassError}
+              </div>
+            )}
+
+            {/* List of bypassed phones */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-[#EAD9B8] text-[#6E5336]">
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Phone Number</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Bypassed At</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bypassedPhones.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-8 text-center text-[#8C6019] italic">
+                        No phone numbers are currently bypassed.
+                      </td>
+                    </tr>
+                  ) : (
+                    bypassedPhones.map((item) => (
+                      <tr key={item.id} className="border-b border-[#F8F5EE] hover:bg-[#FAF8F2] text-[#2D1F0E]">
+                        <td className="py-3 px-4 font-mono font-bold">{item.phone}</td>
+                        <td className="py-3 px-4 text-[#6E5336]">{new Date(item.createdAt).toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleRemoveBypassPhone(item.phone)}
+                            className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 text-[10px] font-bold uppercase tracking-wider transition border border-red-200"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeTab === 'settings' && (

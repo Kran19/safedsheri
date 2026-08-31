@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -43,5 +43,23 @@ export class UsersController {
       return this.usersService.toggleActive(id, body.isActive);
     }
     return this.usersService.update(id, body);
+  }
+
+  @Get('otp-bypass')
+  @ApiOperation({ summary: 'List all bypassed phone numbers (Super Admin only)' })
+  async findAllBypassed() {
+    return this.usersService.findAllBypassed();
+  }
+
+  @Post('otp-bypass')
+  @ApiOperation({ summary: 'Exempt a phone number from OTP verification (Super Admin only)' })
+  async addBypassed(@Body() body: { phone: string }) {
+    return this.usersService.addBypassed(body.phone);
+  }
+
+  @Delete('otp-bypass/:phone')
+  @ApiOperation({ summary: 'Remove a phone number from OTP bypass (Super Admin only)' })
+  async removeBypassed(@Param('phone') phone: string) {
+    return this.usersService.removeBypassed(phone);
   }
 }
