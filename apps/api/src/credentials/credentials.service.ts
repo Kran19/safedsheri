@@ -112,6 +112,10 @@ export class CredentialsService {
 
   async findMyPass(query: string, otpToken?: string) {
     const cleanDigits = query.replace(/\D/g, '');
+    if (cleanDigits.length !== 10 && cleanDigits.length !== 12) {
+      throw new BadRequestException('Invalid query length. Must be 10-digit phone or 12-digit Aadhaar.');
+    }
+
     let targetPhone = '';
 
     if (cleanDigits.length === 10) {
@@ -167,12 +171,6 @@ export class CredentialsService {
           throw new BadRequestException('The verified phone number does not match the phone number registered for this Aadhaar card.');
         }
       }
-    } else {
-      throw new BadRequestException('Invalid query length. Must be 10-digit phone or 12-digit Aadhaar.');
-    }
-
-    if (cleanDigits.length < 10) {
-      throw new BadRequestException('Please enter a valid 10-digit mobile number or 12-digit Aadhaar number');
     }
 
     const attendeeWhereOr: any[] = [];
