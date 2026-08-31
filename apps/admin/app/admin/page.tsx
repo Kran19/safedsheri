@@ -1280,7 +1280,7 @@ export default function SuperAdminDashboard() {
       )}
 
       {/* TOP OPERATIONAL KPI METRICS */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
           <div className="text-[#6E5336] text-[11px] uppercase tracking-wider font-semibold mb-1">Total Bookings</div>
           <div className="text-2xl font-serif font-bold text-[#2D1F0E]">
@@ -1306,6 +1306,13 @@ export default function SuperAdminDashboard() {
           <div className="text-emerald-700 text-[11px] uppercase tracking-wider font-semibold mb-1">Passes Issued</div>
           <div className="text-2xl font-serif font-bold text-emerald-950">
             {overview?.applications?.passesIssued || applications.filter(a => a.status === 'PASS_ISSUED').length}
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-rose-50 border border-rose-200 shadow-sm">
+          <div className="text-rose-700 text-[11px] uppercase tracking-wider font-semibold mb-1">Rejected/Canceled</div>
+          <div className="text-2xl font-serif font-bold text-rose-950">
+            {((overview?.applications?.rejected || 0) + (overview?.applications?.cancelled || 0)) || applications.filter(a => a.status === 'REJECTED' || a.status === 'CANCELLED').length}
           </div>
         </div>
 
