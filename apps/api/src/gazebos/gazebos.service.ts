@@ -868,6 +868,50 @@ export class GazebosService {
         const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
         const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
 
+        // Check global DB uniqueness for Aadhaar
+        const existingActiveAadhaarReg = await tx.registration.findFirst({
+          where: {
+            deletedAt: null,
+            status: {
+              notIn: [
+                RegistrationStatus.REJECTED,
+                RegistrationStatus.CANCELLED,
+                RegistrationStatus.PAYMENT_FAILED,
+              ],
+            },
+            attendees: {
+              some: {
+                attendee: { aadhaarHmac },
+              },
+            },
+          },
+        });
+        if (existingActiveAadhaarReg) {
+          throw new BadRequestException(`Guest #${index + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are not allowed.`);
+        }
+
+        // Check global DB uniqueness for Phone
+        const existingActivePhoneReg = await tx.registration.findFirst({
+          where: {
+            deletedAt: null,
+            status: {
+              notIn: [
+                RegistrationStatus.REJECTED,
+                RegistrationStatus.CANCELLED,
+                RegistrationStatus.PAYMENT_FAILED,
+              ],
+            },
+            attendees: {
+              some: {
+                attendee: { phone: att.phone },
+              },
+            },
+          },
+        });
+        if (existingActivePhoneReg) {
+          throw new BadRequestException(`Guest #${index + 1} (${att.fullName})'s phone number is already associated with an active booking. Each guest must use a unique mobile number.`);
+        }
+
         const attendeeRecord = await tx.attendee.upsert({
           where: { aadhaarHmac },
           update: {
