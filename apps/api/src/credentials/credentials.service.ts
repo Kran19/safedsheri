@@ -124,7 +124,9 @@ export class CredentialsService {
     
     // Enforce that verified phone matches the query.
     if (cleanDigits.length === 10) {
-      if (cleanDigits !== verifiedPhone) {
+      const last10Query = cleanDigits.slice(-10);
+      const last10Verified = verifiedPhone.slice(-10);
+      if (last10Query !== last10Verified) {
         throw new BadRequestException('The verified phone number does not match your search query.');
       }
     } else if (cleanDigits.length === 12) {

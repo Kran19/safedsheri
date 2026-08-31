@@ -20,3 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `GET /credentials/my-pass` and `POST /credentials/my-pass` endpoints to require valid `otpToken` verification.
 - Modified public registration submission to strictly require verified `otpToken` matching the primary attendee's phone.
 
+### Fixed
+- Fixed phone query validation bug in `CredentialsService.findMyPass` where country code prefixes (e.g. `91` or `+91`) on verified tokens caused mismatch failures against 10-digit search queries.
+
