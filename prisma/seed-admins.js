@@ -22,19 +22,19 @@ async function main() {
     },
     {
       username: 'admin1@safedsheri.com',
-      fullName: 'Super Admin 1 (Vikramaditya Solanki)',
+      fullName: 'Super Admin 1 (VIMMI)',
       role: 'SUPER_ADMIN',
       password: process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!',
     },
     {
       username: 'admin2@safedsheri.com',
-      fullName: 'Super Admin 2 (Rudra Pratap Singh)',
+      fullName: 'Super Admin 2 (PRIYANKA)',
       role: 'SUPER_ADMIN',
       password: process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!',
     },
     {
       username: 'admin3@safedsheri.com',
-      fullName: 'Super Admin 3 (Harshvardhan Jadeja)',
+      fullName: 'Super Admin 3 (DELISHA)',
       role: 'SUPER_ADMIN',
       password: process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!',
     },
@@ -85,6 +85,7 @@ async function main() {
       await prisma.user.update({
         where: { username: account.username },
         data: {
+          fullName: account.fullName,
           role: account.role,
           isActive: true,
         },

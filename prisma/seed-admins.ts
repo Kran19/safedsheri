@@ -49,6 +49,7 @@ async function main() {
     const user = await prisma.user.upsert({
       where: { username: account.username },
       update: {
+        fullName: account.fullName,
         role: account.role,
         isActive: true,
       },

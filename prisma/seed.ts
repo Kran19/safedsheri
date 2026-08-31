@@ -105,7 +105,7 @@ async function main() {
     data: {
       username: 'admin1@safedsheri.com',
       passwordHash: adminPassHash,
-      fullName: 'Vikramaditya Solanki (Super Admin 1)',
+      fullName: 'Super Admin 1 (VIMMI)',
       role: Role.SUPER_ADMIN,
       isActive: true,
     },
@@ -116,7 +116,7 @@ async function main() {
     data: {
       username: 'admin2@safedsheri.com',
       passwordHash: adminPassHash,
-      fullName: 'Rudra Pratap Singh (Super Admin 2)',
+      fullName: 'Super Admin 2 (PRIYANKA)',
       role: Role.SUPER_ADMIN,
       isActive: true,
     },
@@ -127,7 +127,7 @@ async function main() {
     data: {
       username: 'admin3@safedsheri.com',
       passwordHash: adminPassHash,
-      fullName: 'Harshvardhan Jadeja (Super Admin 3)',
+      fullName: 'Super Admin 3 (DELISHA)',
       role: Role.SUPER_ADMIN,
       isActive: true,
     },
