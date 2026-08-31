@@ -134,6 +134,7 @@ export default function SuperAdminDashboard() {
   // Filter Pill State for Applications
   const [appStatusFilter, setAppStatusFilter] = useState<string>('ALL');
   const [appPassTypeFilter, setAppPassTypeFilter] = useState<string>('ALL');
+  const [appGazeboFilter, setAppGazeboFilter] = useState<string>('ALL');
 
   // Review Modal State
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
@@ -836,6 +837,7 @@ export default function SuperAdminDashboard() {
   const filteredApps = applications.filter((app) => {
     if (appStatusFilter !== 'ALL' && app.status !== appStatusFilter) return false;
     if (appPassTypeFilter !== 'ALL' && app.passType !== appPassTypeFilter) return false;
+    if (appGazeboFilter !== 'ALL' && app.gazebo?.gazeboNumber !== appGazeboFilter) return false;
     return true;
   });
 
@@ -1518,7 +1520,10 @@ export default function SuperAdminDashboard() {
                 <span className="font-bold text-[#8C6019]">Category:</span>
                 <select
                   value={appPassTypeFilter}
-                  onChange={(e) => setAppPassTypeFilter(e.target.value)}
+                  onChange={(e) => {
+                    setAppPassTypeFilter(e.target.value);
+                    if (e.target.value !== 'GAZEBO') setAppGazeboFilter('ALL');
+                  }}
                   className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
                 >
                   <option value="ALL">All Categories</option>
@@ -1528,6 +1533,22 @@ export default function SuperAdminDashboard() {
                   <option value="GAZEBO">Gazebo VIP</option>
                 </select>
               </div>
+
+              {appPassTypeFilter === 'GAZEBO' && (
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-[#8C6019]">Gazebo:</span>
+                  <select
+                    value={appGazeboFilter}
+                    onChange={(e) => setAppGazeboFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
+                  >
+                    <option value="ALL">All Gazebos</option>
+                    {[...gazebos].sort((a, b) => a.gazeboNumber.localeCompare(b.gazeboNumber)).map(g => (
+                      <option key={g.id} value={g.gazeboNumber}>{g.gazeboNumber}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           }
         />
