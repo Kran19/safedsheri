@@ -1500,7 +1500,7 @@ export default function SuperAdminDashboard() {
             },
           ]}
           customFilterComponent={
-            <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-[#8C6019]">Filter by:</span>
                 <div className="flex flex-wrap items-center space-x-2 bg-[#FAF6EE] p-1 rounded-2xl border border-[#EAD9B8]">
@@ -1545,6 +1545,21 @@ export default function SuperAdminDashboard() {
                     </>
                   )}
                 </div>
+              </div>
+
+              {/* Category Dropdown */}
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-[#8C6019]">Category:</span>
+                <select
+                  value={appPassTypeFilter}
+                  onChange={(e) => setAppPassTypeFilter(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
+                >
+                  <option value="ALL">All Categories</option>
+                  <option value="SINGLE">Single Pass</option>
+                  <option value="COUPLE">Couple Pass</option>
+                  <option value="KIDS">Kids Pass</option>
+                </select>
               </div>
             </div>
           }
