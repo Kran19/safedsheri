@@ -73,6 +73,8 @@ export class PaymentsService {
         } else {
           totalRazorpayActual += amt;
         }
+      } else if (p.method === 'UPI_QR' || p.method === 'CARD' || p.method === 'CUSTOM_DIRECT') {
+        totalAdminManualQr += amt;
       }
     }
 
