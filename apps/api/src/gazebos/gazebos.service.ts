@@ -931,6 +931,17 @@ export class GazebosService {
 
     const mintRes = await this.credentialsService.generateCredentialsForRegistration(registrationResult.registrationId);
 
+    // Map the credentials with attendee names for the frontend
+    const populatedCredentials = await this.prisma.credential.findMany({
+      where: { registrationId: registrationResult.registrationId },
+      include: { attendee: true }
+    });
+    
+    const formattedData = populatedCredentials.map(c => ({
+       attendeeName: c.attendee.fullName,
+       credential: c
+    }));
+
     // 4. Revoke the token so it cannot be used again
     await this.prisma.gazebo.update({
       where: { id: gazebo.id },
@@ -954,7 +965,7 @@ export class GazebosService {
     return {
       success: true,
       message: `Successfully registered ${body.attendees.length} guests for Gazebo ${gazebo.gazeboNumber}`,
-      data: mintRes,
+      data: formattedData,
     };
   }
 }
