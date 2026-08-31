@@ -8,7 +8,7 @@ import {
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
-  Tag, MapPin, Settings, Trash2, Lock, Flag, X
+  Tag, MapPin, Settings, Trash2, Lock, Flag, X, ChevronDown
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -135,6 +135,8 @@ export default function SuperAdminDashboard() {
   const [appStatusFilter, setAppStatusFilter] = useState<string>('ALL');
   const [appPassTypeFilter, setAppPassTypeFilter] = useState<string>('ALL');
   const [appGazeboFilter, setAppGazeboFilter] = useState<string>('ALL');
+  const [isGazeboDropdownOpen, setIsGazeboDropdownOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
   // Review Modal State
   const [selectedApp, setSelectedApp] = useState<any | null>(null);
@@ -1530,17 +1532,57 @@ export default function SuperAdminDashboard() {
                   {appStatusFilter === 'GAZEBO' && (
                     <>
                       <div className="w-px h-6 bg-[#EAD9B8] mx-1"></div>
-                      <div className="flex items-center space-x-1">
-                        <select
-                          value={appGazeboFilter}
-                          onChange={(e) => setAppGazeboFilter(e.target.value)}
-                          className="px-2 py-1 rounded-xl bg-white border border-[#EAD9B8] text-[10px] font-bold uppercase focus:border-[#D99427] outline-none"
+                      <div className="relative flex items-center" tabIndex={0} onBlur={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                          setIsGazeboDropdownOpen(false);
+                        }
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => setIsGazeboDropdownOpen(!isGazeboDropdownOpen)}
+                          className="px-3 py-1.5 rounded-xl bg-white border border-[#EAD9B8] text-[10px] font-bold uppercase hover:border-[#D99427] hover:shadow-sm transition-all flex items-center space-x-1.5 outline-none text-[#2D1F0E]"
                         >
-                          <option value="ALL">ALL GAZEBOS</option>
-                          {[...gazebos].sort((a, b) => a.gazeboNumber.localeCompare(b.gazeboNumber)).map(g => (
-                            <option key={g.id} value={g.gazeboNumber}>{g.gazeboNumber}</option>
-                          ))}
-                        </select>
+                          <span className="truncate max-w-[100px]">{appGazeboFilter === 'ALL' ? 'ALL GAZEBOS' : appGazeboFilter}</span>
+                          <ChevronDown className={`w-3.5 h-3.5 text-[#8C6019] transition-transform duration-300 ${isGazeboDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isGazeboDropdownOpen && (
+                          <div className="absolute top-[calc(100%+4px)] left-0 w-36 bg-white border border-[#EAD9B8] rounded-xl shadow-xl overflow-hidden z-50 py-1 animate-in fade-in zoom-in-95 duration-200 max-h-56 overflow-y-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAppGazeboFilter('ALL');
+                                setIsGazeboDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase transition-colors flex items-center justify-between ${
+                                appGazeboFilter === 'ALL' 
+                                  ? 'bg-[#FAF6EE] text-[#D99427]' 
+                                  : 'text-[#6E5336] hover:bg-[#FAF6EE] hover:text-[#2D1F0E]'
+                              }`}
+                            >
+                              <span>ALL GAZEBOS</span>
+                              {appGazeboFilter === 'ALL' && <CheckCircle2 className="w-3 h-3" />}
+                            </button>
+                            {[...gazebos].sort((a, b) => a.gazeboNumber.localeCompare(b.gazeboNumber)).map(g => (
+                              <button
+                                key={g.id}
+                                type="button"
+                                onClick={() => {
+                                  setAppGazeboFilter(g.gazeboNumber);
+                                  setIsGazeboDropdownOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase transition-colors flex items-center justify-between ${
+                                  appGazeboFilter === g.gazeboNumber 
+                                    ? 'bg-[#FAF6EE] text-[#D99427]' 
+                                    : 'text-[#6E5336] hover:bg-[#FAF6EE] hover:text-[#2D1F0E]'
+                                }`}
+                              >
+                                <span>{g.gazeboNumber}</span>
+                                {appGazeboFilter === g.gazeboNumber && <CheckCircle2 className="w-3 h-3" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -1550,16 +1592,52 @@ export default function SuperAdminDashboard() {
               {/* Category Dropdown */}
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-[#8C6019]">Category:</span>
-                <select
-                  value={appPassTypeFilter}
-                  onChange={(e) => setAppPassTypeFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
-                >
-                  <option value="ALL">All Categories</option>
-                  <option value="SINGLE">Single Pass</option>
-                  <option value="COUPLE">Couple Pass</option>
-                  <option value="KIDS">Kids Pass</option>
-                </select>
+                <div className="relative flex items-center" tabIndex={0} onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget)) {
+                    setIsCategoryDropdownOpen(false);
+                  }
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold hover:border-[#D99427] hover:shadow-sm transition-all flex items-center space-x-1.5 outline-none text-[#2D1F0E] min-w-[130px] justify-between"
+                  >
+                    <span>
+                      {appPassTypeFilter === 'ALL' ? 'All Categories' : 
+                       appPassTypeFilter === 'SINGLE' ? 'Single Pass' :
+                       appPassTypeFilter === 'COUPLE' ? 'Couple Pass' : 'Kids Pass'}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-[#8C6019] transition-transform duration-300 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isCategoryDropdownOpen && (
+                    <div className="absolute top-[calc(100%+4px)] right-0 w-40 bg-white border border-[#EAD9B8] rounded-xl shadow-xl overflow-hidden z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
+                      {[
+                        { val: 'ALL', label: 'All Categories' },
+                        { val: 'SINGLE', label: 'Single Pass' },
+                        { val: 'COUPLE', label: 'Couple Pass' },
+                        { val: 'KIDS', label: 'Kids Pass' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => {
+                            setAppPassTypeFilter(opt.val);
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs font-semibold transition-colors flex items-center justify-between ${
+                            appPassTypeFilter === opt.val 
+                              ? 'bg-[#FAF6EE] text-[#D99427]' 
+                              : 'text-[#6E5336] hover:bg-[#FAF6EE] hover:text-[#2D1F0E]'
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {appPassTypeFilter === opt.val && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           }
