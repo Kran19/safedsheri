@@ -1,12 +1,15 @@
 #!/bin/sh
-set -e
 
 echo "========================================================="
 echo "🚀 SAFED SHERI API CONTAINER INITIALIZATION"
 echo "========================================================="
 
 echo "1. Synchronizing Prisma Database Schema..."
-npx prisma db push --skip-generate
+if npx prisma db push --skip-generate --accept-data-loss; then
+  echo "   ✅ Database schema synchronized successfully."
+else
+  echo "   ⚠️  prisma db push failed (non-fatal). API will start with existing schema."
+fi
 
 echo "2. Auto-synchronizing Super Admin Accounts..."
 node prisma/seed-admins.js || true
