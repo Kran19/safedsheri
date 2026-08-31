@@ -48,3 +48,4 @@ uploads/
 /*.md
 !README.md
 !vps_deployment_guide.md
+!CHANGELOG.md

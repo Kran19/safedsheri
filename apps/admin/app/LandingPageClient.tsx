@@ -549,6 +549,7 @@ export default function SafedSheriLandingPage() {
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletPasses, setWalletPasses] = useState<any[]>([]);
   const [walletSearched, setWalletSearched] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
 
   // Active Payment Modal State
   const [activePaymentLink, setActivePaymentLink] = useState<string | null>(null);
@@ -589,6 +590,7 @@ export default function SafedSheriLandingPage() {
   const [otpModalType, setOtpModalType] = useState<'registration' | 'wallet'>('registration');
   const [otpPhone, setOtpPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
@@ -1077,6 +1079,8 @@ export default function SafedSheriLandingPage() {
       setOtpError(null);
       setOtpLoading(true);
       setOtpSent(false);
+      setOtpCode('');
+      setOtpDigits(['', '', '', '', '', '']);
       setOtpModalOpen(true);
       
       try {
@@ -1115,6 +1119,9 @@ export default function SafedSheriLandingPage() {
     setOtpModalType('wallet');
     setOtpError(null);
     setOtpSent(false);
+    setWalletError(null);
+    setOtpCode('');
+    setOtpDigits(['', '', '', '', '', '']);
 
     try {
       const res = await fetch(`${API_BASE}/credentials/wallet-otp/send`, {
@@ -1128,13 +1135,57 @@ export default function SafedSheriLandingPage() {
         setOtpSent(true);
         setOtpModalOpen(true);
       } else {
-        alert(json.message || 'No active booking found for the provided details.');
+        setWalletError(json.message || 'No active booking found for the provided details.');
       }
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'An error occurred during wallet lookup.');
+      setWalletError(err.message || 'An error occurred during wallet lookup.');
     } finally {
       setWalletLoading(false);
+    }
+  };
+
+  const handleDigitChange = (index: number, val: string) => {
+    const cleanVal = val.replace(/\D/g, '');
+    const newDigits = [...otpDigits];
+    
+    // Take only the last digit typed
+    newDigits[index] = cleanVal.slice(-1);
+    setOtpDigits(newDigits);
+    setOtpCode(newDigits.join(''));
+
+    // Auto-focus next box if a digit was entered
+    if (cleanVal && index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      const newDigits = [...otpDigits];
+      if (!otpDigits[index] && index > 0) {
+        newDigits[index - 1] = '';
+        setOtpDigits(newDigits);
+        setOtpCode(newDigits.join(''));
+        const prevInput = document.getElementById(`otp-input-${index - 1}`);
+        prevInput?.focus();
+      } else {
+        newDigits[index] = '';
+        setOtpDigits(newDigits);
+        setOtpCode(newDigits.join(''));
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedData.length === 6) {
+      const newDigits = pastedData.split('');
+      setOtpDigits(newDigits);
+      setOtpCode(pastedData);
+      document.getElementById('otp-input-5')?.focus();
     }
   };
 
@@ -1189,6 +1240,7 @@ export default function SafedSheriLandingPage() {
     setOtpLoading(true);
     setOtpError(null);
     setOtpCode('');
+    setOtpDigits(['', '', '', '', '', '']);
     try {
       if (otpModalType === 'registration') {
         const res = await fetch(`${API_BASE}/auth/whatsapp-otp/send`, {
@@ -3098,6 +3150,12 @@ export default function SafedSheriLandingPage() {
                 </button>
               </form>
 
+              {walletError && (
+                <p className="text-xs text-red-600 font-bold text-center mt-1">
+                  ⚠️ {walletError}
+                </p>
+              )}
+
               {/* Refresh button after first search */}
               {walletSearched && !walletLoading && (
                 <button
@@ -3415,17 +3473,21 @@ export default function SafedSheriLandingPage() {
               </div>
 
               <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div className="flex justify-center">
-                  <input
-                    type="text"
-                    maxLength={6}
-                    pattern="\d{6}"
-                    required
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 6-digit OTP"
-                    className="w-full max-w-[200px] text-center tracking-[0.5em] font-mono text-2xl py-3 border-2 border-[#EAD9B8] rounded-2xl focus:outline-none focus:border-[#D99427] bg-[#FDFBF7]"
-                  />
+                <div className="flex justify-center space-x-2 md:space-x-3">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <input
+                      key={index}
+                      id={`otp-input-${index}`}
+                      type="text"
+                      maxLength={1}
+                      required
+                      value={otpDigits[index]}
+                      onChange={(e) => handleDigitChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      onPaste={index === 0 ? handlePaste : undefined}
+                      className="w-10 h-12 md:w-12 md:h-14 text-center font-mono text-xl font-bold border-2 border-[#EAD9B8] rounded-xl focus:outline-none focus:border-[#D99427] bg-[#FDFBF7] text-[#2D1F0E]"
+                    />
+                  ))}
                 </div>
 
                 {otpError && (
