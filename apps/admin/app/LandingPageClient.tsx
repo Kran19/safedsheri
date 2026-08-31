@@ -3462,10 +3462,6 @@ export default function SafedSheriLandingPage() {
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
-                  <span>💬</span>
-                  <span>WhatsApp Verification</span>
-                </div>
                 <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Enter OTP Code</h3>
                 <p className="text-xs text-[#6E5336] px-4">
                   We have dispatched a 6-digit OTP code to your registered WhatsApp number <strong className="text-[#D99427]">{otpPhone}</strong>.
