@@ -584,6 +584,17 @@ export default function SafedSheriLandingPage() {
   // Added state for Kids Pass main card toggle
   const [kidsCardTier, setKidsCardTier] = useState<'BELOW_10' | '10_TO_15'>('BELOW_10');
 
+  // WhatsApp OTP Verification Modal State
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [otpModalType, setOtpModalType] = useState<'registration' | 'wallet'>('registration');
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpQuery, setOtpQuery] = useState('');
+  const [otpToken, setOtpToken] = useState<string | null>(null);
+
   // Review Invariant Modal
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
 
@@ -951,6 +962,65 @@ export default function SafedSheriLandingPage() {
     }
   };
 
+  const submitRegistrationWithToken = async (verifiedToken: string) => {
+    setBookingLoading(true);
+    setBookingError(null);
+    try {
+      const res = await fetch(`${API_BASE}/registrations/public`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          passType: selectedPass,
+          otpToken: verifiedToken,
+          attendees: attendees.map((a) => {
+            const { hasMismatch, discrepancies } = computeOcrDiscrepancies(a);
+            return {
+              fullName: a.fullName,
+              phone: a.phone.startsWith('+91') ? a.phone : `+91${a.phone.replace(/\D/g, '')}`,
+              email: a.email || undefined,
+              gender: a.gender,
+              aadhaarNumber: a.aadhaarNumber.replace(/\D/g, ''),
+              documentKey: a.documentKey,
+              documentName: a.documentName,
+              originalFilename: a.documentName,
+              documentBackKey: a.documentBackKey,
+              documentBackName: a.documentBackName,
+              kidsAgeGroup: a.kidsAgeGroup,
+              dob: a.dob,
+              ocrMismatch: hasMismatch,
+              ocrExtractedData: a.ocrData
+                ? JSON.stringify({
+                    extracted: a.ocrData,
+                    userSubmitted: {
+                      fullName: a.fullName,
+                      aadhaarNumber: a.aadhaarNumber,
+                      gender: a.gender,
+                      dob: a.dob,
+                    },
+                    discrepancies,
+                  })
+                : undefined,
+            };
+          }),
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Registration failed');
+      }
+
+      setSubmittedApplication(json.data);
+      garbaAudio.playGhunghroo();
+      setOtpModalOpen(false);
+    } catch (err: any) {
+      setBookingError(err.message);
+      setOtpError(err.message);
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     garbaAudio.playDhol();
@@ -993,57 +1063,44 @@ export default function SafedSheriLandingPage() {
       }
     }
 
-    try {
-      const res = await fetch(`${API_BASE}/registrations/public`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          passType: selectedPass,
-          attendees: attendees.map((a) => {
-            const { hasMismatch, discrepancies } = computeOcrDiscrepancies(a);
-            return {
-              fullName: a.fullName,
-              phone: a.phone.startsWith('+91') ? a.phone : `+91${a.phone.replace(/\D/g, '')}`,
-              email: a.email || undefined,
-              gender: a.gender,
-              aadhaarNumber: a.aadhaarNumber.replace(/\D/g, ''),
-              documentKey: a.documentKey,
-              documentName: a.documentName,
-              originalFilename: a.documentName,
-              documentBackKey: a.documentBackKey,
-              documentBackName: a.documentBackName,
-              kidsAgeGroup: a.kidsAgeGroup,
-              dob: a.dob,
-              ocrMismatch: hasMismatch,
-              ocrExtractedData: a.ocrData
-                ? JSON.stringify({
-                    extracted: a.ocrData,
-                    userSubmitted: {
-                      fullName: a.fullName,
-                      aadhaarNumber: a.aadhaarNumber,
-                      gender: a.gender,
-                      dob: a.dob,
-                    },
-                    discrepancies,
-                  })
-                : undefined,
-            };
-          }),
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Registration failed');
+    if (!otpToken) {
+      const primaryPhone = attendees[0]?.phone;
+      if (!primaryPhone) {
+        setBookingError('Primary attendee phone is required.');
+        setBookingLoading(false);
+        return;
       }
-
-      setSubmittedApplication(json.data);
-      garbaAudio.playGhunghroo();
-    } catch (err: any) {
-      setBookingError(err.message);
-    } finally {
-      setBookingLoading(false);
+      
+      const cleanPhone = primaryPhone.startsWith('+91') ? primaryPhone : `+91${primaryPhone.replace(/\D/g, '')}`;
+      setOtpPhone(cleanPhone);
+      setOtpModalType('registration');
+      setOtpError(null);
+      setOtpLoading(true);
+      setOtpSent(false);
+      setOtpModalOpen(true);
+      
+      try {
+        const res = await fetch(`${API_BASE}/auth/whatsapp-otp/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleanPhone }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          setOtpSent(true);
+        } else {
+          setOtpError(json.message || 'Failed to send WhatsApp OTP.');
+        }
+      } catch (err: any) {
+        setOtpError(err.message || 'Failed to send WhatsApp OTP.');
+      } finally {
+        setOtpLoading(false);
+        setBookingLoading(false);
+      }
+      return;
     }
+
+    await submitRegistrationWithToken(otpToken);
   };
 
   const handleWalletSearch = async (e: React.FormEvent) => {
@@ -1052,20 +1109,116 @@ export default function SafedSheriLandingPage() {
     if (!cleanDigits) return;
     garbaAudio.playDandiya();
     setWalletLoading(true);
-    setWalletSearched(true);
+    setWalletSearched(false);
     setWalletPasses([]);
+    setOtpQuery(cleanDigits);
+    setOtpModalType('wallet');
+    setOtpError(null);
+    setOtpSent(false);
 
     try {
-      const res = await fetch(`${API_BASE}/credentials/my-pass?query=${encodeURIComponent(cleanDigits)}`);
+      const res = await fetch(`${API_BASE}/credentials/wallet-otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: cleanDigits }),
+      });
       const json = await res.json();
       if (json.success && json.data) {
-        setWalletPasses(json.data);
-        if (json.data.length > 0) garbaAudio.playGhunghroo();
+        setOtpPhone(json.data.maskedPhone);
+        setOtpSent(true);
+        setOtpModalOpen(true);
+      } else {
+        alert(json.message || 'No active booking found for the provided details.');
       }
-    } catch (err) {
-      console.error('Failed to search wallet passes:', err);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'An error occurred during wallet lookup.');
     } finally {
       setWalletLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      setOtpError('Please enter a valid 6-digit OTP code.');
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError(null);
+
+    try {
+      if (otpModalType === 'registration') {
+        const res = await fetch(`${API_BASE}/auth/whatsapp-otp/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: otpPhone, code: otpCode }),
+        });
+        const json = await res.json();
+        if (json.success && json.data?.otpToken) {
+          setOtpToken(json.data.otpToken);
+          await submitRegistrationWithToken(json.data.otpToken);
+        } else {
+          setOtpError(json.message || 'Invalid or expired OTP code.');
+        }
+      } else {
+        const res = await fetch(`${API_BASE}/credentials/wallet-otp/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: otpQuery, code: otpCode }),
+        });
+        const json = await res.json();
+        if (json.success && json.data?.otpToken) {
+          setOtpToken(json.data.otpToken);
+          setWalletPasses(json.data.passes);
+          if (json.data.passes.length > 0) garbaAudio.playGhunghroo();
+          setWalletSearched(true);
+          setOtpModalOpen(false);
+        } else {
+          setOtpError(json.message || 'Invalid or expired OTP code.');
+        }
+      }
+    } catch (err: any) {
+      setOtpError(err.message || 'An error occurred during verification.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setOtpLoading(true);
+    setOtpError(null);
+    setOtpCode('');
+    try {
+      if (otpModalType === 'registration') {
+        const res = await fetch(`${API_BASE}/auth/whatsapp-otp/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: otpPhone }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert('OTP resent successfully to WhatsApp!');
+        } else {
+          setOtpError(json.message || 'Failed to resend OTP.');
+        }
+      } else {
+        const res = await fetch(`${API_BASE}/credentials/wallet-otp/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: otpQuery }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert('OTP resent successfully to WhatsApp!');
+        } else {
+          setOtpError(json.message || 'Failed to resend OTP.');
+        }
+      }
+    } catch (err: any) {
+      setOtpError(err.message || 'Failed to resend OTP.');
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -2952,7 +3105,11 @@ export default function SafedSheriLandingPage() {
                     const cleanDigits = walletPhone.replace(/\D/g, '');
                     if (!cleanDigits) return;
                     setWalletLoading(true);
-                    fetch(`${API_BASE}/credentials/my-pass?query=${encodeURIComponent(cleanDigits)}`)
+                    fetch(`${API_BASE}/credentials/my-pass`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ query: cleanDigits, otpToken }),
+                    })
                       .then(res => res.json())
                       .then(json => { if (json.success && json.data) setWalletPasses(json.data); })
                       .catch(console.error)
@@ -3233,6 +3390,82 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* ========================================================================= */}
+      {/* MODAL: WHATSAPP OTP VERIFICATION MODAL */}
+      {/* ========================================================================= */}
+      {otpModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div data-lenis-prevent="true" className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl relative text-center text-[#2D1F0E]">
+            <button
+              onClick={() => setOtpModalOpen(false)}
+              className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
+                  <span>💬</span>
+                  <span>WhatsApp Verification</span>
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">Enter OTP Code</h3>
+                <p className="text-xs text-[#6E5336] px-4">
+                  We have dispatched a 6-digit OTP code to your registered WhatsApp number <strong className="text-[#D99427]">{otpPhone}</strong>.
+                </p>
+              </div>
+
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="flex justify-center">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    pattern="\d{6}"
+                    required
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter 6-digit OTP"
+                    className="w-full max-w-[200px] text-center tracking-[0.5em] font-mono text-2xl py-3 border-2 border-[#EAD9B8] rounded-2xl focus:outline-none focus:border-[#D99427] bg-[#FDFBF7]"
+                  />
+                </div>
+
+                {otpError && (
+                  <p className="text-xs text-red-600 font-bold bg-red-50 border border-red-200 rounded-xl py-2 px-3">
+                    ⚠️ {otpError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={otpLoading || otpCode.length !== 6}
+                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-90 transition disabled:opacity-50 shadow-md flex items-center justify-center space-x-2"
+                >
+                  {otpLoading ? (
+                    <span>Verifying...</span>
+                  ) : (
+                    <>
+                      <span>Verify & Continue</span>
+                      <span>➔</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="pt-2 text-xs text-[#6E5336] flex justify-center items-center space-x-2">
+                <span>Didn't receive code?</span>
+                <button
+                  onClick={handleResendOtp}
+                  disabled={otpLoading}
+                  className="text-[#D99427] font-bold hover:underline disabled:opacity-50"
+                >
+                  Resend OTP
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* MODAL 3: PAYMENT GATEWAY CHECKOUT MODAL */}
       {/* ========================================================================= */}
       {activePaymentLink && (
@@ -3350,7 +3583,11 @@ export default function SafedSheriLandingPage() {
                     if (cleanDigits) {
                       setWalletLoading(true);
                       setWalletSearched(true);
-                      fetch(`${API_BASE}/credentials/my-pass?query=${encodeURIComponent(cleanDigits)}`)
+                      fetch(`${API_BASE}/credentials/my-pass`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: cleanDigits, otpToken }),
+                      })
                         .then(res => res.json())
                         .then(json => { if (json.success && json.data) setWalletPasses(json.data); })
                         .catch(console.error)

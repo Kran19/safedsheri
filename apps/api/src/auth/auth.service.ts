@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { UpdateCredentialsDto } from './dto/update-credentials.dto';
 import * as crypto from 'crypto';
 import { Twilio } from 'twilio';
+import { sendWhatsAppMessage } from '../utils/whatsapp.service';
 // In-memory OTP storage for internal WhatsApp service
 const otpStore = new Map<string, { code: string; expiresAt: number }>();
 
@@ -90,27 +91,26 @@ export class AuthService {
 
     otpStore.set(cleanPhone, { code, expiresAt });
 
-    // Send via Twilio if configured
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886';
+    // Send via Zaple WhatsApp API
+    const apiKey = process.env.ZAPLE_API_KEY;
+    const apiSecret = process.env.ZAPLE_API_SECRET;
+    const templateId = process.env.ZAPLE_REGISTRATION_TEMPLATE_ID || '126407217877245613697020';
 
-    if (accountSid && authToken && accountSid.trim() !== '') {
+    if (apiKey && apiSecret && apiKey.trim() !== '') {
       try {
-        const client = new Twilio(accountSid, authToken);
-        const toPhone = cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone}`;
-        await client.messages.create({
-          body: `Your Safed Sheri OTP is: ${code}. It is valid for 10 minutes.`,
-          from: twilioNumber,
-          to: `whatsapp:${toPhone}`,
-        });
-        console.log(`Twilio WhatsApp OTP dispatched to ${toPhone}`);
-      } catch (error) {
-        console.error('Failed to send WhatsApp OTP via Twilio:', error);
-        // We can throw here if we want strict failure, or proceed
+        const result = await sendWhatsAppMessage(cleanPhone, templateId, code);
+        if (result.success) {
+          console.log(`Zaple WhatsApp OTP dispatched to ${cleanPhone}`);
+        } else {
+          console.error('Failed to send WhatsApp OTP via Zaple API:', result.error);
+          throw new BadRequestException(`WhatsApp OTP dispatch failed: ${typeof result.error === 'object' ? JSON.stringify(result.error) : result.error}`);
+        }
+      } catch (error: any) {
+        console.error('Failed to send WhatsApp OTP via Zaple:', error);
+        throw new BadRequestException(error.message || 'Failed to send WhatsApp OTP');
       }
     } else {
-      console.warn('Twilio credentials missing. OTP generated but not dispatched via WhatsApp.');
+      console.warn('Zaple credentials missing. OTP generated but not dispatched via WhatsApp.');
     }
 
     return {
@@ -202,5 +202,17 @@ export class AuthService {
       success: true,
       message: 'Credentials updated successfully',
     };
+  }
+
+  async verifyOtpToken(token: string): Promise<{ phone: string; verified: boolean } | null> {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload && payload.verified && payload.type === 'WHATSAPP_OTP') {
+        return { phone: payload.phone, verified: true };
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 }

@@ -6,6 +6,7 @@ import { PaymentGatewayService } from '../payments/payment-gateway.service';
 import { EmailService } from '../common/email.service';
 import { PaymentsService } from '../payments/payments.service';
 import * as crypto from 'crypto';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class RegistrationsService {
@@ -17,6 +18,7 @@ export class RegistrationsService {
     private paymentGatewayService: PaymentGatewayService,
     private emailService: EmailService,
     private paymentsService: PaymentsService,
+    private authService: AuthService,
   ) {}
 
   async generateUniqueRegistrationNumber(tx?: any): Promise<string> {
@@ -266,6 +268,7 @@ export class RegistrationsService {
 
   async createPublicRegistration(data: {
     passType: PassType;
+    otpToken?: string;
     attendees: Array<{
       fullName: string;
       phone: string;
@@ -288,6 +291,25 @@ export class RegistrationsService {
       ocrMismatch?: boolean;
     }>;
   }) {
+    if (!data.otpToken) {
+      throw new BadRequestException('Verification required. Please verify your phone number via WhatsApp OTP.');
+    }
+    const verified = await this.authService.verifyOtpToken(data.otpToken);
+    if (!verified || !verified.verified) {
+      throw new BadRequestException('Session expired or invalid verification token. Please verify again.');
+    }
+
+    // Ensure the verified phone matches the primary attendee's phone
+    const primaryPhone = data.attendees[0]?.phone;
+    if (!primaryPhone) {
+      throw new BadRequestException('Primary attendee phone is required.');
+    }
+    const cleanPrimaryPhone = primaryPhone.replace(/\D/g, '').slice(-10);
+    const cleanVerifiedPhone = verified.phone.replace(/\D/g, '').slice(-10);
+    if (cleanPrimaryPhone !== cleanVerifiedPhone) {
+      throw new BadRequestException('The verified phone number does not match the primary attendee phone number.');
+    }
+
     try {
       let activeEvent = await this.prisma.event.findFirst({
       where: { status: 'ACTIVE' },

@@ -11,25 +11,39 @@ import { Role } from '@prisma/client';
 export class CredentialsController {
   constructor(private readonly credentialsService: CredentialsService) {}
 
+  @Post('wallet-otp/send')
+  @ApiOperation({ summary: 'Send OTP to registered WhatsApp phone number associated with Phone or Aadhaar' })
+  async sendWalletOtp(@Body() body: { query: string }) {
+    return this.credentialsService.sendWalletOtp(body.query);
+  }
+
+  @Post('wallet-otp/verify')
+  @ApiOperation({ summary: 'Verify OTP and return verified session token' })
+  async verifyWalletOtp(@Body() body: { query: string; code: string }) {
+    return this.credentialsService.verifyWalletOtp(body.query, body.code);
+  }
+
   @Get('my-pass')
   @ApiOperation({ summary: 'Retrieve digital pass wallet / status via WhatsApp phone or Aadhaar number query (Public)' })
   @ApiQuery({ name: 'query', required: false, type: String })
   @ApiQuery({ name: 'phone', required: false, type: String })
   @ApiQuery({ name: 'aadhaar', required: false, type: String })
+  @ApiQuery({ name: 'otpToken', required: false, type: String })
   async getMyPass(
     @Query('query') query?: string,
     @Query('phone') phone?: string,
     @Query('aadhaar') aadhaar?: string,
+    @Query('otpToken') otpToken?: string,
   ) {
     const searchVal = query || phone || aadhaar || '';
-    return this.credentialsService.findMyPass(searchVal);
+    return this.credentialsService.findMyPass(searchVal, otpToken);
   }
 
   @Post('my-pass')
   @ApiOperation({ summary: 'Retrieve digital pass wallet / status via WhatsApp phone or Aadhaar number body (Public)' })
   async findMyPass(@Body() body: { query?: string; phone?: string; aadhaar?: string; aadhaarNumber?: string; otpToken?: string }) {
     const searchVal = body.query || body.phone || body.aadhaar || body.aadhaarNumber || '';
-    return this.credentialsService.findMyPass(searchVal);
+    return this.credentialsService.findMyPass(searchVal, body.otpToken);
   }
 
   @Get(':id')
