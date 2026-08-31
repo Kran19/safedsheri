@@ -165,9 +165,11 @@ async function main() {
 
   // 5. Gazebos
   const gazebos: any[] = [];
+  const levelCounts: Record<number, number> = { 1: 5, 2: 5, 3: 4 };
   for (let l = 1; l <= 3; l++) {
     const price = l === 1 ? 85000 : l === 2 ? 100000 : 125000;
-    for (let g = 1; g <= 4; g++) {
+    const count = levelCounts[l];
+    for (let g = 1; g <= count; g++) {
       const gzb = await prisma.gazebo.create({
         data: {
           gazeboNumber: `GZB-L${l}-0${g}`,
@@ -179,7 +181,7 @@ async function main() {
       gazebos.push(gzb);
     }
   }
-  console.log(`✓ 12 Gazebo Lounges Initialized across 3 spatial levels // (Dummy data generation has been removed)`);
+  console.log(`✓ 14 Gazebo Lounges Initialized across 3 spatial levels // (Dummy data generation has been removed)`);
 
   const totalAttendeesSeeded = await prisma.attendee.count();
   const totalRegistrationsSeeded = await prisma.registration.count();

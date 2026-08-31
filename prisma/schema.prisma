@@ -386,6 +386,7 @@ model Gazebo {
   level        Int          // 1, 2, 3
   price        Decimal      @db.Decimal(10, 2)
   status       GazeboStatus @default(AVAILABLE)
+  inviteToken  String?      @unique // Secure invite token for guest details submission
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -394,6 +395,7 @@ model Gazebo {
 
   @@index([level])
   @@index([status])
+  @@index([inviteToken])
 }
 
 model GazeboInquiry {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GazebosService } from './gazebos.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -130,5 +130,52 @@ export class GazebosController {
     },
   ) {
     return this.gazebosService.addGuestsToGazebo(id, body, req.user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  @Post('gazebos/:id/invite-link')
+  @ApiOperation({ summary: 'Generate a secure invite link token for a Gazebo' })
+  async generateInviteLink(@Param('id') id: string, @Request() req) {
+    return this.gazebosService.generateInviteLink(id, req.user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  @Delete('gazebos/:id/invite-link')
+  @ApiOperation({ summary: 'Revoke/remove the invite link token for a Gazebo' })
+  async revokeInviteLink(@Param('id') id: string, @Request() req) {
+    return this.gazebosService.revokeInviteLink(id, req.user.id);
+  }
+
+  @Get('auth/gazebo-invite/:token')
+  @ApiOperation({ summary: 'Get Gazebo and host details using a secure invite token (Public)' })
+  async getInviteDetails(@Param('token') token: string) {
+    return this.gazebosService.getInviteDetails(token);
+  }
+
+  @Post('auth/gazebo-invite/:token/submit')
+  @ApiOperation({ summary: 'Submit guest details and verify OTP for a Gazebo booking (Public)' })
+  async submitInviteGuests(
+    @Param('token') token: string,
+    @Body()
+    body: {
+      attendees: Array<{
+        fullName: string;
+        phone: string;
+        email?: string;
+        gender: string;
+        aadhaarNumber?: string;
+        documentFrontKey?: string;
+        documentFrontName?: string;
+        documentBackKey?: string;
+        documentBackName?: string;
+      }>;
+      otpToken?: string;
+    },
+  ) {
+    return this.gazebosService.submitInviteGuests(token, body);
   }
 }

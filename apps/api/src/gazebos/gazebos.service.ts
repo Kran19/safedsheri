@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { randomUUID } from 'crypto';
 import { GazeboStatus, GazeboInquiryStatus, RegistrationStatus, PassType } from '@prisma/client';
 import { CredentialsService } from '../credentials/credentials.service';
 import { EncryptionService } from '../common/encryption.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class GazebosService {
@@ -10,6 +12,7 @@ export class GazebosService {
     private prisma: PrismaService,
     private credentialsService: CredentialsService,
     private encryptionService: EncryptionService,
+    private authService: AuthService,
   ) {}
 
   // PUBLIC: Get real backend spatial inventory counts
@@ -614,6 +617,343 @@ export class GazebosService {
     return {
       success: true,
       message: `Successfully minted passes for ${data.attendees.length} guests for Gazebo ${gazebo.gazeboNumber}`,
+      data: mintRes,
+    };
+  }
+
+  async generateInviteLink(id: string, actorId: string) {
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { id },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Gazebo not found');
+    }
+
+    if (gazebo.status === GazeboStatus.AVAILABLE) {
+      throw new BadRequestException('Cannot generate an invite link for an AVAILABLE Gazebo. It must be booked or held first.');
+    }
+
+    const token = randomUUID();
+
+    const updated = await this.prisma.gazebo.update({
+      where: { id },
+      data: { inviteToken: token },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId,
+        action: 'GAZEBO_INVITE_LINK_GENERATED',
+        targetEntity: 'Gazebo',
+        targetId: id,
+        payload: {
+          gazeboNumber: gazebo.gazeboNumber,
+          inviteToken: token,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Invite link generated successfully',
+      data: { inviteToken: token },
+    };
+  }
+
+  async revokeInviteLink(id: string, actorId: string) {
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { id },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Gazebo not found');
+    }
+
+    await this.prisma.gazebo.update({
+      where: { id },
+      data: { inviteToken: null },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId,
+        action: 'GAZEBO_INVITE_LINK_REVOKED',
+        targetEntity: 'Gazebo',
+        targetId: id,
+        payload: {
+          gazeboNumber: gazebo.gazeboNumber,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Invite link revoked successfully',
+    };
+  }
+
+  async getInviteDetails(token: string) {
+    if (!token || token.trim().length === 0) {
+      throw new BadRequestException('Valid invite token is required');
+    }
+
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { inviteToken: token },
+      include: {
+        inquiries: {
+          where: { status: { in: [GazeboInquiryStatus.CONFIRMED, GazeboInquiryStatus.HOLD] } },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Invitation link is invalid or has expired.');
+    }
+
+    const activeInquiry = gazebo.inquiries?.[0];
+    if (!activeInquiry) {
+      throw new BadRequestException('No active host associated with this Gazebo booking.');
+    }
+
+    return {
+      success: true,
+      data: {
+        id: gazebo.id,
+        gazeboNumber: gazebo.gazeboNumber,
+        level: gazebo.level,
+        status: gazebo.status,
+        hostName: activeInquiry.fullName,
+        hostPhone: activeInquiry.phone,
+      },
+    };
+  }
+
+  async submitInviteGuests(
+    token: string,
+    body: {
+      attendees: Array<{
+        fullName: string;
+        phone: string;
+        email?: string;
+        gender: string;
+        aadhaarNumber?: string;
+        documentFrontKey?: string;
+        documentFrontName?: string;
+        documentBackKey?: string;
+        documentBackName?: string;
+      }>;
+      otpToken?: string;
+    },
+  ) {
+    if (!token || token.trim().length === 0) {
+      throw new BadRequestException('Valid invite token is required');
+    }
+
+    if (!body.attendees || body.attendees.length === 0) {
+      throw new BadRequestException('At least one attendee/guest is required');
+    }
+
+    if (body.attendees.length > 14) {
+      throw new BadRequestException('A Gazebo can only accommodate a maximum of 14 guests.');
+    }
+
+    const gazebo = await this.prisma.gazebo.findUnique({
+      where: { inviteToken: token },
+      include: {
+        inquiries: {
+          where: { status: { in: [GazeboInquiryStatus.CONFIRMED, GazeboInquiryStatus.HOLD] } },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!gazebo) {
+      throw new NotFoundException('Invitation link is invalid or has expired.');
+    }
+
+    const activeInquiry = gazebo.inquiries?.[0];
+    if (!activeInquiry) {
+      throw new BadRequestException('No active host associated with this Gazebo booking.');
+    }
+
+    const primaryPhone = body.attendees[0]?.phone;
+    if (!primaryPhone) {
+      throw new BadRequestException('Primary guest phone is required.');
+    }
+
+    // 1. Verify WhatsApp OTP (unless phone is bypassed)
+    const cleanPrimaryPhone = primaryPhone.replace(/\D/g, '').slice(-10);
+    const checkBypass = await this.prisma.otpBypass.findUnique({
+      where: { phone: cleanPrimaryPhone },
+    });
+    const isBypassed = !!checkBypass;
+
+    if (!isBypassed) {
+      if (!body.otpToken) {
+        throw new BadRequestException('Verification required. Please verify your phone number via WhatsApp OTP.');
+      }
+      const verified = await this.authService.verifyOtpToken(body.otpToken);
+      if (!verified || !verified.verified) {
+        throw new BadRequestException('Session expired or invalid verification token. Please verify again.');
+      }
+
+      const verifiedPhone = verified.phone.replace(/\D/g, '');
+      const last10Verified = verifiedPhone.slice(-10);
+      const last10Primary = cleanPrimaryPhone;
+      const last10Host = activeInquiry.phone.replace(/\D/g, '').slice(-10);
+
+      // Verify that the verified phone matches either the primary guest phone or the host phone
+      if (last10Verified !== last10Primary && last10Verified !== last10Host) {
+        throw new BadRequestException('The verified phone number does not match the primary guest or host phone number.');
+      }
+    }
+
+    // 2. Fetch the first super admin to use as actorId
+    const firstAdmin = await this.prisma.user.findFirst({
+      where: { role: 'SUPER_ADMIN' },
+    });
+    if (!firstAdmin) {
+      throw new BadRequestException('No default administrator found to allocate passes.');
+    }
+
+    // 3. Register guests and mint passes
+    const registrationResult = await this.prisma.$transaction(async (tx) => {
+      const event = await tx.event.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { eventDate: 'desc' },
+      });
+      if (!event) throw new BadRequestException('No active event found');
+
+      const pricingPhase = await tx.pricingPhase.findFirst({
+        where: { isActive: true },
+      });
+      if (!pricingPhase) throw new BadRequestException('No active pricing phase found');
+
+      const count = await tx.registration.count();
+      const seq = (count + 1).toString().padStart(6, '0');
+      const registrationNumber = `REG-26-${seq}`;
+
+      const registration = await tx.registration.create({
+        data: {
+          registrationNumber,
+          eventId: event.id,
+          pricingPhaseId: pricingPhase.id,
+          passType: 'GAZEBO',
+          status: 'PASS_ISSUED',
+          amountDue: 0,
+          createdById: firstAdmin.id,
+          reviewedById: firstAdmin.id,
+          reviewedAt: new Date(),
+          gazeboId: gazebo.id,
+          reviewNotes: 'Guests registered via public Gazebo self-service invite link',
+        },
+      });
+
+      const attendeeConnectData = [];
+      for (const [index, att] of body.attendees.entries()) {
+        if (!att.aadhaarNumber) {
+          throw new BadRequestException(`Aadhaar number is mandatory for guest #${index + 1}`);
+        }
+        
+        const cleanAadhaar = att.aadhaarNumber.replace(/\D/g, '');
+        if (cleanAadhaar.length !== 12) {
+          throw new BadRequestException(`Aadhaar number must be 12 digits for guest #${index + 1}`);
+        }
+
+        const aadhaarMasked = this.encryptionService.maskAadhaar(cleanAadhaar);
+        const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
+        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
+
+        const attendeeRecord = await tx.attendee.upsert({
+          where: { aadhaarHmac },
+          update: {
+            fullName: att.fullName,
+            phone: att.phone,
+            email: att.email || null,
+            gender: att.gender === 'MALE' ? 'MALE' : 'FEMALE',
+            aadhaarMasked,
+            aadhaarEncrypted,
+          },
+          create: {
+            fullName: att.fullName,
+            phone: att.phone,
+            email: att.email || null,
+            gender: att.gender === 'MALE' ? 'MALE' : 'FEMALE',
+            aadhaarHmac,
+            aadhaarMasked,
+            aadhaarEncrypted,
+          },
+        });
+
+        if (att.documentFrontKey) {
+          await tx.aadhaarDocument.upsert({
+            where: { attendeeId: attendeeRecord.id },
+            update: {
+              storageKey: att.documentFrontKey,
+              originalFilename: att.documentFrontName || 'aadhaar_front.jpg',
+              storageKeyBack: att.documentBackKey || null,
+              originalFilenameBack: att.documentBackName || null,
+            },
+            create: {
+              attendeeId: attendeeRecord.id,
+              storageKey: att.documentFrontKey,
+              originalFilename: att.documentFrontName || 'aadhaar_front.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 1024,
+              checksum: 'dummy-checksum',
+              storageKeyBack: att.documentBackKey || null,
+              originalFilenameBack: att.documentBackName || null,
+            },
+          });
+        }
+
+        attendeeConnectData.push({
+          attendeeId: attendeeRecord.id,
+          isPrimary: index === 0,
+          status: 'PASS_ISSUED',
+          reviewedAt: new Date(),
+        });
+      }
+
+      await tx.registrationAttendee.createMany({
+        data: attendeeConnectData.map((d) => ({
+          ...d,
+          registrationId: registration.id,
+        })),
+      });
+
+      return { registrationId: registration.id };
+    });
+
+    const mintRes = await this.credentialsService.generateCredentialsForRegistration(registrationResult.registrationId);
+
+    // 4. Revoke the token so it cannot be used again
+    await this.prisma.gazebo.update({
+      where: { id: gazebo.id },
+      data: { inviteToken: null },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: firstAdmin.id,
+        action: 'GAZEBO_INVITE_LINK_SUBMITTED',
+        targetEntity: 'Gazebo',
+        targetId: gazebo.id,
+        payload: {
+          guestCount: body.attendees.length,
+          registrationId: registrationResult.registrationId,
+          gazeboNumber: gazebo.gazeboNumber,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: `Successfully registered ${body.attendees.length} guests for Gazebo ${gazebo.gazeboNumber}`,
       data: mintRes,
     };
   }

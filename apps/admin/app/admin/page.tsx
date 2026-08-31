@@ -791,6 +791,47 @@ export default function SuperAdminDashboard() {
     }
   }
 
+  async function handleCopyInviteLink(gz: any, num: number) {
+    setMessage('');
+    setError('');
+    
+    let token = gz.inviteToken;
+    if (!token) {
+      const res = await apiRequest(`/gazebos/${gz.id}/invite-link`, { method: 'POST' });
+      if (res.success && res.data?.inviteToken) {
+        token = res.data.inviteToken;
+        setMessage(`✅ Secure invite link generated for Gazebo #${num}!`);
+        loadTabContent('gazebos');
+      } else {
+        setError(res.error?.message || 'Failed to generate invite link');
+        return;
+      }
+    }
+
+    const link = window.location.origin + '/gazebo-invite/' + token;
+    try {
+      await navigator.clipboard.writeText(link);
+      setMessage(`✅ Invite link copied to clipboard: ${link}`);
+    } catch (err) {
+      setError('Failed to copy to clipboard automatically. Link is: ' + link);
+    }
+  }
+
+  async function handleRevokeInviteLink(gz: any, num: number) {
+    if (!confirm(`Are you sure you want to revoke the invite link for Gazebo #${num}? Any user opening the link will no longer be able to submit details.`)) {
+      return;
+    }
+    setMessage('');
+    setError('');
+    const res = await apiRequest(`/gazebos/${gz.id}/invite-link`, { method: 'DELETE' });
+    if (res.success) {
+      setMessage(`✅ Invite link revoked for Gazebo #${num}.`);
+      loadTabContent('gazebos');
+    } else {
+      setError(res.error?.message || 'Failed to revoke invite link');
+    }
+  }
+
   // Filtered applications for custom filter component
   const filteredApps = applications.filter((app) => {
     if (appStatusFilter !== 'ALL' && app.status !== appStatusFilter) return false;
@@ -1534,13 +1575,13 @@ export default function SuperAdminDashboard() {
             <div>
               <div className="inline-flex items-center space-x-2 text-[10px] font-mono tracking-widest font-bold text-[#8C6019] uppercase mb-1">
                 <Crown className="w-3.5 h-3.5 text-[#D99427]" />
-                <span>12 SPATIAL VIP GAZEBO CABANAS</span>
+                <span>14 SPATIAL VIP GAZEBO CABANAS</span>
               </div>
               <h2 className="text-xl md:text-2xl font-serif font-bold text-[#2D1F0E]">
                 VIP Gazebo Inventory & Direct Allocation
               </h2>
               <p className="text-xs text-[#6E5336] mt-1 max-w-xl">
-                Manage all 12 physical luxury gazebos across 3 spatial levels. Directly allocate, hold, or assign guests with optional host contact details.
+                Manage all 14 physical luxury gazebos across 3 spatial levels. Directly allocate, hold, or assign guests with optional host contact details.
               </p>
             </div>
 
@@ -1548,7 +1589,7 @@ export default function SuperAdminDashboard() {
             <div className="flex flex-wrap gap-2.5">
               <div className="px-4 py-2 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center min-w-[75px]">
                 <div className="text-[9px] font-mono font-bold text-[#8C6019] uppercase">TOTAL</div>
-                <div className="text-lg font-serif font-bold text-[#2D1F0E]">12</div>
+                <div className="text-lg font-serif font-bold text-[#2D1F0E]">14</div>
               </div>
               <div className="px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-300 shadow-sm text-center min-w-[75px]">
                 <div className="text-[9px] font-mono font-bold text-emerald-800 uppercase">AVAILABLE</div>
@@ -1703,15 +1744,31 @@ export default function SuperAdminDashboard() {
                             <span>Release</span>
                           </button>
                         </div>
-                        <div className="mt-2">
+                        <div className="mt-2 grid grid-cols-2 gap-2">
                           <button
                             onClick={() => setManageGuestsGazebo(gz)}
-                            className="w-full py-2.5 rounded-xl bg-[#2D1F0E] hover:bg-[#4A351B] text-[#F6C85F] text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1.5"
+                            className="py-2.5 rounded-xl bg-[#2D1F0E] hover:bg-[#4A351B] text-[#F6C85F] text-[11px] font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1"
                           >
-                            <Users className="w-3.5 h-3.5 text-[#F6C85F]" />
-                            <span>👥 Manage Guests</span>
+                            <Users className="w-3 h-3 text-[#F6C85F]" />
+                            <span>👥 Guests</span>
+                          </button>
+                          <button
+                            onClick={() => handleCopyInviteLink(gz, gazeboIndex)}
+                            className="py-2.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FAF6EE] border border-[#EAD9B8] text-[#8C6019] text-[11px] font-bold transition shadow-sm flex items-center justify-center space-x-1"
+                          >
+                            <span>🔗 {gz.inviteToken ? 'Copy Invite' : 'Create Invite'}</span>
                           </button>
                         </div>
+                        {gz.inviteToken && (
+                          <div className="mt-2">
+                            <button
+                              onClick={() => handleRevokeInviteLink(gz, gazeboIndex)}
+                              className="w-full py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 text-[10px] font-bold transition flex items-center justify-center space-x-1"
+                            >
+                              <span>Revoke Invite Link</span>
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
