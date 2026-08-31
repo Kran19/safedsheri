@@ -292,6 +292,10 @@ export default function SuperAdminDashboard() {
       const res = await apiRequest('/users');
       if (res.success) setUsers(res.data || []);
     } else if (tab === 'otp_bypass') {
+      if (currentUser?.username !== 'masteradmin@safedsheri.com') {
+        setActiveTab('applications');
+        return;
+      }
       await loadBypassedPhones();
     }
   }
@@ -1403,7 +1407,12 @@ export default function SuperAdminDashboard() {
           { id: 'otp_bypass', label: 'OTP Bypass List', icon: Phone },
           { id: 'trash', label: 'Trash', icon: Trash2 },
           { id: 'book_pass', label: 'Book Pass', icon: Ticket },
-        ].map((tab) => {
+        ].filter((tab) => {
+          if (tab.id === 'otp_bypass') {
+            return currentUser?.username === 'masteradmin@safedsheri.com';
+          }
+          return true;
+        }).map((tab) => {
           const Icon = tab.icon;
           return (
             <button

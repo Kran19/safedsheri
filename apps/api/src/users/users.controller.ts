@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -46,20 +46,29 @@ export class UsersController {
   }
 
   @Get('otp-bypass')
-  @ApiOperation({ summary: 'List all bypassed phone numbers (Super Admin only)' })
-  async findAllBypassed() {
+  @ApiOperation({ summary: 'List all bypassed phone numbers (Master Admin only)' })
+  async findAllBypassed(@Request() req: any) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Only the Master Admin has permission to manage OTP bypass.');
+    }
     return this.usersService.findAllBypassed();
   }
 
   @Post('otp-bypass')
-  @ApiOperation({ summary: 'Exempt a phone number from OTP verification (Super Admin only)' })
-  async addBypassed(@Body() body: { phone: string }) {
+  @ApiOperation({ summary: 'Exempt a phone number from OTP verification (Master Admin only)' })
+  async addBypassed(@Request() req: any, @Body() body: { phone: string }) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Only the Master Admin has permission to manage OTP bypass.');
+    }
     return this.usersService.addBypassed(body.phone);
   }
 
   @Delete('otp-bypass/:phone')
-  @ApiOperation({ summary: 'Remove a phone number from OTP bypass (Super Admin only)' })
-  async removeBypassed(@Param('phone') phone: string) {
+  @ApiOperation({ summary: 'Remove a phone number from OTP bypass (Master Admin only)' })
+  async removeBypassed(@Request() req: any, @Param('phone') phone: string) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Only the Master Admin has permission to manage OTP bypass.');
+    }
     return this.usersService.removeBypassed(phone);
   }
 }

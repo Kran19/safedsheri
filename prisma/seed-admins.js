@@ -85,7 +85,6 @@ async function main() {
       await prisma.user.update({
         where: { username: account.username },
         data: {
-          fullName: account.fullName,
           role: account.role,
           isActive: true,
         },
