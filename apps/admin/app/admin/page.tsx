@@ -1496,60 +1496,70 @@ export default function SuperAdminDashboard() {
             },
           ]}
           customFilterComponent={
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-3 text-xs">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-[#8C6019]">Filter by Status:</span>
-                <div className="flex space-x-1 bg-[#FAF6EE] p-1 rounded-2xl border border-[#EAD9B8]">
-                  {['ALL', 'UNDER_REVIEW', 'PAYMENT_PENDING', 'CASHIER_PENDING', 'PASS_ISSUED', 'REJECTED'].map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => setAppStatusFilter(st)}
-                      className={`px-3 py-1 rounded-xl font-bold transition text-[11px] ${
-                        appStatusFilter === st
-                          ? 'bg-[#D99427] text-white shadow-sm'
-                          : 'text-[#6E5336] hover:bg-[#F3ECE0]'
-                      }`}
-                    >
-                      {st.replace('_', ' ')}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                <span className="font-bold text-[#8C6019]">Filter by:</span>
+                <div className="flex flex-wrap items-center space-x-2 bg-[#FAF6EE] p-1 rounded-2xl border border-[#EAD9B8]">
+                  {/* Status Pills */}
+                  <div className="flex space-x-1">
+                    {['ALL', 'UNDER_REVIEW', 'PAYMENT_PENDING', 'CASHIER_PENDING', 'PASS_ISSUED', 'REJECTED'].map((st) => (
+                      <button
+                        key={st}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAppStatusFilter(st);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl font-bold uppercase tracking-wider transition text-[10px] ${
+                          appStatusFilter === st
+                            ? 'bg-[#D99427] text-white shadow-sm'
+                            : 'text-[#6E5336] hover:bg-[#F3ECE0]'
+                        }`}
+                      >
+                        {st.replace('_', ' ')}
+                      </button>
+                    ))}
+                  </div>
 
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-[#8C6019]">Category:</span>
-                  <select
-                    value={appPassTypeFilter}
-                    onChange={(e) => {
-                      setAppPassTypeFilter(e.target.value);
-                      if (e.target.value !== 'GAZEBO') setAppGazeboFilter('ALL');
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
-                  >
-                    <option value="ALL">All Categories</option>
-                    <option value="SINGLE">Single Pass</option>
-                    <option value="COUPLE">Couple Pass</option>
-                    <option value="KIDS">Kids Pass</option>
-                    <option value="GAZEBO">Gazebo VIP</option>
-                  </select>
-                </div>
+                  {/* Divider */}
+                  <div className="w-px h-6 bg-[#EAD9B8] mx-1"></div>
 
-                {appPassTypeFilter === 'GAZEBO' && (
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-[#8C6019]">Gazebo:</span>
+                  {/* Category Dropdown */}
+                  <div className="flex items-center space-x-1">
+                    <span className="font-bold text-[#8C6019] text-[10px] uppercase ml-1">Category:</span>
                     <select
-                      value={appGazeboFilter}
-                      onChange={(e) => setAppGazeboFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-semibold focus:border-[#D99427] outline-none"
+                      value={appPassTypeFilter}
+                      onChange={(e) => {
+                        setAppPassTypeFilter(e.target.value);
+                        if (e.target.value !== 'GAZEBO') setAppGazeboFilter('ALL');
+                      }}
+                      className="px-2 py-1 rounded-xl bg-white border border-[#EAD9B8] text-[10px] font-bold uppercase focus:border-[#D99427] outline-none"
                     >
-                      <option value="ALL">All Gazebos</option>
-                      {[...gazebos].sort((a, b) => a.gazeboNumber.localeCompare(b.gazeboNumber)).map(g => (
-                        <option key={g.id} value={g.gazeboNumber}>{g.gazeboNumber}</option>
-                      ))}
+                      <option value="ALL">ALL</option>
+                      <option value="SINGLE">SINGLE</option>
+                      <option value="COUPLE">COUPLE</option>
+                      <option value="KIDS">KIDS</option>
+                      <option value="GAZEBO">GAZEBO VIP</option>
                     </select>
                   </div>
-                )}
+
+                  {/* Gazebo Dropdown */}
+                  {appPassTypeFilter === 'GAZEBO' && (
+                    <div className="flex items-center space-x-1">
+                      <span className="font-bold text-[#8C6019] text-[10px] uppercase ml-1">Gazebo:</span>
+                      <select
+                        value={appGazeboFilter}
+                        onChange={(e) => setAppGazeboFilter(e.target.value)}
+                        className="px-2 py-1 rounded-xl bg-white border border-[#EAD9B8] text-[10px] font-bold uppercase focus:border-[#D99427] outline-none"
+                      >
+                        <option value="ALL">ALL GAZEBOS</option>
+                        {[...gazebos].sort((a, b) => a.gazeboNumber.localeCompare(b.gazeboNumber)).map(g => (
+                          <option key={g.id} value={g.gazeboNumber}>{g.gazeboNumber}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           }
