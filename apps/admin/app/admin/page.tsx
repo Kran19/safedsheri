@@ -30,6 +30,8 @@ export default function SuperAdminDashboard() {
   const [bypassLoading, setBypassLoading] = useState(false);
   const [bypassError, setBypassError] = useState<string | null>(null);
   const [bypassSuccess, setBypassSuccess] = useState<string | null>(null);
+  const [bypassPhoneToRemove, setBypassPhoneToRemove] = useState<string | null>(null);
+  const [bypassRemoving, setBypassRemoving] = useState(false);
   const [userForm, setUserForm] = useState({ username: '', password: '', fullName: '', role: 'TICKETING_FINANCE' });
   const [userError, setUserError] = useState<string | null>(null);
   const [userSuccess, setUserSuccess] = useState<string | null>(null);
@@ -336,14 +338,18 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  async function handleRemoveBypassPhone(phone: string) {
-    if (!confirm(`Are you sure you want to remove ${phone} from the OTP bypass list?`)) return;
+  async function handleRemoveBypassPhone() {
+    if (!bypassPhoneToRemove) return;
+    setBypassRemoving(true);
     setBypassError(null);
     setBypassSuccess(null);
 
-    const res = await apiRequest(`/users/otp-bypass/${phone}`, {
+    const res = await apiRequest(`/users/otp-bypass/${bypassPhoneToRemove}`, {
       method: 'DELETE',
     });
+
+    setBypassRemoving(false);
+    setBypassPhoneToRemove(null);
 
     if (res.success) {
       setBypassSuccess('Phone number removed from OTP bypass list.');
@@ -2390,7 +2396,7 @@ export default function SuperAdminDashboard() {
                         <td className="py-3 px-4 text-[#6E5336]">{new Date(item.createdAt).toLocaleString()}</td>
                         <td className="py-3 px-4 text-right">
                           <button
-                            onClick={() => handleRemoveBypassPhone(item.phone)}
+                            onClick={() => setBypassPhoneToRemove(item.phone)}
                             className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 text-[10px] font-bold uppercase tracking-wider transition border border-red-200"
                           >
                             Remove
@@ -2403,6 +2409,37 @@ export default function SuperAdminDashboard() {
               </table>
             </div>
           </div>
+
+          {/* Premium OTP Bypass Removal Modal */}
+          {bypassPhoneToRemove && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+              <div className="bg-[#2D1F0E] border border-[#EAD9B8] rounded-3xl w-full max-w-md p-8 shadow-2xl relative text-center space-y-6">
+                <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-2 border border-red-500/30">
+                  <Trash2 className="w-8 h-8 text-red-500" />
+                </div>
+                <h3 className="text-2xl font-serif font-bold text-[#FDFBF7]">Remove Bypass Number</h3>
+                <p className="text-sm text-[#EAD9B8] mt-2">
+                  Are you sure you want to remove <strong className="text-white bg-white/10 px-2 py-1 rounded font-mono">{bypassPhoneToRemove}</strong> from the OTP bypass list? They will have to verify OTP going forward.
+                </p>
+                <div className="flex items-center justify-center space-x-4 pt-4">
+                  <button
+                    onClick={() => setBypassPhoneToRemove(null)}
+                    disabled={bypassRemoving}
+                    className="px-6 py-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 text-xs font-bold uppercase tracking-wider transition disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRemoveBypassPhone}
+                    disabled={bypassRemoving}
+                    className="px-6 py-2.5 rounded-full bg-red-600 text-white hover:bg-red-700 text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 shadow-lg shadow-red-600/30"
+                  >
+                    {bypassRemoving ? 'Removing...' : 'Yes, Remove'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
