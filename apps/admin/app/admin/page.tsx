@@ -34,6 +34,8 @@ export default function SuperAdminDashboard() {
   const [userError, setUserError] = useState<string | null>(null);
   const [userSuccess, setUserSuccess] = useState<string | null>(null);
   const [userLoading, setUserLoading] = useState(false);
+  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
+  const [gazeboToRevoke, setGazeboToRevoke] = useState<{gz: any, num: number} | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
@@ -820,10 +822,15 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  async function handleRevokeInviteLink(gz: any, num: number) {
-    if (!confirm(`Are you sure you want to revoke the invite link for Gazebo #${num}? Any user opening the link will no longer be able to submit details.`)) {
-      return;
-    }
+  function promptRevokeInviteLink(gz: any, num: number) {
+    setGazeboToRevoke({ gz, num });
+    setRevokeModalOpen(true);
+  }
+
+  async function handleRevokeInviteLink() {
+    if (!gazeboToRevoke) return;
+    const { gz, num } = gazeboToRevoke;
+    setRevokeModalOpen(false);
     setMessage('');
     setError('');
     const res = await apiRequest(`/gazebos/${gz.id}/invite-link`, { method: 'DELETE' });
@@ -833,6 +840,7 @@ export default function SuperAdminDashboard() {
     } else {
       setError(res.error?.message || 'Failed to revoke invite link');
     }
+    setGazeboToRevoke(null);
   }
 
   // Filtered applications for custom filter component
@@ -1870,7 +1878,7 @@ export default function SuperAdminDashboard() {
                         {gz.inviteToken && (
                           <div className="mt-2">
                             <button
-                              onClick={() => handleRevokeInviteLink(gz, gazeboIndex)}
+                              onClick={() => promptRevokeInviteLink(gz, gazeboIndex)}
                               className="w-full py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 text-[10px] font-bold transition flex items-center justify-center space-x-1"
                             >
                               <span>Revoke Invite Link</span>
@@ -3047,6 +3055,40 @@ export default function SuperAdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PREMIUM REVOKE INVITE LINK MODAL */}
+      {/* ========================================================================= */}
+      {revokeModalOpen && gazeboToRevoke && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-red-100 flex flex-col transform scale-100 animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-red-50 border-b border-red-100 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-red-900">Revoke Invite Link?</h3>
+            </div>
+            <div className="p-6 text-center text-[#6E5336]">
+              <p>Are you sure you want to revoke the invite link for <strong className="text-red-700">Gazebo #{gazeboToRevoke.num}</strong>?</p>
+              <p className="mt-2 text-sm">Any user opening the link will no longer be able to submit details.</p>
+            </div>
+            <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
+              <button
+                onClick={() => setRevokeModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRevokeInviteLink}
+                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-md transition"
+              >
+                Revoke Link
+              </button>
+            </div>
           </div>
         </div>
       )}
