@@ -771,7 +771,7 @@ export class PaymentsService {
 
       await tx.registration.update({
         where: { id: lockedReg.id },
-        data: { status: RegistrationStatus.PAYMENT_CONFIRMED },
+        data: { status: RegistrationStatus.PASS_ISSUED },
       });
 
       await this.credentialsService.generateCredentialsForRegistration(lockedReg.id, tx);

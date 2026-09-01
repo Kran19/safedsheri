@@ -887,7 +887,7 @@ export default function SuperAdminDashboard() {
       key: 'primaryAttendee',
       title: 'Primary Attendee',
       sortable: true,
-      getValue: (row) => row.attendees?.[0]?.attendee?.fullName || '',
+      getValue: (row) => row.attendees?.map((a: any) => a.attendee?.fullName).join(' ') || '',
       render: (row) => {
         const primary = row.attendees?.[0]?.attendee;
         const hasOcrMismatch = row.attendees?.some((ra: any) => ra.attendee?.document?.ocrMismatch);
@@ -911,14 +911,14 @@ export default function SuperAdminDashboard() {
       key: 'phone',
       title: 'WhatsApp Phone',
       sortable: true,
-      getValue: (row) => row.attendees?.[0]?.attendee?.phone || '',
+      getValue: (row) => row.attendees?.map((a: any) => a.attendee?.phone).join(' ') || '',
       render: (row) => <span className="font-mono text-[#6E5336]">{row.attendees?.[0]?.attendee?.phone || '—'}</span>,
     },
     {
       key: 'aadhaarMasked',
       title: 'Masked Aadhaar',
       sortable: true,
-      getValue: (row) => row.attendees?.[0]?.attendee?.aadhaarMasked || '',
+      getValue: (row) => row.attendees?.map((a: any) => a.attendee?.aadhaarMasked).join(' ') || '',
       render: (row) => <span className="font-mono text-[#6E5336]">{row.attendees?.[0]?.attendee?.aadhaarMasked || '—'}</span>,
     },
     {
@@ -1398,7 +1398,8 @@ export default function SuperAdminDashboard() {
       )}
 
       {/* TOP OPERATIONAL KPI METRICS */}
-      <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
+      <h3 className="text-sm font-bold text-[#6E5336] uppercase tracking-wider mb-2">Booking Status Pipeline</h3>
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <div className="p-5 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
           <div className="text-[#6E5336] text-[11px] uppercase tracking-wider font-semibold mb-1">Total Bookings</div>
           <div className="text-2xl font-serif font-bold text-[#2D1F0E]">
@@ -1413,10 +1414,17 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#FFF9EE] border border-[#E5A93C] shadow-sm">
-          <div className="text-[#8C6019] text-[11px] uppercase tracking-wider font-semibold mb-1">Payment Pending</div>
-          <div className="text-2xl font-serif font-bold text-[#2D1F0E]">
+        <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm">
+          <div className="text-amber-700 text-[11px] uppercase tracking-wider font-semibold mb-1">Payment Pending</div>
+          <div className="text-2xl font-serif font-bold text-amber-950">
             {overview?.applications?.paymentPending || applications.filter(a => a.status === 'PAYMENT_PENDING').length}
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-sm">
+          <div className="text-indigo-700 text-[11px] uppercase tracking-wider font-semibold mb-1">Processing</div>
+          <div className="text-2xl font-serif font-bold text-indigo-950">
+            {overview?.applications?.processing || applications.filter(a => ['APPROVED', 'CASHIER_PENDING', 'PAYMENT_CONFIRMED', 'PAYMENT_FAILED'].includes(a.status)).length}
           </div>
         </div>
 
@@ -1433,7 +1441,10 @@ export default function SuperAdminDashboard() {
             {((overview?.applications?.rejected || 0) + (overview?.applications?.cancelled || 0)) || applications.filter(a => a.status === 'REJECTED' || a.status === 'CANCELLED').length}
           </div>
         </div>
+      </div>
 
+      <h3 className="text-sm font-bold text-[#6E5336] uppercase tracking-wider mb-2">Financial & Access Control</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         <div className="p-5 rounded-2xl bg-gradient-to-br from-[#FFF5DC] to-[#FAF6EE] border border-[#D99427] shadow-sm">
           <div className="text-[#8C6019] text-[11px] uppercase tracking-wider font-bold mb-1">Total Collection</div>
           <div className="text-2xl font-serif font-bold text-[#2D1F0E]">

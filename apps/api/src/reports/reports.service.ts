@@ -26,6 +26,12 @@ export class ReportsService {
     const paymentPending = await this.prisma.registration.count({
       where: { status: RegistrationStatus.PAYMENT_PENDING, deletedAt: null },
     });
+    const processing = await this.prisma.registration.count({
+      where: {
+        status: { in: [RegistrationStatus.APPROVED, RegistrationStatus.CASHIER_PENDING, RegistrationStatus.PAYMENT_CONFIRMED, RegistrationStatus.PAYMENT_FAILED] },
+        deletedAt: null,
+      },
+    });
     const paidRegistrations = await this.prisma.registration.count({
       where: {
         status: { in: [RegistrationStatus.PAYMENT_CONFIRMED, RegistrationStatus.PASS_ISSUED] },
@@ -97,6 +103,7 @@ export class ReportsService {
           pendingReview,
           approved,
           paymentPending,
+          processing,
           paid: paidRegistrations,
           passesIssued,
           rejected,
