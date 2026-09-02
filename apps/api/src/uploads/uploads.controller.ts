@@ -98,4 +98,26 @@ export class UploadsController {
     res.setHeader('Content-Disposition', `inline; filename="${originalFilename || 'document'}"`);
     stream.pipe(res);
   }
+
+  @Get('direct/:storageKey')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  async getDocumentDirect(
+    @Param('storageKey') storageKey: string,
+    @Res() res: Response,
+  ) {
+    const { stream } = await this.uploadsService.getDocumentFile(storageKey);
+    // Since we don't know the exact mime without the DB record, we default to image/jpeg 
+    // or infer from extension
+    const ext = storageKey.split('.').pop()?.toLowerCase();
+    let mimeType = 'application/octet-stream';
+    if (ext === 'png') mimeType = 'image/png';
+    else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+    else if (ext === 'webp') mimeType = 'image/webp';
+    else if (ext === 'pdf') mimeType = 'application/pdf';
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${storageKey}"`);
+    stream.pipe(res);
+  }
 }

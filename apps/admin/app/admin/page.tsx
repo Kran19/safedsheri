@@ -15,7 +15,6 @@ import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedT
 import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
 import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenance';
 import BookingDesk from '../components/BookingDesk';
-import GazeboManageGuestsModal from '../components/GazeboManageGuestsModal';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
@@ -36,8 +35,6 @@ export default function SuperAdminDashboard() {
   const [userError, setUserError] = useState<string | null>(null);
   const [userSuccess, setUserSuccess] = useState<string | null>(null);
   const [userLoading, setUserLoading] = useState(false);
-  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
-  const [gazeboToRevoke, setGazeboToRevoke] = useState<{gz: any, num: number} | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
@@ -154,7 +151,6 @@ export default function SuperAdminDashboard() {
 
   // Gazebo Direct Booking Modal State
   const [selectedGazeboForBooking, setSelectedGazeboForBooking] = useState<any | null>(null);
-  const [manageGuestsGazebo, setManageGuestsGazebo] = useState<any | null>(null);
   const [bookingForm, setBookingForm] = useState<{
     fullName: string;
     phone: string;
@@ -403,6 +399,33 @@ export default function SuperAdminDashboard() {
       status: val.status,
       reviewNotes: val.notes || (val.status === 'REJECTED' ? (reviewNotes || 'Aadhaar verification rejected') : ''),
     }));
+
+    if (selectedApp.isMappedInquiry) {
+      const decision = decisionsList[0] || { status: 'APPROVED' };
+      const newStatus = decision.status === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+      
+      const res = await apiRequest(`/gazebos/inquiries/${selectedApp.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          notes: newStatus === 'REJECTED' ? (reviewNotes || decision.reviewNotes || 'Aadhaar verification rejected') : undefined,
+        }),
+      });
+
+      if (res.success) {
+        setMessage(`Inquiry ${newStatus} successfully!`);
+        setSelectedApp(null);
+        setReviewNotes('');
+        setAttendeeDecisions({});
+        loadTabContent('gazebos', true);
+        loadOverviewData(true);
+      } else {
+        setError(res.error?.message || 'Failed to update inquiry status');
+      }
+      setActionLoading(false);
+      return;
+    }
 
     const res = await apiRequest(`/registrations/${selectedApp.id}/review`, {
       method: 'POST',
@@ -787,70 +810,8 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  async function handleReleaseGazebo(gazeboId: string, gazeboNumber: string, num: number) {
-    if (!confirm(`Are you sure you want to release Gazebo #${num} (${gazeboNumber}) back to AVAILABLE inventory?`)) {
-      return;
-    }
-    setMessage('');
-    setError('');
-    const res = await apiRequest(`/gazebos/${gazeboId}/release`, { method: 'POST' });
-    if (res.success) {
-      setMessage(`✅ Gazebo #${num} (${gazeboNumber}) is now AVAILABLE for new allocations.`);
-      loadTabContent('gazebos');
-    } else {
-      setError(res.error?.message || 'Failed to release gazebo');
-    }
-  }
-
-  async function handleCopyInviteLink(gz: any, num: number) {
-    setMessage('');
-    setError('');
-    
-    let token = gz.inviteToken;
-    if (!token) {
-      const res = await apiRequest(`/gazebos/${gz.id}/invite-link`, { method: 'POST' });
-      if (res.success && res.data?.inviteToken) {
-        token = res.data.inviteToken;
-        setMessage(`✅ Secure invite link generated for Gazebo #${num}!`);
-        loadTabContent('gazebos');
-      } else {
-        setError(res.error?.message || 'Failed to generate invite link');
-        return;
-      }
-    }
-
-    const link = window.location.origin + '/gazebo-invite/' + token;
-    try {
-      await navigator.clipboard.writeText(link);
-      setMessage(`✅ Invite link copied to clipboard: ${link}`);
-    } catch (err) {
-      setError('Failed to copy to clipboard automatically. Link is: ' + link);
-    }
-  }
-
-  function promptRevokeInviteLink(gz: any, num: number) {
-    setGazeboToRevoke({ gz, num });
-    setRevokeModalOpen(true);
-  }
-
-  async function handleRevokeInviteLink() {
-    if (!gazeboToRevoke) return;
-    const { gz, num } = gazeboToRevoke;
-    setRevokeModalOpen(false);
-    setMessage('');
-    setError('');
-    const res = await apiRequest(`/gazebos/${gz.id}/invite-link`, { method: 'DELETE' });
-    if (res.success) {
-      setMessage(`✅ Invite link revoked for Gazebo #${num}.`);
-      loadTabContent('gazebos');
-    } else {
-      setError(res.error?.message || 'Failed to revoke invite link');
-    }
-    setGazeboToRevoke(null);
-  }
-
   // Filtered applications for custom filter component
-  const filteredApps = applications.filter((app) => {
+  let filteredApps = applications.filter((app) => {
     if (appStatusFilter === 'GAZEBO') {
       if (app.passType !== 'GAZEBO') return false;
     } else {
@@ -860,6 +821,51 @@ export default function SuperAdminDashboard() {
     if (appGazeboFilter !== 'ALL' && app.gazebo?.gazeboNumber !== appGazeboFilter) return false;
     return true;
   });
+
+  if (appStatusFilter === 'GAZEBO') {
+    const mappedGazeboInquiries = gazeboInquiries
+      .filter((inq: any) => appGazeboFilter === 'ALL' || inq.gazebo?.gazeboNumber === appGazeboFilter)
+      .map((inq: any) => ({
+        id: inq.id,
+        isMappedInquiry: true,
+        registrationNumber: inq.inquiryNumber || `GZB-INQ-${inq.id.substring(0, 4).toUpperCase()}`,
+        passType: 'GAZEBO',
+        amountDue: 0,
+        paymentMethod: 'N/A',
+        status: inq.status,
+        createdAt: inq.createdAt,
+        gazebo: inq.gazebo,
+        attendees: [
+          {
+            isPrimary: true,
+            attendeeId: inq.id,
+            attendee: {
+              id: inq.id,
+              fullName: inq.fullName,
+              phone: inq.phone,
+              gender: 'UNKNOWN',
+              aadhaarMasked: 'In Document',
+              document: (() => {
+                const links: { title: string, url: string }[] = [];
+                inq.notes?.replace(/\[(.*?)\]\((.*?)\)/g, (m: any, title: any, url: any) => { links.push({ title, url }); return ''; });
+                const front = links.find(l => l.title.toLowerCase().includes('front'))?.url;
+                const back = links.find(l => l.title.toLowerCase().includes('back'))?.url;
+                if (!front && !back) return null;
+                return {
+                  id: inq.id,
+                  originalFilename: 'Gazebo KYC Document',
+                  directUrlFront: front || back,
+                  directUrlBack: front && back ? back : undefined,
+                  storageKeyBack: front && back ? 'has_back' : undefined
+                };
+              })()
+            }
+          }
+        ],
+        originalInquiry: inq
+      }));
+    filteredApps = [...filteredApps, ...mappedGazeboInquiries];
+  }
 
   // =========================================================================
   // TABULATOR COLUMN DEFINITIONS
@@ -1042,16 +1048,18 @@ export default function SuperAdminDashboard() {
             <Eye className="w-4 h-4 text-[#D99427]" />
           </button>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              openEditModal(row);
-            }}
-            title="Edit Application"
-            className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 transition shadow-sm"
-          >
-            <Sliders className="w-4 h-4 text-blue-600" />
-          </button>
+          {!row.isMappedInquiry && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditModal(row);
+              }}
+              title="Edit Application"
+              className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 transition shadow-sm"
+            >
+              <Sliders className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
           
           {row.status === 'CASHIER_PENDING' && (
             <>
@@ -1756,6 +1764,8 @@ export default function SuperAdminDashboard() {
               const tierBadgeColor = gz.level === 2 ? 'bg-[#2D1F0E] text-[#F6C85F]' : 'bg-[#FAF6EE] text-[#8C6019] border border-[#EAD9B8]';
               const isBooked = gz.status === 'CONFIRMED';
               const isHeld = gz.status === 'HELD';
+              const pendingInquiry = gazeboInquiries.find((inq) => inq.gazeboId === gz.id && !['REJECTED', 'CANCELLED', 'APPROVED', 'CONFIRMED'].includes(inq.status));
+              const hasRequest = !isBooked && !isHeld && !!pendingInquiry;
               const activeInquiry = gz.inquiries?.[0];
 
               return (
@@ -1785,10 +1795,12 @@ export default function SuperAdminDashboard() {
                             ? 'bg-red-100 text-red-800 border-red-300'
                             : isHeld
                             ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+                            : hasRequest
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-400 animate-pulse'
                             : 'bg-emerald-100 text-emerald-800 border-emerald-300'
                         }`}
                       >
-                        {isBooked ? 'CONFIRMED' : isHeld ? 'ON HOLD' : 'AVAILABLE'}
+                        {isBooked ? 'CONFIRMED' : isHeld ? 'ON HOLD' : hasRequest ? 'REQUEST PENDING' : 'AVAILABLE'}
                       </span>
                     </div>
 
@@ -1833,7 +1845,7 @@ export default function SuperAdminDashboard() {
 
                   {/* Actions */}
                   <div className="pt-2 border-t border-[#EAD9B8]/70">
-                    {gz.status === 'AVAILABLE' ? (
+                    {gz.status === 'AVAILABLE' && (
                       <button
                         onClick={() => {
                           setSelectedGazeboForBooking(gz);
@@ -1851,58 +1863,6 @@ export default function SuperAdminDashboard() {
                         <Crown className="w-3.5 h-3.5 text-[#F6C85F]" />
                         <span>Book Gazebo #{gazeboIndex}</span>
                       </button>
-                    ) : (
-                      <>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedGazeboForBooking(gz);
-                              setBookingForm({
-                                fullName: activeInquiry?.fullName || '',
-                                phone: activeInquiry?.phone || '',
-                                email: activeInquiry?.notes?.match(/Email:\s*([^|]+)/)?.[1]?.trim() || '',
-                                amount: Number(gz.price),
-                                notes: activeInquiry?.notes || '',
-                                status: gz.status === 'HELD' ? 'HOLD' : 'CONFIRMED',
-                              });
-                            }}
-                            className="py-2 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#2D1F0E] text-[11px] font-bold transition flex items-center justify-center space-x-1"
-                          >
-                            <span>✏️ Edit Host</span>
-                          </button>
-                          <button
-                            onClick={() => handleReleaseGazebo(gz.id, gz.gazeboNumber, gazeboIndex)}
-                            className="py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[11px] font-bold transition flex items-center justify-center space-x-1"
-                          >
-                            <span>Release</span>
-                          </button>
-                        </div>
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => setManageGuestsGazebo(gz)}
-                            className="py-2.5 rounded-xl bg-[#2D1F0E] hover:bg-[#4A351B] text-[#F6C85F] text-[11px] font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1"
-                          >
-                            <Users className="w-3 h-3 text-[#F6C85F]" />
-                            <span>👥 Guests</span>
-                          </button>
-                          <button
-                            onClick={() => handleCopyInviteLink(gz, gazeboIndex)}
-                            className="py-2.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FAF6EE] border border-[#EAD9B8] text-[#8C6019] text-[11px] font-bold transition shadow-sm flex items-center justify-center space-x-1"
-                          >
-                            <span>🔗 {gz.inviteToken ? 'Copy Invite' : 'Create Invite'}</span>
-                          </button>
-                        </div>
-                        {gz.inviteToken && (
-                          <div className="mt-2">
-                            <button
-                              onClick={() => promptRevokeInviteLink(gz, gazeboIndex)}
-                              className="w-full py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 text-[10px] font-bold transition flex items-center justify-center space-x-1"
-                            >
-                              <span>Revoke Invite Link</span>
-                            </button>
-                          </div>
-                        )}
-                      </>
                     )}
                   </div>
                 </div>
@@ -2791,6 +2751,8 @@ export default function SuperAdminDashboard() {
                     {att.document ? (
                       <AadhaarDocumentPreview
                         document={att.document}
+                        directUrlFront={att.document.directUrlFront}
+                        directUrlBack={att.document.directUrlBack}
                         token={getAuthToken() || ''}
                       />
                     ) : (
@@ -3110,38 +3072,6 @@ export default function SuperAdminDashboard() {
       {/* ========================================================================= */}
       {/* PREMIUM REVOKE INVITE LINK MODAL */}
       {/* ========================================================================= */}
-      {revokeModalOpen && gazeboToRevoke && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-red-100 flex flex-col transform scale-100 animate-in zoom-in-95 duration-200">
-            <div className="p-6 bg-red-50 border-b border-red-100 text-center">
-              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                <AlertCircle className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-serif font-bold text-red-900">Revoke Invite Link?</h3>
-            </div>
-            <div className="p-6 text-center text-[#6E5336]">
-              <p>Are you sure you want to revoke the invite link for <strong className="text-red-700">Gazebo #{gazeboToRevoke.num}</strong>?</p>
-              <p className="mt-2 text-sm">Any user opening the link will no longer be able to submit details.</p>
-            </div>
-            <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
-              <button
-                onClick={() => setRevokeModalOpen(false)}
-                className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRevokeInviteLink}
-                className="px-5 py-2.5 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-md transition"
-              >
-                Revoke Link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
       {/* PREMIUM SOFT DELETE MODAL */}
       {/* ========================================================================= */}
       {deleteModalOpen && appToDelete && (
@@ -3395,12 +3325,60 @@ export default function SuperAdminDashboard() {
                 {/* Notes & Requirements */}
                 <div className="pt-4 border-t border-[#EAD9B8]">
                   <div className="text-[10px] font-bold text-[#6E5336] uppercase tracking-wider mb-2">
-                    {inquiryType === 'gazebo' ? '🏛️ VIP Concierge Requests' :
+                    {inquiryType === 'gazebo' ? '🏛️ VIP Concierge Requests & KYC Documents' :
                      inquiryType === 'sponsor' ? '📋 Brand Objectives & Activation Notes' :
                      '📝 Special Requirements & Notes'}
                   </div>
-                  <div className="text-sm text-[#2D1F0E] bg-white p-3.5 rounded-xl border border-[#EAD9B8] italic whitespace-pre-wrap leading-relaxed">
-                    {selectedInquiry.notes || 'No special requirements or notes provided.'}
+                  <div className="text-sm text-[#2D1F0E] bg-white p-3.5 rounded-xl border border-[#EAD9B8] leading-relaxed">
+                    {(() => {
+                      if (!selectedInquiry.notes) return <div className="italic">No special requirements or notes provided.</div>;
+                      
+                      const links: { title: string, url: string }[] = [];
+                      let cleanText = selectedInquiry.notes.replace(/\[(.*?)\]\((.*?)\)/g, (match, title, url) => {
+                        links.push({ title, url });
+                        return ''; 
+                      });
+                      
+                      // Cleanup dangling pipes after removing links
+                      cleanText = cleanText.replace(/\|\s*\|/g, '|').replace(/\|\s*$/gm, '').trim();
+
+                      const frontLinks = links.filter(l => l.title.toLowerCase().includes('front'));
+                      const backLinks = links.filter(l => l.title.toLowerCase().includes('back'));
+                      const otherLinks = links.filter(l => !l.title.toLowerCase().includes('front') && !l.title.toLowerCase().includes('back'));
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="whitespace-pre-wrap italic">{cleanText}</div>
+                          
+                          {frontLinks.length > 0 && (
+                            <div className="space-y-3 pt-2">
+                              {frontLinks.map((front, idx) => {
+                                const back = backLinks[idx];
+                                return (
+                                  <AadhaarDocumentPreview
+                                    key={idx}
+                                    directUrlFront={front.url}
+                                    directUrlBack={back?.url}
+                                    filename={front.title.replace(' Front Side', '').replace(' Front', '') || 'Aadhaar Document'}
+                                    token={getAuthToken() || ''}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {otherLinks.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {otherLinks.map((link, idx) => (
+                                <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition">
+                                  {link.title}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -3602,20 +3580,6 @@ export default function SuperAdminDashboard() {
             </form>
           </div>
         </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUPER ADMIN GAZEBO MANAGE GUESTS MODAL */}
-      {/* ========================================================================= */}
-      {manageGuestsGazebo && (
-        <GazeboManageGuestsModal
-          gazebo={manageGuestsGazebo}
-          onClose={() => setManageGuestsGazebo(null)}
-          onSuccess={() => {
-            setManageGuestsGazebo(null);
-            loadTabContent('gazebos');
-          }}
-        />
       )}
 
       {/* ========================================================================= */}

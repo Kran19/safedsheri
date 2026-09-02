@@ -38,6 +38,7 @@ interface AdvancedTabulatorTableProps<T> {
   onRefresh?: () => void;
   isLoading?: boolean;
   customFilterComponent?: React.ReactNode;
+  emptyStateComponent?: React.ReactNode;
 }
 
 export function AdvancedTabulatorTable<T extends Record<string, any>>({
@@ -52,6 +53,7 @@ export function AdvancedTabulatorTable<T extends Record<string, any>>({
   onRefresh,
   isLoading = false,
   customFilterComponent,
+  emptyStateComponent,
 }: AdvancedTabulatorTableProps<T>) {
   // Global & Column Search
   const [globalSearch, setGlobalSearch] = useState('');
@@ -548,7 +550,7 @@ export function AdvancedTabulatorTable<T extends Record<string, any>>({
                   colSpan={columns.filter((c) => visibleColumns[c.key]).length + 1}
                   className="p-8 text-center text-[#6E5336] text-xs font-serif"
                 >
-                  {isLoading ? 'Loading records...' : 'No matching records found.'}
+                  {isLoading ? 'Loading records...' : (emptyStateComponent || 'No matching records found.')}
                 </td>
               </tr>
             ) : (

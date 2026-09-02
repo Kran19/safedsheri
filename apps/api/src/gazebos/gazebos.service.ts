@@ -42,9 +42,9 @@ export class GazebosService {
     };
   }
 
-  // PUBLIC: Create Gazebo Inquiry (DOES NOT CONSUME INVENTORY, NO PAYMENTS/QRS)
   async createInquiry(data: {
     level: number;
+    gazeboNumber?: number;
     fullName: string;
     phone: string;
     notes?: string;
@@ -59,9 +59,49 @@ export class GazebosService {
       throw new BadRequestException('Valid WhatsApp phone number is required');
     }
 
+    // Backend Uniqueness Check: Prevent duplicate bookings with the same Aadhaar/Phone
+    const activeInquiries = await this.prisma.gazeboInquiry.findMany({
+      where: { status: { notIn: ['REJECTED', 'CANCELLED'] } },
+      select: { phone: true, notes: true, inquiryNumber: true },
+    });
+
+    if (activeInquiries.some(inq => inq.phone === data.phone)) {
+      throw new ConflictException(`Primary phone number ${data.phone} is already associated with an active Gazebo booking.`);
+    }
+
+    const aadhaarMatches = data.notes?.match(/\b\d{12}\b/g) || [];
+    const phoneMatches = data.notes?.match(/\b\d{10}\b/g) || [];
+
+    for (const inq of activeInquiries) {
+      if (!inq.notes) continue;
+      
+      for (const aadhaar of aadhaarMatches) {
+        if (inq.notes.includes(aadhaar)) {
+          throw new ConflictException(`Aadhaar number ending in ${aadhaar.slice(-4)} is already associated with active Gazebo booking ${inq.inquiryNumber}.`);
+        }
+      }
+      
+      for (const phone of phoneMatches) {
+        if (inq.phone === phone || inq.notes.includes(phone)) {
+          throw new ConflictException(`Phone number ending in ${phone.slice(-4)} is already associated with active Gazebo booking ${inq.inquiryNumber}.`);
+        }
+      }
+    }
+
     const count = await this.prisma.gazeboInquiry.count();
     const seq = (count + 101).toString().padStart(6, '0');
     const inquiryNumber = `GZB-INQ-${seq}`;
+
+    let assignedGazeboId = null;
+    if (data.gazeboNumber) {
+      const gazeboNumString = `GZB-L${data.level}-${data.gazeboNumber.toString().padStart(2, '0')}`;
+      const physicalGazebo = await this.prisma.gazebo.findUnique({
+        where: { gazeboNumber: gazeboNumString },
+      });
+      if (physicalGazebo) {
+        assignedGazeboId = physicalGazebo.id;
+      }
+    }
 
     const inquiry = await this.prisma.gazeboInquiry.create({
       data: {
@@ -71,7 +111,7 @@ export class GazebosService {
         phone: data.phone,
         notes: data.notes,
         status: GazeboInquiryStatus.NEW,
-        gazeboId: null, // Public inquiries start with NO physical gazebo assigned
+        gazeboId: assignedGazeboId, // Links the inquiry to the specific requested gazebo
       },
     });
 
