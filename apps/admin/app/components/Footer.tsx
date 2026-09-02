@@ -126,17 +126,7 @@ export default function Footer() {
 
         {/* Bottom text */}
         <div className="text-center flex flex-col items-center">
-          <div className="text-[12px] md:text-[13px] font-medium leading-relaxed text-[#4A3B2C] mb-5 space-y-2 max-w-4xl px-4">
-            <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1">
-              <span>Pan No: BFPPH9298G</span>
-              <span className="text-[#D99427]/70 hidden md:inline">|</span>
-              <span>Legal name: SONDARVA HARISH</span>
-            </div>
-            <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-center">
-              <span>Address: HANUMAN CHOWK, SHERI 2, ANDHASHRAM PASE, JAMNAGAR, JAMNAGAR, JAMNAGAR, Pin 361006, JAMNAGAR, Gujarat</span>
-            </div>
-          </div>
-          <div className="text-[14px] md:text-[15px] font-medium">© 2026 Safed Sheri is owned and operated by Sondarva Harish</div>
+          <div className="text-[14px] md:text-[15px] font-medium">© 2026 Safed Sheri all right reserved</div>
           <div className="mt-2 text-xs flex items-center justify-center space-x-3 text-[#D99427] font-medium">
             <Link href="/terms-and-conditions" className="hover:underline transition cursor-pointer z-20 relative">Terms & Conditions</Link>
             <span>|</span>
