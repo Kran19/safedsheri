@@ -3334,7 +3334,7 @@ export default function SuperAdminDashboard() {
                       if (!selectedInquiry.notes) return <div className="italic">No special requirements or notes provided.</div>;
                       
                       const links: { title: string, url: string }[] = [];
-                      let cleanText = selectedInquiry.notes.replace(/\[(.*?)\]\((.*?)\)/g, (match, title, url) => {
+                      let cleanText = selectedInquiry.notes.replace(/\[(.*?)\]\((.*?)\)/g, (match: string, title: string, url: string) => {
                         links.push({ title, url });
                         return ''; 
                       });
