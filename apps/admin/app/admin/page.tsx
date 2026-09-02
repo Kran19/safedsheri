@@ -819,6 +819,7 @@ export default function SuperAdminDashboard() {
     }
     
     if (appGazeboFilter !== 'ALL' && app.gazebo?.gazeboNumber !== appGazeboFilter) return false;
+    if (appPassTypeFilter !== 'ALL' && app.passType !== appPassTypeFilter) return false;
     return true;
   });
 
