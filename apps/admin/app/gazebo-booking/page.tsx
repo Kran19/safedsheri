@@ -683,6 +683,8 @@ export default function GazeboBookingPage() {
                     backUploaded: false,
                     frontUploading: false,
                     backUploading: false,
+                    frontStorageKey: '',
+                    backStorageKey: '',
                   }]);
                 }}
                 className="w-full py-4 rounded-xl border-2 border-dashed border-[#D99427] text-[#D99427] font-bold text-sm tracking-widest uppercase hover:bg-[#FDFBF7] transition flex items-center justify-center space-x-2"
