@@ -379,8 +379,8 @@ export default function GazeboBookingPage() {
 
       // Determine level based on gazeboNumber (1-4 is level 1, 5-8 is level 2, 9-14 is level 3)
       let gazeboLevel = 1;
-      if (gazeboNumber > 4 && gazeboNumber <= 8) gazeboLevel = 2;
-      else if (gazeboNumber > 8) gazeboLevel = 3;
+      if (gazeboNumber !== null && gazeboNumber > 4 && gazeboNumber <= 8) gazeboLevel = 2;
+      else if (gazeboNumber !== null && gazeboNumber > 8) gazeboLevel = 3;
 
       const payload = {
         level: gazeboLevel,
