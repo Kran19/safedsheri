@@ -81,7 +81,7 @@ export function AadhaarDocumentPreview({ document, token, directUrlFront, direct
           <div className="p-6 text-center space-y-3">
             <FileText className="w-12 h-12 text-[#D99427] mx-auto animate-bounce" />
             <div>
-              <p className="text-xs font-bold text-[#2D1F0E]">{document.originalFilename}</p>
+              <p className="text-xs font-bold text-[#2D1F0E]">{document?.originalFilename || 'Document'}</p>
               <p className="text-[10px] text-[#8C6019]">PDF Document Upload</p>
             </div>
             <a
