@@ -19,7 +19,7 @@ export class RegistrationsService {
     private emailService: EmailService,
     private paymentsService: PaymentsService,
     private authService: AuthService,
-  ) {}
+  ) { }
 
   async generateUniqueRegistrationNumber(tx?: any): Promise<string> {
     const db = tx || this.prisma;
@@ -318,124 +318,107 @@ export class RegistrationsService {
     }
 
     try {
+      // Check if bookings are paused until 12 September 2026 (activates after 12:00 AM IST: 2026-09-09T00:00:00+05:30)
+      const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
+      const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+      const now = Date.now();
+      if (now >= lockStart && now < lockEnd) {
+        throw new BadRequestException('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+      }
+
       let activeEvent = await this.prisma.event.findFirst({
-      where: { status: 'ACTIVE' },
-    });
-    if (!activeEvent) {
-      activeEvent = await this.prisma.event.create({
-        data: {
-          name: 'Safed Sheri 2026',
-          eventDate: new Date('2026-10-09T00:00:00.000Z'),
-          status: 'ACTIVE',
-        },
+        where: { status: 'ACTIVE' },
       });
-    }
-
-    let activePhase = await this.prisma.pricingPhase.findFirst({
-      where: { isActive: true },
-    });
-    if (!activePhase) {
-      const created = await this.getActivePhase();
-      activePhase = await this.prisma.pricingPhase.findUnique({
-        where: { id: created.data.id },
-      });
-    }
-
-    if (!activePhase) {
-      throw new BadRequestException('No active pricing phase configured');
-    }
-
-    if (!data.attendees || data.attendees.length === 0) {
-      throw new BadRequestException('At least one attendee is required');
-    }
-
-    if (!data.attendees[0].email) {
-      throw new BadRequestException('Primary contact email is mandatory.');
-    }
-
-
-
-    // RULE 1: Single Pass strictly for 1 Female attendee only
-    if (data.passType === PassType.SINGLE) {
-      if (data.attendees.length !== 1) {
-        throw new BadRequestException('Single Female Pass allows only 1 pass per booking.');
-      }
-      if (data.attendees[0].gender === Gender.MALE) {
-        throw new BadRequestException(`Single pass tier is strictly for female attendees. Attendee (${data.attendees[0].fullName}) must be female.`);
-      }
-    }
-
-    // RULE 2: Kids Pass strictly for 1 Kid attendee only
-    if (data.passType === PassType.KIDS) {
-      if (data.attendees.length !== 1) {
-        throw new BadRequestException('Kids Pass allows only 1 pass per booking.');
-      }
-    }
-
-    // RULE 3: Couple Pass requires exactly 2 attendees
-    if (data.passType === PassType.COUPLE) {
-      if (data.attendees.length !== 2) {
-        throw new BadRequestException('Couple Pass requires exactly 2 attendee records');
-      }
-    }
-
-    // RULE 3 & 4: In-Batch Unique Aadhaar & Duplicate Person Prevention via HMAC
-    const batchAadhaarSet = new Set<string>();
-
-    for (let i = 0; i < data.attendees.length; i++) {
-      const att = data.attendees[i];
-      if (!att.fullName || att.fullName.trim().length < 2) {
-        throw new BadRequestException(`Full name is required for attendee #${i + 1}`);
-      }
-      if (!att.phone || att.phone.trim().length < 10) {
-        throw new BadRequestException(`Valid phone number is mandatory for attendee #${i + 1} (${att.fullName})`);
-      }
-      
-      const cleanAadhaar = (att.aadhaarNumber || '').replace(/\D/g, '');
-      if (cleanAadhaar.length !== 12) {
-        throw new BadRequestException(`Valid 12-digit Aadhaar number is mandatory for attendee #${i + 1} (${att.fullName})`);
-      }
-
-      if (batchAadhaarSet.has(cleanAadhaar)) {
-        throw new BadRequestException(`Each attendee must have a unique Aadhaar card. Duplicate Aadhaar detected for ${att.fullName}.`);
-      }
-      batchAadhaarSet.add(cleanAadhaar);
-
-      if (!att.documentKey || !att.documentBackKey) {
-        throw new BadRequestException(`Mandatory Aadhaar document image/PDF upload (Front and Back) missing for attendee #${i + 1} (${att.fullName})`);
-      }
-
-      const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
-
-      // Check global DB uniqueness for Aadhaar — directly query for any active (non-deleted, non-terminal) registration
-      const existingActiveAadhaarReg = await this.prisma.registration.findFirst({
-        where: {
-          deletedAt: null,
-          status: {
-            notIn: [
-              RegistrationStatus.REJECTED,
-              RegistrationStatus.CANCELLED,
-              RegistrationStatus.PAYMENT_FAILED,
-            ],
+      if (!activeEvent) {
+        activeEvent = await this.prisma.event.create({
+          data: {
+            name: 'Safed Sheri 2026',
+            eventDate: new Date('2026-10-09T00:00:00.000Z'),
+            status: 'ACTIVE',
           },
-          attendees: {
-            some: {
-              attendee: { aadhaarHmac },
-            },
-          },
-        },
-      });
-      if (existingActiveAadhaarReg) {
-        throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are strictly not allowed.`);
+        });
       }
 
-      // Check global DB uniqueness for Phone — ONLY IF booking an Adult pass (SINGLE, COUPLE, GAZEBO)
-      // We allow multiple kids passes on the same phone, and 1 adult pass on the same phone.
-      if (data.passType !== PassType.KIDS) {
-        const existingActivePhoneReg = await this.prisma.registration.findFirst({
+      let activePhase = await this.prisma.pricingPhase.findFirst({
+        where: { isActive: true },
+      });
+      if (!activePhase) {
+        const created = await this.getActivePhase();
+        activePhase = await this.prisma.pricingPhase.findUnique({
+          where: { id: created.data.id },
+        });
+      }
+
+      if (!activePhase) {
+        throw new BadRequestException('No active pricing phase configured');
+      }
+
+      if (!data.attendees || data.attendees.length === 0) {
+        throw new BadRequestException('At least one attendee is required');
+      }
+
+      if (!data.attendees[0].email) {
+        throw new BadRequestException('Primary contact email is mandatory.');
+      }
+
+
+
+      // RULE 1: Single Pass strictly for 1 Female attendee only
+      if (data.passType === PassType.SINGLE) {
+        if (data.attendees.length !== 1) {
+          throw new BadRequestException('Single Female Pass allows only 1 pass per booking.');
+        }
+        if (data.attendees[0].gender === Gender.MALE) {
+          throw new BadRequestException(`Single pass tier is strictly for female attendees. Attendee (${data.attendees[0].fullName}) must be female.`);
+        }
+      }
+
+      // RULE 2: Kids Pass strictly for 1 Kid attendee only
+      if (data.passType === PassType.KIDS) {
+        if (data.attendees.length !== 1) {
+          throw new BadRequestException('Kids Pass allows only 1 pass per booking.');
+        }
+      }
+
+      // RULE 3: Couple Pass requires exactly 2 attendees
+      if (data.passType === PassType.COUPLE) {
+        if (data.attendees.length !== 2) {
+          throw new BadRequestException('Couple Pass requires exactly 2 attendee records');
+        }
+      }
+
+      // RULE 3 & 4: In-Batch Unique Aadhaar & Duplicate Person Prevention via HMAC
+      const batchAadhaarSet = new Set<string>();
+
+      for (let i = 0; i < data.attendees.length; i++) {
+        const att = data.attendees[i];
+        if (!att.fullName || att.fullName.trim().length < 2) {
+          throw new BadRequestException(`Full name is required for attendee #${i + 1}`);
+        }
+        if (!att.phone || att.phone.trim().length < 10) {
+          throw new BadRequestException(`Valid phone number is mandatory for attendee #${i + 1} (${att.fullName})`);
+        }
+
+        const cleanAadhaar = (att.aadhaarNumber || '').replace(/\D/g, '');
+        if (cleanAadhaar.length !== 12) {
+          throw new BadRequestException(`Valid 12-digit Aadhaar number is mandatory for attendee #${i + 1} (${att.fullName})`);
+        }
+
+        if (batchAadhaarSet.has(cleanAadhaar)) {
+          throw new BadRequestException(`Each attendee must have a unique Aadhaar card. Duplicate Aadhaar detected for ${att.fullName}.`);
+        }
+        batchAadhaarSet.add(cleanAadhaar);
+
+        if (!att.documentKey || !att.documentBackKey) {
+          throw new BadRequestException(`Mandatory Aadhaar document image/PDF upload (Front and Back) missing for attendee #${i + 1} (${att.fullName})`);
+        }
+
+        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
+
+        // Check global DB uniqueness for Aadhaar — directly query for any active (non-deleted, non-terminal) registration
+        const existingActiveAadhaarReg = await this.prisma.registration.findFirst({
           where: {
             deletedAt: null,
-            passType: { not: PassType.KIDS }, // only check against existing adult passes
             status: {
               notIn: [
                 RegistrationStatus.REJECTED,
@@ -445,193 +428,218 @@ export class RegistrationsService {
             },
             attendees: {
               some: {
-                attendee: { phone: att.phone },
+                attendee: { aadhaarHmac },
               },
             },
           },
         });
-        if (existingActivePhoneReg) {
-          throw new BadRequestException(`Phone number ${att.phone} is already registered with an active ADULT booking. Duplicate adult passes are strictly not allowed.`);
+        if (existingActiveAadhaarReg) {
+          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is already registered with an active booking using this Aadhaar card. Duplicate passes are strictly not allowed.`);
+        }
+
+        // Check global DB uniqueness for Phone — ONLY IF booking an Adult pass (SINGLE, COUPLE, GAZEBO)
+        // We allow multiple kids passes on the same phone, and 1 adult pass on the same phone.
+        if (data.passType !== PassType.KIDS) {
+          const existingActivePhoneReg = await this.prisma.registration.findFirst({
+            where: {
+              deletedAt: null,
+              passType: { not: PassType.KIDS }, // only check against existing adult passes
+              status: {
+                notIn: [
+                  RegistrationStatus.REJECTED,
+                  RegistrationStatus.CANCELLED,
+                  RegistrationStatus.PAYMENT_FAILED,
+                ],
+              },
+              attendees: {
+                some: {
+                  attendee: { phone: att.phone },
+                },
+              },
+            },
+          });
+          if (existingActivePhoneReg) {
+            throw new BadRequestException(`Phone number ${att.phone} is already registered with an active ADULT booking. Duplicate adult passes are strictly not allowed.`);
+          }
         }
       }
-    }
 
-    // Amount due computation
-    let amountDue = 0;
-    if (data.passType === PassType.COUPLE) {
-      amountDue = Number(activePhase.couplePrice) * Math.ceil(data.attendees.length / 2);
-    } else if (data.passType === PassType.GAZEBO) {
-      amountDue = 85000;
-    } else if (data.passType === PassType.KIDS) {
-      for (let i = 0; i < data.attendees.length; i++) {
-        const att = data.attendees[i];
-        if (!att.dob) {
-          throw new BadRequestException(`Date of Birth is required for Kids pass for attendee #${i + 1} (${att.fullName})`);
+      // Amount due computation
+      let amountDue = 0;
+      if (data.passType === PassType.COUPLE) {
+        amountDue = Number(activePhase.couplePrice) * Math.ceil(data.attendees.length / 2);
+      } else if (data.passType === PassType.GAZEBO) {
+        amountDue = 85000;
+      } else if (data.passType === PassType.KIDS) {
+        for (let i = 0; i < data.attendees.length; i++) {
+          const att = data.attendees[i];
+          if (!att.dob) {
+            throw new BadRequestException(`Date of Birth is required for Kids pass for attendee #${i + 1} (${att.fullName})`);
+          }
+          const dobDate = new Date(att.dob);
+          if (isNaN(dobDate.getTime())) {
+            throw new BadRequestException(`Invalid Date of Birth for attendee #${i + 1} (${att.fullName})`);
+          }
+          const diffMs = Date.now() - dobDate.getTime();
+          const ageDate = new Date(diffMs);
+          const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+
+          if (age > 15) {
+            throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is ${age} years old. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
+          } else if (age > 10 && age <= 15) {
+            amountDue += 1200;
+          } else {
+            amountDue += 0; // Free pass for age <= 10
+          }
         }
-        const dobDate = new Date(att.dob);
-        if (isNaN(dobDate.getTime())) {
-          throw new BadRequestException(`Invalid Date of Birth for attendee #${i + 1} (${att.fullName})`);
-        }
-        const diffMs = Date.now() - dobDate.getTime();
-        const ageDate = new Date(diffMs);
-        const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-        
-        if (age > 15) {
-          throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is ${age} years old. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
-        } else if (age > 10 && age <= 15) {
-          amountDue += 1200;
-        } else {
-          amountDue += 0; // Free pass for age <= 10
-        }
+      } else {
+        amountDue = Number(activePhase.singlePrice) * data.attendees.length;
       }
-    } else {
-      amountDue = Number(activePhase.singlePrice) * data.attendees.length;
-    }
 
-    let adminUser = await this.prisma.user.findFirst({
-      where: { role: Role.SUPER_ADMIN },
-    });
-
-    if (!adminUser) {
-      adminUser = await this.prisma.user.findFirst();
-    }
-
-    if (!adminUser) {
-      const dummyHash = '$2a$10$wT0vR1jB2zOqZ1qC5jK3eu8s3mG4uF0hI9lE7rD5xW1s9mJ2kL3nO';
-      adminUser = await this.prisma.user.create({
-        data: {
-          username: 'admin',
-          passwordHash: dummyHash,
-          fullName: 'Safed Sheri System Admin',
-          role: Role.SUPER_ADMIN,
-        },
-      });
-    }
-
-    const registration = await this.prisma.$transaction(async (tx) => {
-      const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
-      const createdReg = await tx.registration.create({
-        data: {
-          registrationNumber,
-          eventId: activeEvent.id,
-          pricingPhaseId: activePhase.id,
-          passType: data.passType,
-          amountDue,
-          status: RegistrationStatus.UNDER_REVIEW,
-          createdById: adminUser.id,
-        },
+      let adminUser = await this.prisma.user.findFirst({
+        where: { role: Role.SUPER_ADMIN },
       });
 
-      for (let i = 0; i < data.attendees.length; i++) {
-        const attData = data.attendees[i];
-        const aadhaarMasked = this.encryptionService.maskAadhaar(attData.aadhaarNumber);
-        const aadhaarEncrypted = this.encryptionService.encrypt(attData.aadhaarNumber);
-        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(attData.aadhaarNumber);
+      if (!adminUser) {
+        adminUser = await this.prisma.user.findFirst();
+      }
 
-        // Upsert or create attendee
-        const attendee = await tx.attendee.upsert({
-          where: { aadhaarHmac },
-          update: {
-            fullName: attData.fullName,
-            phone: attData.phone,
-            email: attData.email || null,
-            gender: attData.gender,
-            aadhaarMasked,
-            aadhaarEncrypted,
-            kidsAgeGroup: attData.kidsAgeGroup || null,
-            dob: attData.dob ? new Date(attData.dob) : null,
-          },
-          create: {
-            fullName: attData.fullName,
-            phone: attData.phone,
-            email: attData.email || null,
-            gender: attData.gender,
-            aadhaarHmac,
-            aadhaarMasked,
-            aadhaarEncrypted,
-            kidsAgeGroup: attData.kidsAgeGroup || null,
-            dob: attData.dob ? new Date(attData.dob) : null,
-          },
-        });
-
-        // Upsert document record
-        await tx.aadhaarDocument.upsert({
-          where: { attendeeId: attendee.id },
-          update: {
-            storageKey: attData.documentKey,
-            originalFilename: attData.originalFilename || 'aadhaar_doc.jpg',
-            mimeType: attData.mimeType || 'image/jpeg',
-            sizeBytes: attData.sizeBytes || 1024,
-            checksum: attData.checksum || 'sha256_checksum',
-            storageKeyBack: attData.documentBackKey || null,
-            originalFilenameBack: attData.documentBackName || null,
-            mimeTypeBack: attData.documentBackMimeType || null,
-            sizeBytesBack: attData.documentBackSizeBytes || null,
-            checksumBack: attData.documentBackChecksum || null,
-            ocrExtractedData: attData.ocrExtractedData || null,
-            ocrMismatch: !!attData.ocrMismatch,
-          },
-          create: {
-            attendeeId: attendee.id,
-            storageKey: attData.documentKey,
-            originalFilename: attData.originalFilename || 'aadhaar_doc.jpg',
-            mimeType: attData.mimeType || 'image/jpeg',
-            sizeBytes: attData.sizeBytes || 1024,
-            checksum: attData.checksum || 'sha256_checksum',
-            storageKeyBack: attData.documentBackKey || null,
-            originalFilenameBack: attData.documentBackName || null,
-            mimeTypeBack: attData.documentBackMimeType || null,
-            sizeBytesBack: attData.documentBackSizeBytes || null,
-            checksumBack: attData.documentBackChecksum || null,
-            ocrExtractedData: attData.ocrExtractedData || null,
-            ocrMismatch: !!attData.ocrMismatch,
-          },
-        });
-
-        await tx.registrationAttendee.create({
+      if (!adminUser) {
+        const dummyHash = '$2a$10$wT0vR1jB2zOqZ1qC5jK3eu8s3mG4uF0hI9lE7rD5xW1s9mJ2kL3nO';
+        adminUser = await this.prisma.user.create({
           data: {
-            registrationId: createdReg.id,
-            attendeeId: attendee.id,
-            isPrimary: i === 0,
+            username: 'admin',
+            passwordHash: dummyHash,
+            fullName: 'Safed Sheri System Admin',
+            role: Role.SUPER_ADMIN,
           },
         });
       }
 
-      await tx.auditLog.create({
-        data: {
-          actorId: adminUser.id,
-          action: 'APPLICATION_SUBMITTED',
-          targetEntity: 'Registration',
-          targetId: createdReg.id,
-          payload: {
+      const registration = await this.prisma.$transaction(async (tx) => {
+        const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
+        const createdReg = await tx.registration.create({
+          data: {
             registrationNumber,
+            eventId: activeEvent.id,
+            pricingPhaseId: activePhase.id,
             passType: data.passType,
-            attendeesCount: data.attendees.length,
             amountDue,
+            status: RegistrationStatus.UNDER_REVIEW,
+            createdById: adminUser.id,
           },
-        },
+        });
+
+        for (let i = 0; i < data.attendees.length; i++) {
+          const attData = data.attendees[i];
+          const aadhaarMasked = this.encryptionService.maskAadhaar(attData.aadhaarNumber);
+          const aadhaarEncrypted = this.encryptionService.encrypt(attData.aadhaarNumber);
+          const aadhaarHmac = this.encryptionService.computeAadhaarHmac(attData.aadhaarNumber);
+
+          // Upsert or create attendee
+          const attendee = await tx.attendee.upsert({
+            where: { aadhaarHmac },
+            update: {
+              fullName: attData.fullName,
+              phone: attData.phone,
+              email: attData.email || null,
+              gender: attData.gender,
+              aadhaarMasked,
+              aadhaarEncrypted,
+              kidsAgeGroup: attData.kidsAgeGroup || null,
+              dob: attData.dob ? new Date(attData.dob) : null,
+            },
+            create: {
+              fullName: attData.fullName,
+              phone: attData.phone,
+              email: attData.email || null,
+              gender: attData.gender,
+              aadhaarHmac,
+              aadhaarMasked,
+              aadhaarEncrypted,
+              kidsAgeGroup: attData.kidsAgeGroup || null,
+              dob: attData.dob ? new Date(attData.dob) : null,
+            },
+          });
+
+          // Upsert document record
+          await tx.aadhaarDocument.upsert({
+            where: { attendeeId: attendee.id },
+            update: {
+              storageKey: attData.documentKey,
+              originalFilename: attData.originalFilename || 'aadhaar_doc.jpg',
+              mimeType: attData.mimeType || 'image/jpeg',
+              sizeBytes: attData.sizeBytes || 1024,
+              checksum: attData.checksum || 'sha256_checksum',
+              storageKeyBack: attData.documentBackKey || null,
+              originalFilenameBack: attData.documentBackName || null,
+              mimeTypeBack: attData.documentBackMimeType || null,
+              sizeBytesBack: attData.documentBackSizeBytes || null,
+              checksumBack: attData.documentBackChecksum || null,
+              ocrExtractedData: attData.ocrExtractedData || null,
+              ocrMismatch: !!attData.ocrMismatch,
+            },
+            create: {
+              attendeeId: attendee.id,
+              storageKey: attData.documentKey,
+              originalFilename: attData.originalFilename || 'aadhaar_doc.jpg',
+              mimeType: attData.mimeType || 'image/jpeg',
+              sizeBytes: attData.sizeBytes || 1024,
+              checksum: attData.checksum || 'sha256_checksum',
+              storageKeyBack: attData.documentBackKey || null,
+              originalFilenameBack: attData.documentBackName || null,
+              mimeTypeBack: attData.documentBackMimeType || null,
+              sizeBytesBack: attData.documentBackSizeBytes || null,
+              checksumBack: attData.documentBackChecksum || null,
+              ocrExtractedData: attData.ocrExtractedData || null,
+              ocrMismatch: !!attData.ocrMismatch,
+            },
+          });
+
+          await tx.registrationAttendee.create({
+            data: {
+              registrationId: createdReg.id,
+              attendeeId: attendee.id,
+              isPrimary: i === 0,
+            },
+          });
+        }
+
+        await tx.auditLog.create({
+          data: {
+            actorId: adminUser.id,
+            action: 'APPLICATION_SUBMITTED',
+            targetEntity: 'Registration',
+            targetId: createdReg.id,
+            payload: {
+              registrationNumber,
+              passType: data.passType,
+              attendeesCount: data.attendees.length,
+              amountDue,
+            },
+          },
+        });
+
+        return createdReg;
       });
 
-      return createdReg;
-    });
+      // Send Email Notification
+      if (data.attendees[0].email) {
+        // this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registration.registrationNumber).catch(e => console.error(e));
+      }
 
-    // Send Email Notification
-    if (data.attendees[0].email) {
-      // this.emailService.sendRegistrationSubmitted(data.attendees[0].email, registration.registrationNumber).catch(e => console.error(e));
-    }
-
-    return {
-      success: true,
-      data: {
-        id: registration.id,
-        registrationNumber: registration.registrationNumber,
-        passType: registration.passType,
-        status: registration.status,
-        amountDue: Number(registration.amountDue),
-        attendeesCount: data.attendees.length,
-        message: 'Your registration application has been submitted for review by Safed Sheri executive team.',
-      },
-    };
+      return {
+        success: true,
+        data: {
+          id: registration.id,
+          registrationNumber: registration.registrationNumber,
+          passType: registration.passType,
+          status: registration.status,
+          amountDue: Number(registration.amountDue),
+          attendeesCount: data.attendees.length,
+          message: 'Your registration application has been submitted for review by Safed Sheri executive team.',
+        },
+      };
     } catch (err: any) {
       if (err instanceof BadRequestException || err instanceof NotFoundException) {
         throw err;
@@ -921,12 +929,12 @@ export class RegistrationsService {
         throw new BadRequestException('Only the Master Admin has permission to delete paid applications.');
       }
     }
-    
+
     await this.prisma.registration.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
-    
+
     await this.prisma.auditLog.create({
       data: {
         actorId: adminId,
@@ -936,19 +944,19 @@ export class RegistrationsService {
         payload: { registrationNumber: reg.registrationNumber },
       },
     });
-    
+
     return { success: true, message: 'Application moved to trash' };
   }
 
   async restore(id: string, adminId: string) {
     const reg = await this.prisma.registration.findUnique({ where: { id } });
     if (!reg) throw new NotFoundException('Registration application not found');
-    
+
     await this.prisma.registration.update({
       where: { id },
       data: { deletedAt: null },
     });
-    
+
     await this.prisma.auditLog.create({
       data: {
         actorId: adminId,
@@ -958,7 +966,7 @@ export class RegistrationsService {
         payload: { registrationNumber: reg.registrationNumber },
       },
     });
-    
+
     return { success: true, message: 'Application restored successfully' };
   }
 
@@ -986,11 +994,11 @@ export class RegistrationsService {
         throw new BadRequestException('Only the Master Admin has permission to permanently delete paid applications.');
       }
     }
-    
+
     await this.prisma.registration.delete({
       where: { id },
     });
-    
+
     await this.prisma.auditLog.create({
       data: {
         actorId: adminId,
@@ -1000,7 +1008,7 @@ export class RegistrationsService {
         payload: { registrationNumber: reg.registrationNumber },
       },
     });
-    
+
     return { success: true, message: 'Application permanently deleted' };
   }
 
@@ -1021,14 +1029,14 @@ export class RegistrationsService {
     if (confirmedPayment) {
       // If already paid, just change the payment method of the confirmed transaction
       const oldMethod = confirmedPayment.method;
-      
+
       if (oldMethod === PaymentMethod.ONLINE_GATEWAY && method === PaymentMethod.CASH) {
         throw new BadRequestException('Action denied: You cannot convert an authenticated Razorpay online payment into a manual Cash payment.');
       }
 
       const updatedPayment = await this.prisma.payment.update({
         where: { id: confirmedPayment.id },
-        data: { 
+        data: {
           method,
           collectedById: adminId, // Track which admin changed the payment method
         },

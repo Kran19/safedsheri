@@ -13,7 +13,7 @@ import { Vibe3DOrbit } from './components/Vibe3DOrbit';
 import { PremiumDatePicker } from './components/PremiumDatePicker';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X, Calendar, Bell, CheckCircle2, MessageSquare } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
@@ -384,6 +384,46 @@ export default function SafedSheriLandingPage() {
   // Booking Drawer State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedPass, setSelectedPass] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
+
+  // 12 September Pass Booking Lock State (Activates after 12:00 AM IST: 2026-09-09T00:00:00+05:30, until Sep 12, 2026)
+  const BOOKING_LOCK_START_TIMESTAMP = new Date('2026-09-09T00:00:00+05:30').getTime();
+  const BOOKING_START_TIMESTAMP = new Date('2026-09-12T00:00:00+05:30').getTime();
+
+  const [isBookingSoonModalOpen, setIsBookingSoonModalOpen] = useState(false);
+  const [noticePassType, setNoticePassType] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
+  const [isPassBookingLocked, setIsPassBookingLocked] = useState(false);
+  const [sep12Countdown, setSep12Countdown] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({ days: 3, hours: 1, minutes: 6, seconds: 43 });
+
+  // Synchronize lock state and live countdown to 12 September 2026
+  useEffect(() => {
+    const updateLockStatus = () => {
+      const isPreview = typeof window !== 'undefined' && (
+        window.location.search.includes('previewLock=true') ||
+        window.location.search.includes('preview=true')
+      );
+      const now = Date.now();
+      const locked = isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
+      setIsPassBookingLocked(locked);
+
+      // Live countdown to 12 September 2026 00:00:00 IST
+      const diff = Math.max(0, BOOKING_START_TIMESTAMP - now);
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setSep12Countdown({ days, hours, minutes, seconds });
+    };
+
+    updateLockStatus();
+    const timer = setInterval(updateLockStatus, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [pricing, setPricing] = useState<any>({
     singlePrice: 3500,
     couplePrice: 6500,
@@ -830,6 +870,19 @@ export default function SafedSheriLandingPage() {
   const handlePassSelect = (type: 'SINGLE' | 'COUPLE' | 'KIDS') => {
     garbaAudio.playGhunghroo();
     setSelectedPass(type);
+
+    // Check if bookings are paused until 12 September (activates after 1:30 hours or via previewLock=true)
+    const isPreview = typeof window !== 'undefined' && (
+      window.location.search.includes('previewLock=true') ||
+      window.location.search.includes('preview=true')
+    );
+    const now = Date.now();
+    if (isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
+      setNoticePassType(type);
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
+
     setCurrentAttendeeIndex(0);
     setWizardStep('ATTENDEE');
     if (type === 'SINGLE') {
@@ -965,6 +1018,18 @@ export default function SafedSheriLandingPage() {
   };
 
   const submitRegistrationWithToken = async (verifiedToken: string) => {
+    const isPreview = typeof window !== 'undefined' && (
+      window.location.search.includes('previewLock=true') ||
+      window.location.search.includes('preview=true')
+    );
+    const now = Date.now();
+    if (isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
+      setBookingError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+      setOtpError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
+
     setBookingLoading(true);
     setBookingError(null);
     try {
@@ -1026,6 +1091,18 @@ export default function SafedSheriLandingPage() {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     garbaAudio.playDhol();
+
+    const isPreview = typeof window !== 'undefined' && (
+      window.location.search.includes('previewLock=true') ||
+      window.location.search.includes('preview=true')
+    );
+    const now = Date.now();
+    if (isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
+      setBookingError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
+
     setBookingLoading(true);
     setBookingError(null);
 
@@ -2125,11 +2202,18 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
 
+              {isPassBookingLocked && (
+                <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FDF4DF] border border-[#E5A93C] text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D99427] animate-pulse" />
+                  <span>Bookings Open 12th Sept</span>
+                </div>
+              )}
+
               <button
                 onClick={() => handlePassSelect('SINGLE')}
-                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md"
+                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md flex items-center justify-center space-x-2"
               >
-                Apply for Single Female Pass
+                <span>{isPassBookingLocked ? 'Apply (Opens 12th Sept)' : 'Apply for Single Female Pass'}</span>
               </button>
             </div>
 
@@ -2202,11 +2286,18 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
 
+              {isPassBookingLocked && (
+                <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FDF4DF] border border-[#E5A93C] text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D99427] animate-pulse" />
+                  <span>Bookings Open 12th Sept</span>
+                </div>
+              )}
+
               <button
                 onClick={() => handlePassSelect('COUPLE')}
-                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg shadow-[#D99427]/30"
+                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2"
               >
-                Apply for Couple Pass
+                <span>{isPassBookingLocked ? 'Apply (Opens 12th Sept)' : 'Apply for Couple Pass'}</span>
               </button>
             </div>
 
@@ -2271,11 +2362,18 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
 
+              {isPassBookingLocked && (
+                <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FDF4DF] border border-[#E5A93C] text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D99427] animate-pulse" />
+                  <span>Bookings Open 12th Sept</span>
+                </div>
+              )}
+
               <button
                 onClick={() => handlePassSelect('KIDS')}
-                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md"
+                className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md flex items-center justify-center space-x-2"
               >
-                Apply for Kids Pass
+                <span>{isPassBookingLocked ? 'Apply (Opens 12th Sept)' : 'Apply for Kids Pass'}</span>
               </button>
             </div>
           </div>
@@ -2434,6 +2532,161 @@ export default function SafedSheriLandingPage() {
             <button onClick={() => setShowPrivacyPolicy(false)} className="w-full mt-6 py-3 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg cursor-pointer">
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PREMIUM POP-UP MODAL: PASS BOOKINGS COMMENCING 12TH SEPTEMBER */}
+      {/* ========================================================================= */}
+      {isBookingSoonModalOpen && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-fade-in"
+          onClick={() => setIsBookingSoonModalOpen(false)}
+        >
+          <div
+            data-lenis-prevent="true"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-xl bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2.5rem] p-6 sm:p-9 text-[#2D1F0E] overflow-hidden"
+          >
+            {/* Ambient Royal Gold Glow in Background */}
+            <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full bg-gradient-to-br from-[#F6C85F]/30 to-[#D99427]/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-60 h-60 rounded-full bg-gradient-to-tr from-[#D99427]/20 to-[#F6C85F]/10 blur-3xl pointer-events-none" />
+
+            {/* Close button */}
+            <button
+              onClick={() => setIsBookingSoonModalOpen(false)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-white/80 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer"
+              title="Close announcement"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header Emblem & Pill */}
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#FFF5DC] via-white to-[#F6C85F]/30 border-2 border-[#D99427] flex items-center justify-center text-[#D99427] shadow-lg shadow-[#D99427]/20 mb-3">
+                <Sparkles className="w-7 h-7" />
+              </div>
+
+              <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-2 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D99427] animate-ping" />
+                <span>Official Proclamation • Navratri 2026</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
+                Pass Bookings Commencing <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019]">
+                  12th September 2026
+                </span>
+              </h3>
+
+              <p className="text-xs sm:text-sm text-[#6E5336] mt-2 max-w-md leading-relaxed">
+                The official digital application window for Safed Sheri passes will commence on <strong className="text-[#2D1F0E]">12th September 2026</strong>.
+              </p>
+            </div>
+
+            {/* Selected Pass Notice Card */}
+            <div className="mb-5 p-4 rounded-2xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427]">
+                  <Crown className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-[#8C6019]">
+                    Applied Privilege Category
+                  </div>
+                  <div className="text-sm font-bold text-[#2D1F0E]">
+                    {noticePassType === 'SINGLE' && 'Single Female Pass (Verified Entry)'}
+                    {noticePassType === 'COUPLE' && 'Couple Pass (1 Female + 1 Male Entry)'}
+                    {noticePassType === 'KIDS' && 'Kids Pass (Children 10–15 Yrs Entry)'}
+                  </div>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-[#FAF6EE] text-[10px] font-bold text-[#8C6019] border border-[#EAD9B8] uppercase shadow-sm">
+                Opens Sep 12
+              </span>
+            </div>
+
+            {/* Live Glowing Countdown */}
+            <div className="mb-5">
+              <div className="text-center text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-2 flex items-center justify-center space-x-1.5">
+                <Clock className="w-3.5 h-3.5 text-[#D99427]" />
+                <span>Countdown to Booking Window</span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
+                    {String(sep12Countdown.days).padStart(2, '0')}
+                  </div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Days</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
+                    {String(sep12Countdown.hours).padStart(2, '0')}
+                  </div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Hours</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
+                    {String(sep12Countdown.minutes).padStart(2, '0')}
+                  </div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Mins</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#D99427]">
+                    {String(sep12Countdown.seconds).padStart(2, '0')}
+                  </div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Secs</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Key Preparation Instructions */}
+            <div className="mb-6 p-4 rounded-2xl bg-[#FFF9EE] border border-[#EAD9B8] text-xs space-y-2">
+              <div className="font-bold text-[#8C6019] text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                <Shield className="w-3.5 h-3.5 text-[#D99427]" />
+                <span>Prepare for Instant Verification on 12th September</span>
+              </div>
+              <div className="space-y-1.5 text-[#6E5336] text-[11px] leading-relaxed">
+                <div className="flex items-start space-x-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
+                  <span><strong>Aadhaar Card:</strong> Have clear front &amp; back original government ID copies ready for instant OCR verification.</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
+                  <span><strong>75% White Attire:</strong> Pure white traditional Gujarati attire is strictly mandatory for venue entrance.</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
+                  <span><strong>Limited Allotment:</strong> Passes are released on a curated first-come verified quota.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <a
+                href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Team%2C%20please%20notify%20me%20immediately%20when%20pass%20bookings%20open%20on%2012th%20September%202026!"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => garbaAudio.playDhol()}
+                className="w-full sm:flex-1 py-3.5 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Bell className="w-4 h-4" />
+                <span>Notify Me on WhatsApp</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  garbaAudio.playDandiya();
+                  setIsBookingSoonModalOpen(false);
+                }}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] font-bold text-xs tracking-wider uppercase transition shadow-sm cursor-pointer"
+              >
+                I'll Be Ready
+              </button>
+            </div>
           </div>
         </div>
       )}
