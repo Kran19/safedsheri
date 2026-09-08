@@ -243,6 +243,16 @@ export class PaymentsService {
   }
 
   async getOrderDetails(paymentLinkId: string) {
+    // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST)
+    const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
+    const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+    const now = Date.now();
+    if (now >= lockStart && now < lockEnd) {
+      throw new BadRequestException(
+        'The Early Bird pass payment window has officially closed as of 8th September 12:00 AM midnight. Pass bookings and payments will reopen on 12th September 2026.',
+      );
+    }
+
     const registration = await this.prisma.registration.findFirst({
       where: { paymentLinkId },
       include: {
@@ -632,6 +642,16 @@ export class PaymentsService {
   }
 
   async createStandardOrder(dto: { amount: number; currency?: string; receipt?: string; notes?: any }) {
+    // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST)
+    const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
+    const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+    const now = Date.now();
+    if (now >= lockStart && now < lockEnd) {
+      throw new BadRequestException(
+        'Pass payments are currently paused. The payment window will reopen on 12th September 2026.',
+      );
+    }
+
     if (!dto.amount || dto.amount < 100) {
       throw new BadRequestException('Amount must be at least 100 paise (₹1)');
     }
@@ -680,6 +700,16 @@ export class PaymentsService {
     notes?: string;
     method?: PaymentMethod;
   }) {
+    // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST)
+    const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
+    const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+    const now = Date.now();
+    if (now >= lockStart && now < lockEnd) {
+      throw new BadRequestException(
+        'Pass payments are currently paused. The payment window will reopen on 12th September 2026.',
+      );
+    }
+
     return await this.prisma.$transaction(async (tx) => {
       const registration = await tx.registration.findFirst({
         where: { paymentLinkId: data.paymentLinkId },

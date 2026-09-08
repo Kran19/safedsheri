@@ -1377,6 +1377,20 @@ export default function SafedSheriLandingPage() {
 
   const openPaymentModal = async (paymentLinkId: string) => {
     garbaAudio.playDandiya();
+
+    const isPreview = typeof window !== 'undefined' && (
+      window.location.search.includes('previewLock=true') ||
+      window.location.search.includes('preview=true')
+    );
+    const now = Date.now();
+    const locked = isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
+
+    if (locked) {
+      setNoticePassType('SINGLE');
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
+
     setActivePaymentLink(paymentLinkId);
     setPaymentOrder(null);
     setPaymentSuccessData(null);
@@ -1387,6 +1401,8 @@ export default function SafedSheriLandingPage() {
       const json = await res.json();
       if (json.success && json.data) {
         setPaymentOrder(json.data);
+      } else {
+        alert(json.message || 'Payment link is unavailable or paused.');
       }
     } catch (err) {
       console.error(err);
@@ -1396,6 +1412,18 @@ export default function SafedSheriLandingPage() {
   };
 
   const handleSimulatePayment = async () => {
+    const isPreview = typeof window !== 'undefined' && (
+      window.location.search.includes('previewLock=true') ||
+      window.location.search.includes('preview=true')
+    );
+    const now = Date.now();
+    const locked = isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
+    if (locked) {
+      alert('The Early Bird pass payment window has officially closed as of 12:00 AM midnight. Pass bookings and payments will reopen on 12th September 2026.');
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
+
     if (!activePaymentLink || !paymentOrder) return;
     garbaAudio.playDhol();
     const totalAmount = paymentOrder.amountDue || paymentOrder.amount || 3500;
@@ -2574,14 +2602,14 @@ export default function SafedSheriLandingPage() {
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
-                Pass Bookings Commencing <br />
+                Pass Bookings &amp; Payments <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019]">
-                  12th September 2026
+                  Commencing 12th September 2026
                 </span>
               </h3>
 
               <p className="text-xs sm:text-sm text-[#6E5336] mt-2 max-w-md leading-relaxed">
-                The official digital application window for Safed Sheri passes will commence on <strong className="text-[#2D1F0E]">12th September 2026</strong>.
+                The official window for Safed Sheri pass applications &amp; payments will commence on <strong className="text-[#2D1F0E]">12th September 2026</strong>. Early Bird applications and payments have closed as of 12:00 AM midnight.
               </p>
             </div>
 
@@ -3612,20 +3640,38 @@ export default function SafedSheriLandingPage() {
                               <span>KYC Approved! Online Payment Pending</span>
                             </div>
                             <p className="text-[11px] text-[#6E5336] leading-relaxed">
-                              Your document verification is complete. Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.
+                              Your document verification is complete. {isPassBookingLocked ? (
+                                <span className="text-[#8C6019] font-medium block mt-1">
+                                  ⚠️ The Early Bird payment window has concluded at 12:00 AM midnight. Pass payments will resume on <strong>12th September 2026</strong>.
+                                </span>
+                              ) : (
+                                <>Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.</>
+                              )}
                             </p>
 
                             {p.paymentLinkId && p.isPrimary && (
                               <div className="pt-1 flex justify-end">
-                                <button
-                                  onClick={() => {
-                                    setIsWalletOpen(false);
-                                    openPaymentModal(p.paymentLinkId);
-                                  }}
-                                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:scale-105 transition shadow-md flex items-center space-x-1.5"
-                                >
-                                  <span>Pay Now & Mint Pass →</span>
-                                </button>
+                                {isPassBookingLocked ? (
+                                  <button
+                                    onClick={() => {
+                                      setIsWalletOpen(false);
+                                      setIsBookingSoonModalOpen(true);
+                                    }}
+                                    className="px-6 py-2.5 rounded-full bg-[#FFF5DC] border border-[#D99427] text-[#8C6019] font-bold text-xs uppercase tracking-wider hover:bg-[#FAF6EE] transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                                  >
+                                    <span>Payments Resume Sep 12 →</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setIsWalletOpen(false);
+                                      openPaymentModal(p.paymentLinkId);
+                                    }}
+                                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:scale-105 transition shadow-md flex items-center space-x-1.5"
+                                  >
+                                    <span>Pay Now & Mint Pass →</span>
+                                  </button>
+                                )}
                               </div>
                             )}
 
@@ -3867,16 +3913,39 @@ export default function SafedSheriLandingPage() {
                 )}
 
                 <div className="space-y-2.5 pt-4">
-                  <button
-                    onClick={handleSimulatePayment}
-                    disabled={paymentLoading}
-                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition disabled:opacity-50 shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2"
-                  >
-                    <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (₹${paymentOrder?.amountDue?.toLocaleString() || '3,500'})`}</span>
-                  </button>
-                  <p className="text-[10px] text-[#6E5336]">
-                    Protected by Razorpay 256-bit encrypted gateway. Digital QR pass minted instantly.
-                  </p>
+                  {isPassBookingLocked ? (
+                    <div className="p-4 rounded-2xl bg-[#FFF9EE] border border-[#E5A93C] text-center space-y-2">
+                      <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-[#8C6019] uppercase tracking-wider">
+                        <Clock className="w-4 h-4 text-[#D99427]" />
+                        <span>Early Bird Payment Window Concluded</span>
+                      </div>
+                      <p className="text-xs text-[#6E5336] leading-relaxed">
+                        Online pass payments have paused as of 12:00 AM midnight. Pass checkouts will officially resume on <strong>12th September 2026</strong>.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setActivePaymentLink(null);
+                          setIsBookingSoonModalOpen(true);
+                        }}
+                        className="mt-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-sm hover:opacity-95 transition"
+                      >
+                        View Announcement &amp; Countdown →
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSimulatePayment}
+                        disabled={paymentLoading}
+                        className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition disabled:opacity-50 shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2"
+                      >
+                        <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (₹${paymentOrder?.amountDue?.toLocaleString() || '3,500'})`}</span>
+                      </button>
+                      <p className="text-[10px] text-[#6E5336]">
+                        Protected by Razorpay 256-bit encrypted gateway. Digital QR pass minted instantly.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
