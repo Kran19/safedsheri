@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
@@ -158,22 +160,10 @@ export class PaymentsController {
   }
 
   @Post('webhook')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Payment Gateway Webhook Endpoint' })
-  handleWebhook(
-    @Body()
-    body: {
-      event: string;
-      paymentLinkId: string;
-      providerReference?: string;
-      signature?: string;
-    },
-  ) {
-    return this.paymentsService.confirmGatewayPayment({
-      paymentLinkId: body.paymentLinkId,
-      providerReference: body.providerReference,
-      notes: `Webhook verified event: ${body.event}`,
-      method: PaymentMethod.ONLINE_GATEWAY,
-    });
+  handleWebhook(@Body() body: any) {
+    return this.paymentsService.handleWebhook(body);
   }
 
   @Get(':id')

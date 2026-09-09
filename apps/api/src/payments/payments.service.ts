@@ -831,6 +831,56 @@ export class PaymentsService {
     });
   }
 
+  async handleWebhook(body: any) {
+    try {
+      if (!body || Object.keys(body).length === 0 || body.ping) {
+        return { success: true, status: 'ok', message: 'Webhook ping received' };
+      }
+
+      const event = body.event;
+      const paymentEntity = body.payload?.payment?.entity;
+      const orderEntity = body.payload?.order?.entity;
+
+      const paymentId = paymentEntity?.id || body.providerReference;
+      const notes = paymentEntity?.notes || orderEntity?.notes || body.notes || {};
+      const paymentLinkId = notes.paymentLinkId || body.paymentLinkId;
+      const registrationId = notes.registrationId || body.registrationId;
+
+      let targetLinkId = paymentLinkId;
+      if (!targetLinkId && registrationId) {
+        const reg = await this.prisma.registration.findUnique({
+          where: { id: registrationId },
+          select: { paymentLinkId: true },
+        });
+        targetLinkId = reg?.paymentLinkId;
+      }
+
+      if (!targetLinkId && (notes.registrationNumber || body.registrationNumber)) {
+        const regNumber = notes.registrationNumber || body.registrationNumber;
+        const reg = await this.prisma.registration.findFirst({
+          where: { registrationNumber: regNumber },
+          select: { paymentLinkId: true },
+        });
+        targetLinkId = reg?.paymentLinkId;
+      }
+
+      if (targetLinkId) {
+        const res = await this.confirmGatewayPayment({
+          paymentLinkId: targetLinkId,
+          providerReference: paymentId,
+          notes: `Webhook verified event: ${event || 'payment.captured'}`,
+          method: PaymentMethod.ONLINE_GATEWAY,
+        });
+        return { success: true, status: 'ok', data: res };
+      }
+
+      return { success: true, status: 'ok', message: 'Webhook event processed' };
+    } catch (err: any) {
+      console.error('Webhook error:', err.message);
+      return { success: true, status: 'ok', message: 'Webhook handled', error: err.message };
+    }
+  }
+
   async approveCashierRequest(registrationId: string, adminId: string) {
     return await this.prisma.$transaction(async (tx) => {
       const reg = await tx.registration.findUnique({
