@@ -694,22 +694,11 @@ export class PaymentsService {
   }
 
   async confirmGatewayPayment(data: {
-
     paymentLinkId: string;
     providerReference?: string;
     notes?: string;
     method?: PaymentMethod;
   }) {
-    // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST)
-    const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
-    const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
-    const now = Date.now();
-    if (now >= lockStart && now < lockEnd) {
-      throw new BadRequestException(
-        'Pass payments are currently paused. The payment window will reopen on 12th September 2026.',
-      );
-    }
-
     return await this.prisma.$transaction(async (tx) => {
       const registration = await tx.registration.findFirst({
         where: { paymentLinkId: data.paymentLinkId },
