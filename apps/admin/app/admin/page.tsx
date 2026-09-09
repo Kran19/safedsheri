@@ -940,12 +940,19 @@ export default function SuperAdminDashboard() {
       sortable: true,
       isNumeric: true,
       align: 'right',
-      getValue: (row) => Number(row.amountDue || 0),
-      render: (row) => (
-        <span className="font-serif font-bold text-emerald-800">
-          ₹{Number(row.amountDue)?.toLocaleString()}
-        </span>
-      ),
+      getValue: (row) => {
+        const paidAmount = row.payments?.find((p: any) => p.status === 'CONFIRMED')?.amount;
+        return Number(row.amountDue || paidAmount || 0);
+      },
+      render: (row) => {
+        const paidAmount = row.payments?.find((p: any) => p.status === 'CONFIRMED')?.amount;
+        const displayAmount = Number(row.amountDue || paidAmount || 0);
+        return (
+          <span className="font-serif font-bold text-emerald-800">
+            ₹{displayAmount.toLocaleString()}
+          </span>
+        );
+      },
     },
     {
       key: 'paymentMethod',
