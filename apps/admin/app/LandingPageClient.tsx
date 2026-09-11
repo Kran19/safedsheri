@@ -427,7 +427,7 @@ export default function SafedSheriLandingPage() {
   const [pricing, setPricing] = useState<any>({
     singlePrice: 3500,
     couplePrice: 6500,
-    kidsPrice: 1200,
+    kidsPrice: 1500,
     nextSinglePrice: 6500,
     nextCouplePrice: 12000,
     nextKidsPrice: 1999,
@@ -460,7 +460,7 @@ export default function SafedSheriLandingPage() {
         if (json.success && json.data) {
           setPricing({
             ...json.data,
-            kidsPrice: json.data.kidsPrice || 1200,
+            kidsPrice: json.data.kidsPrice || 1500,
             nextKidsPrice: json.data.nextKidsPrice || 1999,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
           });
@@ -2354,7 +2354,9 @@ export default function SafedSheriLandingPage() {
                         <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Kids Pass (10 to 15 Yrs)</span>
                         <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
                       </div>
-                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">₹1,200</span>
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
+                      </span>
                     </div>
                   </div>
                 ) : (
