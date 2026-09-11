@@ -1,5 +1,5 @@
 import axios from 'axios';
-import https from 'https';
+import * as https from 'https';
 
 const ipv4HttpsAgent = new https.Agent({
   family: 4, // Force IPv4 to prevent IPv6 ENETUNREACH delays
@@ -40,7 +40,9 @@ export async function sendWhatsAppMessage(
   templateId: string,
   code: string,
 ): Promise<{ success: boolean; data?: any; error?: any }> {
-  const url = process.env.ZAPLE_API_URL || 'https://app.zaple.ai/api/v2/send-template-message';
+  const url = (process.env.ZAPLE_API_URL && process.env.ZAPLE_API_URL.trim())
+    ? process.env.ZAPLE_API_URL.trim()
+    : 'https://app.zaple.ai/api/v2/send-template-message';
   
   const { countryCode, sendTo } = sanitizePhoneNumber(to);
   

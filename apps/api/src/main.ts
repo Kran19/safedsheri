@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import dns from 'dns';
+import * as dns from 'dns';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
@@ -7,7 +7,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 // Prioritize IPv4 to prevent IPv6 ENETUNREACH / dual-stack socket connection hangs
 try {
-  dns.setDefaultResultOrder('ipv4first');
+  if (typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+  }
 } catch {
   // Ignore on older Node versions
 }
