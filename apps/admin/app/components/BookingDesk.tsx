@@ -174,7 +174,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
             setManualForm(mf => ({ ...mf, customAmount: 0 }));
           } else if (age > 10 && age <= 15) {
             copy[index].kidsAgeGroup = 'AGE_11_15';
-            setManualForm(mf => ({ ...mf, customAmount: 1500 }));
+            setManualForm(mf => ({ ...mf, customAmount: 1200 }));
           }
         }
       }
@@ -231,7 +231,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                     setManualForm(mf => ({ ...mf, customAmount: 0 }));
                   } else if (ex.age > 10 && ex.age <= 15) {
                     copy[index].kidsAgeGroup = 'AGE_11_15';
-                    setManualForm(mf => ({ ...mf, customAmount: 1500 }));
+                    setManualForm(mf => ({ ...mf, customAmount: 1200 }));
                   }
                 }
               }

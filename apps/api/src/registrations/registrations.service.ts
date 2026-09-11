@@ -87,7 +87,7 @@ export class RegistrationsService {
         phaseName: phase.phaseName || 'EARLY PASS',
         singlePrice: Number(phase.singlePrice) || 3500,
         couplePrice: Number(phase.couplePrice) || 6500,
-        kidsPrice: 1500,
+        kidsPrice: 1200,
         nextSinglePrice: phase.nextSinglePrice ? Number(phase.nextSinglePrice) : null,
         nextCouplePrice: phase.nextCouplePrice ? Number(phase.nextCouplePrice) : null,
         showSinglePrice: phase.showSinglePrice,
@@ -489,7 +489,7 @@ export class RegistrationsService {
           if (age > 15) {
             throw new BadRequestException(`Attendee #${i + 1} (${att.fullName}) is ${age} years old. You are not able to book a Kids Pass (Kids Pass is strictly for age 15 and under).`);
           } else if (age > 10 && age <= 15) {
-            amountDue += 1500;
+            amountDue += 1200;
           } else {
             amountDue += 0; // Free pass for age <= 10
           }
@@ -755,7 +755,7 @@ export class RegistrationsService {
             const diffMs = Date.now() - new Date(ra.attendee.dob).getTime();
             const ageDate = new Date(diffMs);
             const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-            if (age >= 10 && age <= 15) return sum + 1500;
+            if (age >= 10 && age <= 15) return sum + 1200;
             return sum;
           }
           return sum; // Should not happen, but default to 0 if dob missing on approved kids pass

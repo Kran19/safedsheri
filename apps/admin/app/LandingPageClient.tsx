@@ -429,7 +429,7 @@ export default function SafedSheriLandingPage() {
   const [pricing, setPricing] = useState<any>({
     singlePrice: 3500,
     couplePrice: 6500,
-    kidsPrice: 1500,
+    kidsPrice: 1200,
     nextSinglePrice: null,
     nextCouplePrice: null,
     nextKidsPrice: null,
@@ -466,7 +466,7 @@ export default function SafedSheriLandingPage() {
             phaseName: json.data.phaseName || 'EARLY PASS',
             singlePrice: json.data.singlePrice || 3500,
             couplePrice: json.data.couplePrice || 6500,
-            kidsPrice: json.data.kidsPrice || 1500,
+            kidsPrice: json.data.kidsPrice || 1200,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
           }));
         }
@@ -667,7 +667,7 @@ export default function SafedSheriLandingPage() {
           phaseName: json.data.phaseName || 'EARLY PASS',
           singlePrice: json.data.singlePrice || 3500,
           couplePrice: json.data.couplePrice || 6500,
-          kidsPrice: json.data.kidsPrice || 1500,
+          kidsPrice: json.data.kidsPrice || 1200,
         }));
       }
     } catch (e) {
@@ -750,7 +750,7 @@ export default function SafedSheriLandingPage() {
       const diffMs = Date.now() - dobDate.getTime();
       const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
       if (age <= 10) return 0; // Free pass for 10 and under
-      if (age > 10 && age <= 15) return pricing.kidsPrice || 1500; // ₹1,500 for 11 to 15
+      if (age > 10 && age <= 15) return pricing.kidsPrice || 1200; // ₹1,200 for 11 to 15
       return 0;
     }
     return 0;
@@ -2359,7 +2359,7 @@ export default function SafedSheriLandingPage() {
                         </span>
                       </div>
                       <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
+                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,200'}
                       </span>
                     </div>
                   </div>
