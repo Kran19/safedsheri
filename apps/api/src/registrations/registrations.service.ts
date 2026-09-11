@@ -88,6 +88,9 @@ export class RegistrationsService {
         singlePrice: Number(phase.singlePrice),
         couplePrice: Number(phase.couplePrice),
         kidsPrice: 1500,
+        oldSinglePrice: 3500,
+        oldCouplePrice: 6500,
+        oldKidsPrice: 1200,
         nextSinglePrice: phase.nextSinglePrice ? Number(phase.nextSinglePrice) : null,
         nextCouplePrice: phase.nextCouplePrice ? Number(phase.nextCouplePrice) : null,
         showSinglePrice: phase.showSinglePrice,
@@ -319,11 +322,12 @@ export class RegistrationsService {
     }
 
     try {
-      // Check if bookings are paused until 12 September 2026 (activates after 12:00 AM IST: 2026-09-09T00:00:00+05:30)
+      // Check if bookings are paused until 12 September 2026 (lock toggleable while preserving logic)
+      const isBookingLockEnabled = false;
       const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
       const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
       const now = Date.now();
-      if (now >= lockStart && now < lockEnd) {
+      if (isBookingLockEnabled && now >= lockStart && now < lockEnd) {
         throw new BadRequestException('Pass bookings are currently paused and will officially commence on 12th September 2026.');
       }
 

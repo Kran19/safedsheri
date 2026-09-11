@@ -386,6 +386,8 @@ export default function SafedSheriLandingPage() {
   const [selectedPass, setSelectedPass] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
 
   // 12 September Pass Booking Lock State (Activates after 12:00 AM IST: 2026-09-09T00:00:00+05:30, until Sep 12, 2026)
+  // Lock is deactivated for passes while preserving the complete lock logic, timer, and preview capability
+  const IS_BOOKING_LOCK_ENABLED = false;
   const BOOKING_LOCK_START_TIMESTAMP = new Date('2026-09-09T00:00:00+05:30').getTime();
   const BOOKING_START_TIMESTAMP = new Date('2026-09-12T00:00:00+05:30').getTime();
 
@@ -407,7 +409,7 @@ export default function SafedSheriLandingPage() {
         window.location.search.includes('preview=true')
       );
       const now = Date.now();
-      const locked = isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
+      const locked = isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
       setIsPassBookingLocked(locked);
 
       // Live countdown to 12 September 2026 00:00:00 IST
@@ -425,12 +427,15 @@ export default function SafedSheriLandingPage() {
   }, []);
 
   const [pricing, setPricing] = useState<any>({
-    singlePrice: 3500,
-    couplePrice: 6500,
+    singlePrice: 4000,
+    couplePrice: 7500,
     kidsPrice: 1500,
-    nextSinglePrice: 6500,
-    nextCouplePrice: 12000,
-    nextKidsPrice: 1999,
+    oldSinglePrice: 3500,
+    oldCouplePrice: 6500,
+    oldKidsPrice: 1200,
+    nextSinglePrice: null,
+    nextCouplePrice: null,
+    nextKidsPrice: null,
     showSinglePrice: true,
     showCouplePrice: true,
     showKidsPrice: true,
@@ -458,12 +463,17 @@ export default function SafedSheriLandingPage() {
         const res = await fetch(`${API_BASE}/registrations/active-phase`);
         const json = await res.json();
         if (json.success && json.data) {
-          setPricing({
+          setPricing((prev: any) => ({
+            ...prev,
             ...json.data,
+            singlePrice: json.data.singlePrice || 4000,
+            couplePrice: json.data.couplePrice || 7500,
             kidsPrice: json.data.kidsPrice || 1500,
-            nextKidsPrice: json.data.nextKidsPrice || 1999,
+            oldSinglePrice: json.data.oldSinglePrice || 3500,
+            oldCouplePrice: json.data.oldCouplePrice || 6500,
+            oldKidsPrice: json.data.oldKidsPrice || 1200,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
-          });
+          }));
         }
       } catch (err) {
         console.warn('Failed to load active pricing phase', err);
@@ -656,7 +666,16 @@ export default function SafedSheriLandingPage() {
       const res = await fetch(`${API_BASE}/registrations/active-phase`);
       const json = await res.json();
       if (json.success && json.data) {
-        setPricing(json.data);
+        setPricing((prev: any) => ({
+          ...prev,
+          ...json.data,
+          singlePrice: json.data.singlePrice || 4000,
+          couplePrice: json.data.couplePrice || 7500,
+          kidsPrice: json.data.kidsPrice || 1500,
+          oldSinglePrice: json.data.oldSinglePrice || 3500,
+          oldCouplePrice: json.data.oldCouplePrice || 6500,
+          oldKidsPrice: json.data.oldKidsPrice || 1200,
+        }));
       }
     } catch (e) {
       console.log('Using default pricing phase');
@@ -738,7 +757,7 @@ export default function SafedSheriLandingPage() {
       const diffMs = Date.now() - dobDate.getTime();
       const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
       if (age <= 10) return 0; // Free pass for 10 and under
-      if (age > 10 && age <= 15) return 1200; // ₹1,200 for 11 to 15
+      if (age > 10 && age <= 15) return pricing.kidsPrice || 1500; // ₹1,500 for 11 to 15
       return 0;
     }
     return 0;
@@ -877,7 +896,7 @@ export default function SafedSheriLandingPage() {
       window.location.search.includes('preview=true')
     );
     const now = Date.now();
-    if (isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
+    if (isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
       setNoticePassType(type);
       setIsBookingSoonModalOpen(true);
       return;
@@ -2188,9 +2207,9 @@ export default function SafedSheriLandingPage() {
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
                         ₹{pricing.singlePrice?.toLocaleString()}
                       </span>
-                      {pricing.nextSinglePrice && (
-                        <span className="text-xs font-mono text-gray-400 line-through">
-                          ₹{pricing.nextSinglePrice?.toLocaleString()}
+                      {(pricing.oldSinglePrice || 3500) && (
+                        <span className="text-sm font-mono text-gray-400 line-through">
+                          ₹{(pricing.oldSinglePrice || 3500).toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -2272,9 +2291,9 @@ export default function SafedSheriLandingPage() {
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
                         ₹{pricing.couplePrice?.toLocaleString()}
                       </span>
-                      {pricing.nextCouplePrice && (
-                        <span className="text-xs font-mono text-gray-400 line-through">
-                          ₹{pricing.nextCouplePrice?.toLocaleString()}
+                      {(pricing.oldCouplePrice || 6500) && (
+                        <span className="text-sm font-mono text-gray-400 line-through">
+                          ₹{(pricing.oldCouplePrice || 6500).toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -2354,9 +2373,16 @@ export default function SafedSheriLandingPage() {
                         <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Kids Pass (10 to 15 Yrs)</span>
                         <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
                       </div>
-                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
-                      </span>
+                      <div className="flex items-baseline space-x-2">
+                        <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                          ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
+                        </span>
+                        {(pricing.oldKidsPrice || 1200) && (
+                          <span className="text-xs font-mono text-gray-400 line-through">
+                            ₹{(pricing.oldKidsPrice || 1200).toLocaleString('en-IN')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
