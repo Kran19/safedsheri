@@ -1,4 +1,10 @@
 import axios from 'axios';
+import https from 'https';
+
+const ipv4HttpsAgent = new https.Agent({
+  family: 4, // Force IPv4 to prevent IPv6 ENETUNREACH delays
+  keepAlive: true,
+});
 
 /**
  * Sanitizes the phone number to separate the country code from the 10-digit mobile number.
@@ -34,7 +40,7 @@ export async function sendWhatsAppMessage(
   templateId: string,
   code: string,
 ): Promise<{ success: boolean; data?: any; error?: any }> {
-  const url = 'https://app.zaple.ai/api/v2/send-template-message';
+  const url = process.env.ZAPLE_API_URL || 'https://app.zaple.ai/api/v2/send-template-message';
   
   const { countryCode, sendTo } = sanitizePhoneNumber(to);
   
@@ -53,13 +59,18 @@ export async function sendWhatsAppMessage(
     const response = await axios.post(url, payload, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Zaple-Api-Key': process.env.ZAPLE_API_KEY,
         'Zaple-Api-Secret': process.env.ZAPLE_API_SECRET,
       },
+      httpsAgent: ipv4HttpsAgent,
+      timeout: 8000,
     });
     return { success: true, data: response.data };
   } catch (error: any) {
-    console.error('WhatsApp API Error:', error.response?.data || error.message);
-    return { success: false, error: error.response?.data || error.message };
+    const errMsg = error.response?.data || error.message;
+    console.error('WhatsApp API Error:', errMsg);
+    return { success: false, error: errMsg };
   }
 }
+

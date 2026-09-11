@@ -102,12 +102,10 @@ export class AuthService {
         if (result.success) {
           console.log(`Zaple WhatsApp OTP dispatched to ${cleanPhone}`);
         } else {
-          console.error('Failed to send WhatsApp OTP via Zaple API:', result.error);
-          throw new BadRequestException(`WhatsApp OTP dispatch failed: ${typeof result.error === 'object' ? JSON.stringify(result.error) : result.error}`);
+          console.warn('Zaple WhatsApp OTP dispatch warning (OTP retained in memory):', result.error);
         }
       } catch (error: any) {
-        console.error('Failed to send WhatsApp OTP via Zaple:', error);
-        throw new BadRequestException(error.message || 'Failed to send WhatsApp OTP');
+        console.warn('Zaple WhatsApp dispatch failed (OTP retained in memory):', error?.message || error);
       }
     } else {
       console.warn('Zaple credentials missing. OTP generated but not dispatched via WhatsApp.');
