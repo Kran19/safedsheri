@@ -53,7 +53,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
   // Manual On-Spot Form State
   const [manualForm, setManualForm] = useState({
     passType: 'SINGLE' as 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO',
-    customAmount: 3500,
+    customAmount: 4000,
     paymentMethod: 'CUSTOM_DIRECT' as 'CUSTOM_DIRECT' | 'UPI_QR',
     notes: 'On-spot walk-in booking by Desk Executive',
   });
@@ -118,9 +118,9 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
 
   // Handle Pass Type Switch
   function handlePassTypeChange(newType: 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO') {
-    let defaultAmount = 3500;
-    if (newType === 'SINGLE') defaultAmount = 3500;
-    if (newType === 'COUPLE') defaultAmount = 6500;
+    let defaultAmount = 4000;
+    if (newType === 'SINGLE') defaultAmount = 4000;
+    if (newType === 'COUPLE') defaultAmount = 7500;
     if (newType === 'KIDS') defaultAmount = 0;
     if (newType === 'GAZEBO') defaultAmount = 85000;
 
@@ -174,7 +174,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
             setManualForm(mf => ({ ...mf, customAmount: 0 }));
           } else if (age > 10 && age <= 15) {
             copy[index].kidsAgeGroup = 'AGE_11_15';
-            setManualForm(mf => ({ ...mf, customAmount: 1200 }));
+            setManualForm(mf => ({ ...mf, customAmount: 1500 }));
           }
         }
       }
@@ -231,7 +231,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                     setManualForm(mf => ({ ...mf, customAmount: 0 }));
                   } else if (ex.age > 10 && ex.age <= 15) {
                     copy[index].kidsAgeGroup = 'AGE_11_15';
-                    setManualForm(mf => ({ ...mf, customAmount: 1200 }));
+                    setManualForm(mf => ({ ...mf, customAmount: 1500 }));
                   }
                 }
               }
@@ -832,7 +832,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
 
                     {att.age !== null && att.age !== undefined && (
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF5DC] text-[#8C6019] border border-[#EAD9B8]">
-                        Age: {att.age} Years {manualForm.passType === 'KIDS' && (att.age <= 10 ? '• Free Pass (₹0)' : att.age <= 15 ? '• Tier Pass (₹1,200)' : '• Blocked (>15)')}
+                        Age: {att.age} Years {manualForm.passType === 'KIDS' && (att.age <= 10 ? '• Free Pass (₹0)' : att.age <= 15 ? '• Tier Pass (₹1,500)' : '• Blocked (>15)')}
                       </span>
                     )}
                   </div>

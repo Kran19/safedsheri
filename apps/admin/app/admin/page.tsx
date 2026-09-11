@@ -118,8 +118,8 @@ export default function SuperAdminDashboard() {
 
   const [pricingSettings, setPricingSettings] = useState<any>({
     phaseName: 'EARLY PASS',
-    singlePrice: 3500,
-    couplePrice: 6500,
+    singlePrice: 4000,
+    couplePrice: 7500,
     nextSinglePrice: null,
     nextCouplePrice: null,
     showSinglePrice: true,
@@ -1979,14 +1979,14 @@ export default function SuperAdminDashboard() {
                   setPricingSettings((prev: any) => ({
                     ...prev,
                     phaseName: 'EARLY PASS',
-                    singlePrice: 3500,
-                    couplePrice: 6500,
+                    singlePrice: 4000,
+                    couplePrice: 7500,
                     nextSinglePrice: null,
                     nextCouplePrice: null,
                     showSinglePrice: true,
                     showCouplePrice: true,
                     isCountdownActive: true,
-                    urgencyTagline: '⚡ Early Pass Window Active — Lock in passes at ₹3,500 before price escalates!',
+                    urgencyTagline: '⚡ Early Pass Window Active — Lock in passes at ₹4,000 before price escalates!',
                   }));
                 }}
                 className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-[11px] font-bold transition flex items-center space-x-1"
@@ -2822,7 +2822,7 @@ export default function SuperAdminDashboard() {
               const totalGuests = selectedApp.attendees?.length || 0;
               const approvedCount = Object.values(attendeeDecisions).filter((d) => d.status === 'APPROVED').length;
               const rejectedCount = totalGuests - approvedCount;
-              const singlePrice = Number(selectedApp.pricingPhase?.singlePrice || 3500);
+              const singlePrice = Number(selectedApp.pricingPhase?.singlePrice || 4000);
               const recalculatedAmount =
                 selectedApp.passType === 'COUPLE'
                   ? Number(selectedApp.amountDue)
@@ -2832,7 +2832,7 @@ export default function SuperAdminDashboard() {
                         if (attWrapper.attendee.dob) {
                           const diffMs = Date.now() - new Date(attWrapper.attendee.dob).getTime();
                           const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
-                          if (age > 10 && age <= 15) return sum + 1200;
+                          if (age > 10 && age <= 15) return sum + 1500;
                           return sum; // Free for <= 10
                         }
                         return sum; // Fallback

@@ -244,7 +244,7 @@ export class PaymentsService {
 
   async getOrderDetails(paymentLinkId: string) {
     // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST - toggleable while preserving logic)
-    const isPaymentLockEnabled = false;
+    const isPaymentLockEnabled = true;
     const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
     const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
     const now = Date.now();
@@ -644,7 +644,7 @@ export class PaymentsService {
 
   async createStandardOrder(dto: { amount: number; currency?: string; receipt?: string; notes?: any }) {
     // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST - toggleable while preserving logic)
-    const isPaymentLockEnabled = false;
+    const isPaymentLockEnabled = true;
     const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
     const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
     const now = Date.now();

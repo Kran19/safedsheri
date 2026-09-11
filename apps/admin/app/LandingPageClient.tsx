@@ -386,8 +386,8 @@ export default function SafedSheriLandingPage() {
   const [selectedPass, setSelectedPass] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
 
   // 12 September Pass Booking Lock State (Activates after 12:00 AM IST: 2026-09-09T00:00:00+05:30, until Sep 12, 2026)
-  // Lock is deactivated for passes while preserving the complete lock logic, timer, and preview capability
-  const IS_BOOKING_LOCK_ENABLED = false;
+  // Lock is active for passes until official opening on 12 September 2026
+  const IS_BOOKING_LOCK_ENABLED = true;
   const BOOKING_LOCK_START_TIMESTAMP = new Date('2026-09-09T00:00:00+05:30').getTime();
   const BOOKING_START_TIMESTAMP = new Date('2026-09-12T00:00:00+05:30').getTime();
 
@@ -427,9 +427,9 @@ export default function SafedSheriLandingPage() {
   }, []);
 
   const [pricing, setPricing] = useState<any>({
-    singlePrice: 3500,
-    couplePrice: 6500,
-    kidsPrice: 1200,
+    singlePrice: 4000,
+    couplePrice: 7500,
+    kidsPrice: 1500,
     nextSinglePrice: null,
     nextCouplePrice: null,
     nextKidsPrice: null,
@@ -464,9 +464,9 @@ export default function SafedSheriLandingPage() {
             ...prev,
             ...json.data,
             phaseName: json.data.phaseName || 'EARLY PASS',
-            singlePrice: json.data.singlePrice || 3500,
-            couplePrice: json.data.couplePrice || 6500,
-            kidsPrice: json.data.kidsPrice || 1200,
+            singlePrice: json.data.singlePrice || 4000,
+            couplePrice: json.data.couplePrice || 7500,
+            kidsPrice: json.data.kidsPrice || 1500,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
           }));
         }
@@ -665,9 +665,9 @@ export default function SafedSheriLandingPage() {
           ...prev,
           ...json.data,
           phaseName: json.data.phaseName || 'EARLY PASS',
-          singlePrice: json.data.singlePrice || 3500,
-          couplePrice: json.data.couplePrice || 6500,
-          kidsPrice: json.data.kidsPrice || 1200,
+          singlePrice: json.data.singlePrice || 4000,
+          couplePrice: json.data.couplePrice || 7500,
+          kidsPrice: json.data.kidsPrice || 1500,
         }));
       }
     } catch (e) {
@@ -750,7 +750,7 @@ export default function SafedSheriLandingPage() {
       const diffMs = Date.now() - dobDate.getTime();
       const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
       if (age <= 10) return 0; // Free pass for 10 and under
-      if (age > 10 && age <= 15) return pricing.kidsPrice || 1200; // ₹1,200 for 11 to 15
+      if (age > 10 && age <= 15) return pricing.kidsPrice || 1500; // ₹1,500 for 11 to 15
       return 0;
     }
     return 0;
@@ -1443,7 +1443,7 @@ export default function SafedSheriLandingPage() {
 
     if (!activePaymentLink || !paymentOrder) return;
     garbaAudio.playDhol();
-    const totalAmount = paymentOrder.amountDue || paymentOrder.amount || 3500;
+    const totalAmount = paymentOrder.amountDue || paymentOrder.amount || 4000;
     const options = {
       key: paymentOrder.razorpayKeyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TU3glApQtNIVtN',
       amount: Math.round(totalAmount * 100),
@@ -2364,7 +2364,7 @@ export default function SafedSheriLandingPage() {
                         </span>
                       </div>
                       <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,200'}
+                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
                       </span>
                     </div>
                   </div>
@@ -3091,7 +3091,7 @@ export default function SafedSheriLandingPage() {
                                       </div>
                                     </div>
                                     <span className="px-3 py-1 bg-amber-600 text-white rounded-full uppercase tracking-wider text-[10px] font-bold shadow-sm">
-                                      ₹1,200 PASS
+                                      ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'} PASS
                                     </span>
                                   </div>
                                 );
@@ -3656,7 +3656,7 @@ export default function SafedSheriLandingPage() {
                                   ⚠️ The Early Bird payment window has concluded at 12:00 AM midnight. Pass payments will resume on <strong>12th September 2026</strong>.
                                 </span>
                               ) : (
-                                <>Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '3,500'}</strong> to activate and download your official entry pass.</>
+                                <>Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '4,000'}</strong> to activate and download your official entry pass.</>
                               )}
                             </p>
 
@@ -3957,7 +3957,7 @@ export default function SafedSheriLandingPage() {
                         disabled={paymentLoading}
                         className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition disabled:opacity-50 shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2"
                       >
-                        <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (₹${paymentOrder?.amountDue?.toLocaleString() || '3,500'})`}</span>
+                        <span>{paymentLoading ? 'Confirming Online Payment...' : `Authorize & Mint Pass (₹${paymentOrder?.amountDue?.toLocaleString() || '4,000'})`}</span>
                       </button>
                       <p className="text-[10px] text-[#6E5336]">
                         Protected by Razorpay 256-bit encrypted gateway. Digital QR pass minted instantly.
