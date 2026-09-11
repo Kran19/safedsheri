@@ -2354,7 +2354,9 @@ export default function SafedSheriLandingPage() {
                     <div className="flex justify-between items-center bg-[#FFFDF9] p-3 rounded-xl border border-[#EAD9B8]">
                       <div className="flex flex-col">
                         <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Kids Pass (10 to 15 Yrs)</span>
-                        <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
+                        <span className="text-[10px] text-[#8C6019] font-bold uppercase tracking-wider">
+                          {pricing.phaseName?.toUpperCase().includes('PASS') ? pricing.phaseName.replace('_', ' ') : pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
+                        </span>
                       </div>
                       <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
                         ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
