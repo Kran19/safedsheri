@@ -427,12 +427,9 @@ export default function SafedSheriLandingPage() {
   }, []);
 
   const [pricing, setPricing] = useState<any>({
-    singlePrice: 4000,
-    couplePrice: 7500,
+    singlePrice: 3500,
+    couplePrice: 6500,
     kidsPrice: 1500,
-    oldSinglePrice: 3500,
-    oldCouplePrice: 6500,
-    oldKidsPrice: 1200,
     nextSinglePrice: null,
     nextCouplePrice: null,
     nextKidsPrice: null,
@@ -442,9 +439,9 @@ export default function SafedSheriLandingPage() {
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '⚡ Phase 1 Ending Soon — Lock in passes before price escalates!',
+    urgencyTagline: '⚡ Early Pass Window Active — Lock in passes before price escalates!',
     hiddenPriceLabel: 'Price Revealed on Approval',
-    phaseName: 'PHASE 1',
+    phaseName: 'EARLY PASS',
   });
 
   // Urgency Reverse Stop Watch State
@@ -466,12 +463,10 @@ export default function SafedSheriLandingPage() {
           setPricing((prev: any) => ({
             ...prev,
             ...json.data,
-            singlePrice: json.data.singlePrice || 4000,
-            couplePrice: json.data.couplePrice || 7500,
+            phaseName: json.data.phaseName || 'EARLY PASS',
+            singlePrice: json.data.singlePrice || 3500,
+            couplePrice: json.data.couplePrice || 6500,
             kidsPrice: json.data.kidsPrice || 1500,
-            oldSinglePrice: json.data.oldSinglePrice || 3500,
-            oldCouplePrice: json.data.oldCouplePrice || 6500,
-            oldKidsPrice: json.data.oldKidsPrice || 1200,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
           }));
         }
@@ -669,12 +664,10 @@ export default function SafedSheriLandingPage() {
         setPricing((prev: any) => ({
           ...prev,
           ...json.data,
-          singlePrice: json.data.singlePrice || 4000,
-          couplePrice: json.data.couplePrice || 7500,
+          phaseName: json.data.phaseName || 'EARLY PASS',
+          singlePrice: json.data.singlePrice || 3500,
+          couplePrice: json.data.couplePrice || 6500,
           kidsPrice: json.data.kidsPrice || 1500,
-          oldSinglePrice: json.data.oldSinglePrice || 3500,
-          oldCouplePrice: json.data.oldCouplePrice || 6500,
-          oldKidsPrice: json.data.oldKidsPrice || 1200,
         }));
       }
     } catch (e) {
@@ -1782,7 +1775,7 @@ export default function SafedSheriLandingPage() {
               <div>
                 <div className="inline-flex items-center space-x-2 text-[10px] font-mono tracking-widest font-bold text-[#F6C85F] uppercase mb-0.5">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-ping mr-1" />
-                  LIMITED TIME REVERSE COUNTDOWN • {pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
+                  LIMITED TIME REVERSE COUNTDOWN • {pricing.phaseName?.toUpperCase().includes('PASS') ? pricing.phaseName.replace('_', ' ') : pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
                 </div>
                 <div className="text-xs md:text-sm font-serif font-bold text-white tracking-wide">
                   {pricing.urgencyTagline || 'Lock in your passes at current phase rates before price escalates!'}
@@ -2207,14 +2200,9 @@ export default function SafedSheriLandingPage() {
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
                         ₹{pricing.singlePrice?.toLocaleString()}
                       </span>
-                      {(pricing.oldSinglePrice || 3500) && (
-                        <span className="text-sm font-mono text-gray-400 line-through">
-                          ₹{(pricing.oldSinglePrice || 3500).toLocaleString()}
-                        </span>
-                      )}
                     </div>
                     <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                      {pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
+                      {pricing.phaseName?.toUpperCase().includes('PASS') ? pricing.phaseName.replace('_', ' ') : pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
                     </div>
                   </div>
                 ) : (
@@ -2291,14 +2279,9 @@ export default function SafedSheriLandingPage() {
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
                         ₹{pricing.couplePrice?.toLocaleString()}
                       </span>
-                      {(pricing.oldCouplePrice || 6500) && (
-                        <span className="text-sm font-mono text-gray-400 line-through">
-                          ₹{(pricing.oldCouplePrice || 6500).toLocaleString()}
-                        </span>
-                      )}
                     </div>
                     <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                      {pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
+                      {pricing.phaseName?.toUpperCase().includes('PASS') ? pricing.phaseName.replace('_', ' ') : pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
                     </div>
                   </div>
                 ) : (
@@ -2373,16 +2356,9 @@ export default function SafedSheriLandingPage() {
                         <span className="text-xs font-bold text-[#8C6019] uppercase tracking-wider">Kids Pass (10 to 15 Yrs)</span>
                         <span className="text-[10px] text-[#6E5336]">Phase Pricing</span>
                       </div>
-                      <div className="flex items-baseline space-x-2">
-                        <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
-                          ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
-                        </span>
-                        {(pricing.oldKidsPrice || 1200) && (
-                          <span className="text-xs font-mono text-gray-400 line-through">
-                            ₹{(pricing.oldKidsPrice || 1200).toLocaleString('en-IN')}
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-2xl font-serif font-bold text-[#2D1F0E]">
+                        ₹{pricing.kidsPrice ? pricing.kidsPrice.toLocaleString('en-IN') : '1,500'}
+                      </span>
                     </div>
                   </div>
                 ) : (

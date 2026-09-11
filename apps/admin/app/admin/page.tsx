@@ -117,17 +117,17 @@ export default function SuperAdminDashboard() {
   }
 
   const [pricingSettings, setPricingSettings] = useState<any>({
-    phaseName: 'PHASE 1',
-    singlePrice: 4000,
-    couplePrice: 7500,
-    nextSinglePrice: 4500,
-    nextCouplePrice: 8500,
+    phaseName: 'EARLY PASS',
+    singlePrice: 3500,
+    couplePrice: 6500,
+    nextSinglePrice: null,
+    nextCouplePrice: null,
     showSinglePrice: true,
     showCouplePrice: true,
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-    urgencyTagline: 'Phase 1 Ending Soon — Lock in Your Passes Before Price Hike!',
+    urgencyTagline: 'Early Pass Window Active — Lock in Your Passes Before Price Hike!',
     hiddenPriceLabel: 'Price Revealed on Approval',
   });
   const [pricingSaving, setPricingSaving] = useState(false);
@@ -1978,21 +1978,21 @@ export default function SuperAdminDashboard() {
                 onClick={() => {
                   setPricingSettings((prev: any) => ({
                     ...prev,
-                    phaseName: 'PHASE 1',
-                    singlePrice: 4000,
-                    couplePrice: 7500,
-                    nextSinglePrice: 4500,
-                    nextCouplePrice: 8500,
+                    phaseName: 'EARLY PASS',
+                    singlePrice: 3500,
+                    couplePrice: 6500,
+                    nextSinglePrice: null,
+                    nextCouplePrice: null,
                     showSinglePrice: true,
                     showCouplePrice: true,
                     isCountdownActive: true,
-                    urgencyTagline: '⚡ Phase 1 Ending Soon — Lock in passes at ₹4,000 before price escalates to ₹4,500!',
+                    urgencyTagline: '⚡ Early Pass Window Active — Lock in passes at ₹3,500 before price escalates!',
                   }));
                 }}
                 className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-[11px] font-bold transition flex items-center space-x-1"
               >
                 <Sparkles className="w-3 h-3 text-[#D99427]" />
-                <span>Preset: Phase 1 Sale</span>
+                <span>Preset: Early Pass Sale</span>
               </button>
 
               <button
