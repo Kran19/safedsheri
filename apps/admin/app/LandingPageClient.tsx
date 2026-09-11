@@ -1035,7 +1035,7 @@ export default function SafedSheriLandingPage() {
       window.location.search.includes('preview=true')
     );
     const now = Date.now();
-    if (isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
+    if (isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
       setBookingError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
       setOtpError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
       setIsBookingSoonModalOpen(true);
@@ -1109,7 +1109,7 @@ export default function SafedSheriLandingPage() {
       window.location.search.includes('preview=true')
     );
     const now = Date.now();
-    if (isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
+    if (isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
       setBookingError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
       setIsBookingSoonModalOpen(true);
       return;
@@ -1395,7 +1395,7 @@ export default function SafedSheriLandingPage() {
       window.location.search.includes('preview=true')
     );
     const now = Date.now();
-    const locked = isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
+    const locked = isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
 
     if (locked) {
       setNoticePassType('SINGLE');
@@ -1429,7 +1429,7 @@ export default function SafedSheriLandingPage() {
       window.location.search.includes('preview=true')
     );
     const now = Date.now();
-    const locked = isPreview || (now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
+    const locked = isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
     if (locked) {
       alert('The Early Bird pass payment window has officially closed as of 12:00 AM midnight. Pass bookings and payments will reopen on 12th September 2026.');
       setIsBookingSoonModalOpen(true);
