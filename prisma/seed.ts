@@ -76,11 +76,11 @@ async function main() {
   console.log(`✓ Event Created: ${event.name} (Canonical Date: 09.10.2026)`);
 
   // 2. Create Pricing Phases
-  const earlyBirdPhase = await prisma.pricingPhase.create({
+  const phase1 = await prisma.pricingPhase.create({
     data: {
-      phaseName: 'EARLY_BIRD',
-      singlePrice: 3500.0,
-      couplePrice: 6500.0,
+      phaseName: 'PHASE 1',
+      singlePrice: 4000.0,
+      couplePrice: 7500.0,
       isActive: true,
     },
   });
@@ -93,7 +93,7 @@ async function main() {
       isActive: false,
     },
   });
-  console.log('✓ Pricing Phases Initialized (Early Bird: Single ₹3500, Couple ₹6500)');
+  console.log('✓ Pricing Phases Initialized (Phase 1: Single ₹4000, Couple ₹7500)');
 
   // 3. Create Demo Staff Users & 3 Super Admin Accounts
   const adminPassHash = hashPassword('AdminPass123!');

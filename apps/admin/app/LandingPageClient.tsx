@@ -437,9 +437,9 @@ export default function SafedSheriLandingPage() {
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '⚡ Early Bird Phase Ending Soon — Lock in passes at ₹3,500 before price escalates to ₹6,500!',
+    urgencyTagline: '⚡ Phase 1 Ending Soon — Lock in passes before price escalates!',
     hiddenPriceLabel: 'Price Revealed on Approval',
-    phaseName: 'EARLY_BIRD',
+    phaseName: 'PHASE 1',
   });
 
   // Urgency Reverse Stop Watch State
@@ -1763,7 +1763,7 @@ export default function SafedSheriLandingPage() {
               <div>
                 <div className="inline-flex items-center space-x-2 text-[10px] font-mono tracking-widest font-bold text-[#F6C85F] uppercase mb-0.5">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-ping mr-1" />
-                  LIMITED TIME REVERSE COUNTDOWN • {pricing.phaseName} PHASE
+                  LIMITED TIME REVERSE COUNTDOWN • {pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
                 </div>
                 <div className="text-xs md:text-sm font-serif font-bold text-white tracking-wide">
                   {pricing.urgencyTagline || 'Lock in your passes at current phase rates before price escalates!'}
@@ -2195,7 +2195,7 @@ export default function SafedSheriLandingPage() {
                       )}
                     </div>
                     <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                      {pricing.phaseName} PHASE
+                      {pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
                     </div>
                   </div>
                 ) : (
@@ -2279,7 +2279,7 @@ export default function SafedSheriLandingPage() {
                       )}
                     </div>
                     <div className="text-[10px] tracking-wider font-bold text-[#8C6019] uppercase mt-1">
-                      {pricing.phaseName} PHASE
+                      {pricing.phaseName?.toUpperCase().includes('PHASE') ? pricing.phaseName.replace('_', ' ') : `${pricing.phaseName?.replace('_', ' ')} PHASE`}
                     </div>
                   </div>
                 ) : (

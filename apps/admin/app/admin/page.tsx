@@ -117,17 +117,17 @@ export default function SuperAdminDashboard() {
   }
 
   const [pricingSettings, setPricingSettings] = useState<any>({
-    phaseName: 'EARLY_BIRD',
-    singlePrice: 3500,
-    couplePrice: 6500,
-    nextSinglePrice: 6500,
-    nextCouplePrice: 12000,
+    phaseName: 'PHASE 1',
+    singlePrice: 4000,
+    couplePrice: 7500,
+    nextSinglePrice: 4500,
+    nextCouplePrice: 8500,
     showSinglePrice: true,
     showCouplePrice: true,
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-    urgencyTagline: 'Early Bird Phase Ending Soon — Lock in Your Passes Before Price Hike!',
+    urgencyTagline: 'Phase 1 Ending Soon — Lock in Your Passes Before Price Hike!',
     hiddenPriceLabel: 'Price Revealed on Approval',
   });
   const [pricingSaving, setPricingSaving] = useState(false);
@@ -1978,21 +1978,21 @@ export default function SuperAdminDashboard() {
                 onClick={() => {
                   setPricingSettings((prev: any) => ({
                     ...prev,
-                    phaseName: 'EARLY_BIRD',
-                    singlePrice: 3500,
-                    couplePrice: 6500,
-                    nextSinglePrice: 6500,
-                    nextCouplePrice: 12000,
+                    phaseName: 'PHASE 1',
+                    singlePrice: 4000,
+                    couplePrice: 7500,
+                    nextSinglePrice: 4500,
+                    nextCouplePrice: 8500,
                     showSinglePrice: true,
                     showCouplePrice: true,
                     isCountdownActive: true,
-                    urgencyTagline: '⚡ Early Bird Phase Ending Soon — Lock in passes at ₹3,500 before price escalates to ₹6,500!',
+                    urgencyTagline: '⚡ Phase 1 Ending Soon — Lock in passes at ₹4,000 before price escalates to ₹4,500!',
                   }));
                 }}
                 className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-[11px] font-bold transition flex items-center space-x-1"
               >
                 <Sparkles className="w-3 h-3 text-[#D99427]" />
-                <span>Preset: Early Bird Flash Sale</span>
+                <span>Preset: Phase 1 Sale</span>
               </button>
 
               <button

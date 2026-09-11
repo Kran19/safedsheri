@@ -64,17 +64,17 @@ export class RegistrationsService {
     if (!phase) {
       phase = await this.prisma.pricingPhase.create({
         data: {
-          phaseName: 'EARLY_BIRD',
-          singlePrice: 3500,
-          couplePrice: 6500,
-          nextSinglePrice: 6500,
-          nextCouplePrice: 12000,
+          phaseName: 'PHASE 1',
+          singlePrice: 4000,
+          couplePrice: 7500,
+          nextSinglePrice: 4500,
+          nextCouplePrice: 8500,
           showSinglePrice: true,
           showCouplePrice: true,
           showGazeboPrice: false,
           isCountdownActive: true,
           countdownTarget: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
-          urgencyTagline: 'Early Bird Phase Ending Soon — Lock in Your Passes Before Price Hike!',
+          urgencyTagline: 'Phase 1 Ending Soon — Lock in Your Passes Before Price Hike!',
           hiddenPriceLabel: 'Price Revealed on Approval',
           isActive: true,
         },
@@ -95,7 +95,7 @@ export class RegistrationsService {
         showGazeboPrice: phase.showGazeboPrice,
         isCountdownActive: phase.isCountdownActive,
         countdownTarget: phase.countdownTarget,
-        urgencyTagline: phase.urgencyTagline || 'Early Bird Phase Ending Soon — Lock in Your Passes Before Price Hike!',
+        urgencyTagline: phase.urgencyTagline || 'Phase 1 Ending Soon — Lock in Your Passes Before Price Hike!',
         hiddenPriceLabel: phase.hiddenPriceLabel || 'Price Revealed on Approval',
       },
     };
@@ -132,9 +132,9 @@ export class RegistrationsService {
     if (!activePhase) {
       activePhase = await this.prisma.pricingPhase.create({
         data: {
-          phaseName: data.phaseName || 'EARLY_BIRD',
-          singlePrice: data.singlePrice || 3500,
-          couplePrice: data.couplePrice || 6500,
+          phaseName: data.phaseName || 'PHASE 1',
+          singlePrice: data.singlePrice || 4000,
+          couplePrice: data.couplePrice || 7500,
           isActive: true,
         },
       });
