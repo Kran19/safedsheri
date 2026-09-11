@@ -950,6 +950,10 @@ export class PaymentsService {
     });
   }
 
+  async generateCredentialsForRegistration(registrationId: string, tx?: any) {
+    return this.credentialsService.generateCredentialsForRegistration(registrationId, tx);
+  }
+
   async rejectCashierRequest(registrationId: string, adminId: string, reason?: string) {
     return await this.prisma.$transaction(async (tx) => {
       const reg = await tx.registration.findUnique({

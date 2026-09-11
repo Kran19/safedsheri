@@ -668,6 +668,7 @@ export class RegistrationsService {
       include: {
         attendees: { include: { attendee: true } },
         pricingPhase: true,
+        payments: true,
       },
     });
 
@@ -783,10 +784,15 @@ export class RegistrationsService {
           ? `${approvedCount} approved, ${rejectedAttendees.length} rejected. (Amount: ₹${recalculatedAmount})`
           : 'All attendees approved by Admin.';
 
+      const hasConfirmedPayment = reg.payments?.some((p) => p.status === PaymentStatus.CONFIRMED);
+      const targetStatus = hasConfirmedPayment
+        ? RegistrationStatus.PASS_ISSUED
+        : RegistrationStatus.PAYMENT_PENDING;
+
       const updated = await tx.registration.update({
         where: { id },
         data: {
-          status: RegistrationStatus.PAYMENT_PENDING,
+          status: targetStatus,
           amountDue: recalculatedAmount,
           paymentLinkId: paymentOrder.paymentLinkId,
           reviewNotes: data.globalNotes ? `${data.globalNotes} • ${summaryNote}` : summaryNote,
@@ -794,6 +800,10 @@ export class RegistrationsService {
           reviewedAt: new Date(),
         },
       });
+
+      if (hasConfirmedPayment) {
+        await this.paymentsService.generateCredentialsForRegistration(reg.id, tx);
+      }
 
       await tx.auditLog.create({
         data: {
@@ -1043,6 +1053,14 @@ export class RegistrationsService {
           collectedById: adminId, // Track which admin changed the payment method
         },
       });
+
+      if (reg.status !== RegistrationStatus.PASS_ISSUED) {
+        await this.prisma.registration.update({
+          where: { id: reg.id },
+          data: { status: RegistrationStatus.PASS_ISSUED },
+        });
+        await this.paymentsService.generateCredentialsForRegistration(reg.id);
+      }
       await this.prisma.auditLog.create({
         data: {
           actorId: adminId,
