@@ -16,6 +16,7 @@ import { MediaModule } from './media/media.module';
 import { GazebosModule } from './gazebos/gazebos.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { BlockedUsersModule } from './blocked-users/blocked-users.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UploadsModule } from './uploads/uploads.module';
     GazebosModule,
     InquiriesModule,
     UploadsModule,
+    BlockedUsersModule,
   ],
 })
 export class AppModule {}

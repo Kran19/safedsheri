@@ -236,7 +236,24 @@ export class RegistrationsService {
       take: 500,
     });
 
-    return { success: true, data: registrations };
+    const blockedList = await this.prisma.blockedUser.findMany({
+      select: { phone: true, aadhaarHmac: true },
+    });
+    const blockedPhones = new Set(blockedList.map((b) => b.phone));
+    const blockedAadhaars = new Set(blockedList.map((b) => b.aadhaarHmac).filter(Boolean));
+
+    const decorated = registrations.map((reg) => {
+      const isBlocked = reg.attendees?.some((ra: any) => {
+        const p = ra.attendee?.phone?.replace(/\D/g, '').slice(-10);
+        return (
+          (p && blockedPhones.has(p)) ||
+          (ra.attendee?.aadhaarHmac && blockedAadhaars.has(ra.attendee.aadhaarHmac))
+        );
+      });
+      return { ...reg, isBlocked };
+    });
+
+    return { success: true, data: decorated };
   }
 
   async findOne(id: string) {
@@ -297,6 +314,16 @@ export class RegistrationsService {
       throw new BadRequestException('Primary attendee phone is required.');
     }
     const cleanPrimaryPhone = primaryPhone.replace(/\D/g, '').slice(-10);
+
+    // Check if primary phone is on administrative block list
+    const primaryBlocked = await this.prisma.blockedUser.findFirst({
+      where: { phone: cleanPrimaryPhone },
+    });
+    if (primaryBlocked) {
+      throw new BadRequestException(
+        `This mobile number has been blocked by event administration from booking passes. ${primaryBlocked.reason ? `Reason: ${primaryBlocked.reason}. ` : ''}Please contact Safed Sheri support.`
+      );
+    }
 
     // Check if phone number is exempted from OTP verification
     const isBypassed = await this.prisma.otpBypass.findUnique({
@@ -416,6 +443,22 @@ export class RegistrationsService {
         }
 
         const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
+
+        // Check if attendee phone or Aadhaar is on administrative block list
+        const attendeeCleanPhone = (att.phone || '').replace(/\D/g, '').slice(-10);
+        const attendeeBlocked = await this.prisma.blockedUser.findFirst({
+          where: {
+            OR: [
+              ...(attendeeCleanPhone.length === 10 ? [{ phone: attendeeCleanPhone }] : []),
+              { aadhaarHmac },
+            ],
+          },
+        });
+        if (attendeeBlocked) {
+          throw new BadRequestException(
+            `Attendee #${i + 1} (${att.fullName}) is on the administrative block list and cannot book passes. ${attendeeBlocked.reason ? `Reason: ${attendeeBlocked.reason}. ` : ''}Please contact Safed Sheri support.`
+          );
+        }
 
         // Check global DB uniqueness for Aadhaar — directly query for any active (non-deleted, non-terminal) registration
         const existingActiveAadhaarReg = await this.prisma.registration.findFirst({

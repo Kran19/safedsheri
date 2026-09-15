@@ -84,6 +84,17 @@ export class AuthService {
       throw new BadRequestException('Valid WhatsApp phone number is required');
     }
     const cleanPhone = phone.replace(/\s+/g, '');
+    const rawDigits = cleanPhone.replace(/\D/g, '').slice(-10);
+
+    // Check if phone number is blocked from booking
+    if (rawDigits && rawDigits.length === 10) {
+      const blocked = await this.prisma.blockedUser.findFirst({
+        where: { phone: rawDigits },
+      });
+      if (blocked) {
+        throw new BadRequestException('This mobile number has been blocked by event administration from booking passes. Please contact support.');
+      }
+    }
     
     // Generate 6-digit OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -123,6 +134,18 @@ export class AuthService {
       throw new BadRequestException('Phone number and OTP code are required');
     }
     const cleanPhone = phone.replace(/\s+/g, '');
+    const rawDigits = cleanPhone.replace(/\D/g, '').slice(-10);
+
+    // Check if phone number is blocked from booking
+    if (rawDigits && rawDigits.length === 10) {
+      const blocked = await this.prisma.blockedUser.findFirst({
+        where: { phone: rawDigits },
+      });
+      if (blocked) {
+        throw new BadRequestException('This mobile number has been blocked by event administration from booking passes. Please contact support.');
+      }
+    }
+
     const stored = otpStore.get(cleanPhone);
 
     // Accept '123456' as master demo OTP for testing

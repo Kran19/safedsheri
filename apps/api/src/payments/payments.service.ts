@@ -433,6 +433,28 @@ export class PaymentsService {
 
       const isSuperAdmin = staffUser.role === 'SUPER_ADMIN';
 
+      // Verify that none of the attendees are on the administrative block list
+      for (let i = 0; i < dto.attendees.length; i++) {
+        const attDto = dto.attendees[i] as any;
+        const cleanPhone = (attDto.phone || '').replace(/\D/g, '').slice(-10);
+        const cleanAadhaar = attDto.aadhaarNumber ? attDto.aadhaarNumber.replace(/\D/g, '') : '';
+        const aadhaarHmac = cleanAadhaar ? this.encryptionService.computeAadhaarHmac(cleanAadhaar) : null;
+
+        const blocked = await tx.blockedUser.findFirst({
+          where: {
+            OR: [
+              ...(cleanPhone.length === 10 ? [{ phone: cleanPhone }] : []),
+              ...(aadhaarHmac ? [{ aadhaarHmac }] : []),
+            ],
+          },
+        });
+        if (blocked) {
+          throw new BadRequestException(
+            `Cannot issue pass: Attendee ${attDto.fullName || `attendee #${i + 1}`} is on the administrative block list. ${blocked.reason ? `Reason: ${blocked.reason}. ` : ''}`
+          );
+        }
+      }
+
       // 2. Generate Registration Number
       const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
       const paymentLinkId = `paylink_${crypto.randomBytes(16).toString('hex')}`;

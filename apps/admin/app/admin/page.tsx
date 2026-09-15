@@ -8,7 +8,8 @@ import {
   RefreshCw, CheckCircle2, Crown, Eye, ThumbsUp, ThumbsDown, 
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
-  Tag, MapPin, Settings, Trash2, Lock, Flag, X, ChevronDown
+  Tag, MapPin, Settings, Trash2, Lock, Flag, X, ChevronDown,
+  Ban, UserX, ShieldAlert
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -19,9 +20,36 @@ import BookingDesk from '../components/BookingDesk';
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass' | 'blocked_users'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+
+  // Blocked Users State
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [blockedError, setBlockedError] = useState<string | null>(null);
+  const [blockedSuccess, setBlockedSuccess] = useState<string | null>(null);
+  const [blockedSearch, setBlockedSearch] = useState('');
+
+  // Manual Add to Block List Form
+  const [newBlockForm, setNewBlockForm] = useState({ phone: '', fullName: '', reason: '' });
+  const [newBlockLoading, setNewBlockLoading] = useState(false);
+
+  // Block Modal (from Applications or Attendees)
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [itemToBlock, setItemToBlock] = useState<{
+    registrationId?: string;
+    registrationNumber?: string;
+    attendees: Array<{ id: string; fullName: string; phone: string; aadhaarMasked?: string }>;
+    selectedAttendeeIds: string[];
+    reason: string;
+  } | null>(null);
+  const [blockModalLoading, setBlockModalLoading] = useState(false);
+
+  // Unblock Confirm Modal
+  const [unblockModalOpen, setUnblockModalOpen] = useState(false);
+  const [userToUnblock, setUserToUnblock] = useState<any | null>(null);
+  const [unblockLoading, setUnblockLoading] = useState(false);
 
   // OTP Bypass State
   const [bypassedPhones, setBypassedPhones] = useState<any[]>([]);
@@ -245,6 +273,8 @@ export default function SuperAdminDashboard() {
     const resGazebos = await apiRequest('/gazebos');
     if (resGazebos.success) setGazebos(resGazebos.data || []);
 
+    loadBlockedUsers();
+
     if (!silent) setLoading(false);
   }
 
@@ -300,6 +330,8 @@ export default function SuperAdminDashboard() {
         return;
       }
       await loadBypassedPhones();
+    } else if (tab === 'blocked_users') {
+      await loadBlockedUsers();
     }
   }
 
@@ -352,6 +384,116 @@ export default function SuperAdminDashboard() {
       await loadBypassedPhones();
     } else {
       setBypassError(res.error?.message || 'Failed to remove phone number.');
+    }
+  }
+
+  async function loadBlockedUsers() {
+    setBlockedError(null);
+    setBlockedLoading(true);
+    const res = await apiRequest('/blocked-users');
+    setBlockedLoading(false);
+    if (res.success) {
+      setBlockedUsers(res.data || []);
+    } else {
+      setBlockedError(res.error?.message || 'Failed to load blocked users list.');
+    }
+  }
+
+  async function handleConfirmBlock() {
+    if (!itemToBlock) return;
+    setBlockModalLoading(true);
+    setBlockedError(null);
+
+    let res;
+    if (itemToBlock.registrationId) {
+      res = await apiRequest(`/blocked-users/block-registration/${itemToBlock.registrationId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          attendeeIds: itemToBlock.selectedAttendeeIds,
+          reason: itemToBlock.reason,
+        }),
+      });
+    } else if (itemToBlock.attendees?.[0]) {
+      const att = itemToBlock.attendees[0];
+      res = await apiRequest('/blocked-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: att.phone,
+          fullName: att.fullName,
+          reason: itemToBlock.reason,
+        }),
+      });
+    }
+
+    setBlockModalLoading(false);
+    if (res?.success) {
+      setMessage(res.message || 'User has been blocked successfully.');
+      setBlockModalOpen(false);
+      setItemToBlock(null);
+      await loadBlockedUsers();
+      if (activeTab === 'applications') {
+        loadTabContent('applications', true);
+      } else if (activeTab === 'attendees') {
+        loadTabContent('attendees', true);
+      }
+    } else {
+      setError(res?.error?.message || 'Failed to block user.');
+    }
+  }
+
+  async function handleConfirmUnblock() {
+    if (!userToUnblock) return;
+    setUnblockLoading(true);
+    const res = await apiRequest(`/blocked-users/${userToUnblock.id}`, {
+      method: 'DELETE',
+    });
+    setUnblockLoading(false);
+    setUnblockModalOpen(false);
+    setUserToUnblock(null);
+
+    if (res.success) {
+      setMessage(res.message || 'User unblocked successfully.');
+      await loadBlockedUsers();
+      if (activeTab === 'applications') {
+        loadTabContent('applications', true);
+      } else if (activeTab === 'attendees') {
+        loadTabContent('attendees', true);
+      }
+    } else {
+      setError(res.error?.message || 'Failed to unblock user.');
+    }
+  }
+
+  async function handleManualAddBlock(e: React.FormEvent) {
+    e.preventDefault();
+    const cleanDigits = newBlockForm.phone.replace(/\D/g, '').slice(-10);
+    if (!cleanDigits || cleanDigits.length !== 10) {
+      setBlockedError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    setNewBlockLoading(true);
+    setBlockedError(null);
+    setBlockedSuccess(null);
+
+    const res = await apiRequest('/blocked-users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: cleanDigits,
+        fullName: newBlockForm.fullName,
+        reason: newBlockForm.reason || 'Manually blocked by administration',
+      }),
+    });
+
+    setNewBlockLoading(false);
+    if (res.success) {
+      setBlockedSuccess(res.message || 'User added to block list.');
+      setNewBlockForm({ phone: '', fullName: '', reason: '' });
+      await loadBlockedUsers();
+    } else {
+      setBlockedError(res.error?.message || 'Failed to block number.');
     }
   }
 
@@ -906,7 +1048,15 @@ export default function SuperAdminDashboard() {
         const hasOcrMismatch = row.attendees?.some((ra: any) => ra.attendee?.document?.ocrMismatch);
         return (
           <div>
-            <div className="font-semibold text-[#2D1F0E]">{primary?.fullName || '—'}</div>
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-[#2D1F0E]">{primary?.fullName || '—'}</span>
+              {row.isBlocked && (
+                <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[9px] flex items-center space-x-1 shadow-sm">
+                  <Ban className="w-2.5 h-2.5" />
+                  <span>BLOCKED</span>
+                </span>
+              )}
+            </div>
             <div className="text-[10px] text-[#6E5336] flex flex-wrap items-center gap-1.5 mt-0.5">
               <span>{row.passType === 'SINGLE' && primary?.gender === 'FEMALE' ? 'SINGLE FEMALE' : primary?.gender}</span>
               {hasOcrMismatch && (
@@ -1066,6 +1216,36 @@ export default function SuperAdminDashboard() {
               className="p-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 transition shadow-sm"
             >
               <Sliders className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
+
+          {!row.isMappedInquiry && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const atts = (row.attendees || []).map((ra: any) => ({
+                  id: ra.attendeeId || ra.attendee?.id,
+                  fullName: ra.attendee?.fullName || 'Attendee',
+                  phone: ra.attendee?.phone || '',
+                  aadhaarMasked: ra.attendee?.aadhaarMasked || '',
+                }));
+                setItemToBlock({
+                  registrationId: row.id,
+                  registrationNumber: row.registrationNumber,
+                  attendees: atts,
+                  selectedAttendeeIds: atts.map((a: any) => a.id),
+                  reason: '',
+                });
+                setBlockModalOpen(true);
+              }}
+              title={row.isBlocked ? 'User is Blocked (Click to manage)' : 'Block User from Booking Passes'}
+              className={`p-1.5 rounded-xl border transition shadow-sm ${
+                row.isBlocked
+                  ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-700'
+                  : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+              }`}
+            >
+              <Ban className="w-4 h-4" />
             </button>
           )}
           
@@ -1233,17 +1413,30 @@ export default function SuperAdminDashboard() {
       key: 'fullName', 
       title: 'Attendee Name', 
       sortable: true, 
-      render: (r) => (
-        <div className="flex items-center space-x-2">
-          <strong className="text-[#2D1F0E]">{r.fullName}</strong>
-          {r.document?.ocrMismatch && (
-            <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[9px] flex items-center space-x-1">
-              <Flag className="w-2.5 h-2.5 text-rose-600 fill-rose-600" />
-              <span>DATA MODIFIED</span>
-            </span>
-          )}
-        </div>
-      ) 
+      render: (r) => {
+        const isBlocked = blockedUsers.some(
+          (b) =>
+            b.phone === r.phone?.replace(/\D/g, '').slice(-10) ||
+            (b.aadhaarHmac && b.aadhaarHmac === r.aadhaarHmac)
+        );
+        return (
+          <div className="flex items-center space-x-2">
+            <strong className="text-[#2D1F0E]">{r.fullName}</strong>
+            {isBlocked && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[9px] flex items-center space-x-1 shadow-sm">
+                <Ban className="w-2.5 h-2.5" />
+                <span>BLOCKED</span>
+              </span>
+            )}
+            {r.document?.ocrMismatch && (
+              <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[9px] flex items-center space-x-1">
+                <Flag className="w-2.5 h-2.5 text-rose-600 fill-rose-600" />
+                <span>DATA MODIFIED</span>
+              </span>
+            )}
+          </div>
+        );
+      } 
     },
     {
       key: 'gender',
@@ -1277,6 +1470,47 @@ export default function SuperAdminDashboard() {
       sortable: true,
       getValue: (r) => new Date(r.createdAt).toISOString(),
       render: (r) => <span className="font-mono text-[11px] text-[#6E5336]">{new Date(r.createdAt).toLocaleDateString()}</span>,
+    },
+    {
+      key: 'actions',
+      title: 'Action',
+      sortable: false,
+      align: 'right',
+      render: (r) => {
+        const isBlocked = blockedUsers.some(
+          (b) =>
+            b.phone === r.phone?.replace(/\D/g, '').slice(-10) ||
+            (b.aadhaarHmac && b.aadhaarHmac === r.aadhaarHmac)
+        );
+        return (
+          <div className="flex items-center justify-end space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setItemToBlock({
+                  attendees: [{
+                    id: r.id,
+                    fullName: r.fullName,
+                    phone: r.phone,
+                    aadhaarMasked: r.aadhaarMasked,
+                  }],
+                  selectedAttendeeIds: [r.id],
+                  reason: '',
+                });
+                setBlockModalOpen(true);
+              }}
+              title={isBlocked ? 'Attendee is Blocked' : 'Block Attendee from Booking Passes'}
+              className={`p-1.5 rounded-xl border transition shadow-sm ${
+                isBlocked
+                  ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-700'
+                  : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+              }`}
+            >
+              <Ban className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -1495,6 +1729,7 @@ export default function SuperAdminDashboard() {
           { id: 'audit', label: 'Audit Log', icon: FileText },
           { id: 'settings', label: 'Account Settings', icon: Settings },
           { id: 'otp_bypass', label: 'OTP Bypass List', icon: Phone },
+          { id: 'blocked_users', label: 'Block List', icon: Ban },
           { id: 'trash', label: 'Trash', icon: Trash2 },
           { id: 'book_pass', label: 'Book Pass', icon: Ticket },
         ].filter((tab) => {
@@ -2411,6 +2646,183 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
+      {activeTab === 'blocked_users' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#EAD9B8]">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-serif text-[#2D1F0E] mb-1 flex items-center gap-3">
+                  <Ban className="w-6 h-6 text-rose-600" />
+                  <span>Block List & Blacklisted Users</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-bold border border-rose-200">
+                    {blockedUsers.length} Blocked
+                  </span>
+                </h2>
+                <p className="text-sm text-[#6E5336]">
+                  Blocked attendees and mobile numbers are strictly barred from booking passes, requesting WhatsApp OTPs, or being registered at the cashier desk.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Add Form */}
+            <form onSubmit={handleManualAddBlock} className="bg-[#FAF6EE] p-5 rounded-2xl border border-[#EAD9B8] mb-8">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C6019] mb-3 flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-rose-600" />
+                <span>Manually Block Mobile Number / Attendee</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  required
+                  maxLength={10}
+                  placeholder="10-digit Phone Number *"
+                  value={newBlockForm.phone}
+                  onChange={(e) => setNewBlockForm({ ...newBlockForm, phone: e.target.value.replace(/\D/g, '') })}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono focus:border-[#D99427] outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Full Name (optional)"
+                  value={newBlockForm.fullName}
+                  onChange={(e) => setNewBlockForm({ ...newBlockForm, fullName: e.target.value })}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Reason (e.g. Fraud, Blacklist)"
+                    value={newBlockForm.reason}
+                    onChange={(e) => setNewBlockForm({ ...newBlockForm, reason: e.target.value })}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-[#2D1F0E] text-xs focus:border-[#D99427] outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={newBlockLoading}
+                    className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs tracking-wider uppercase transition shadow-md disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    <Ban className="w-3.5 h-3.5" />
+                    <span>{newBlockLoading ? 'Blocking...' : 'Block'}</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {blockedSuccess && (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2 mb-6">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span>{blockedSuccess}</span>
+              </div>
+            )}
+            {blockedError && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2 mb-6">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span>{blockedError}</span>
+              </div>
+            )}
+
+            {/* Filter / Search Bar */}
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <input
+                type="text"
+                placeholder="Search blocked users by name, phone, reason..."
+                value={blockedSearch}
+                onChange={(e) => setBlockedSearch(e.target.value)}
+                className="w-full max-w-sm px-4 py-2 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none"
+              />
+              <button
+                onClick={loadBlockedUsers}
+                className="px-3 py-2 rounded-xl bg-[#FAF6EE] hover:bg-[#F3ECE0] border border-[#EAD9B8] text-[#6E5336] text-xs font-semibold flex items-center gap-1.5 transition"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${blockedLoading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto rounded-xl border border-[#EAD9B8]">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#FAF6EE] border-b border-[#EAD9B8] text-[#6E5336]">
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Attendee Name</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Phone Number</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Masked Aadhaar</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Reason</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Blocked Date</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider">Blocked By</th>
+                    <th className="py-3 px-4 font-bold uppercase tracking-wider text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F8F5EE]">
+                  {blockedUsers.filter((u) => {
+                    if (!blockedSearch.trim()) return true;
+                    const q = blockedSearch.toLowerCase();
+                    return (
+                      (u.fullName || '').toLowerCase().includes(q) ||
+                      u.phone.includes(q) ||
+                      (u.aadhaarMasked || '').includes(q) ||
+                      (u.reason || '').toLowerCase().includes(q)
+                    );
+                  }).length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-10 text-center text-[#8C6019] italic">
+                        {blockedSearch ? 'No matching blocked users found.' : 'No users are currently on the block list.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    blockedUsers
+                      .filter((u) => {
+                        if (!blockedSearch.trim()) return true;
+                        const q = blockedSearch.toLowerCase();
+                        return (
+                          (u.fullName || '').toLowerCase().includes(q) ||
+                          u.phone.includes(q) ||
+                          (u.aadhaarMasked || '').includes(q) ||
+                          (u.reason || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .map((item) => (
+                        <tr key={item.id} className="hover:bg-[#FAF8F2] text-[#2D1F0E] transition">
+                          <td className="py-3 px-4 font-semibold">
+                            {item.fullName || '—'}
+                          </td>
+                          <td className="py-3 px-4 font-mono font-bold text-rose-800">
+                            +91 {item.phone}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-[#6E5336]">
+                            {item.aadhaarMasked || '—'}
+                          </td>
+                          <td className="py-3 px-4 text-[#6E5336]">
+                            <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 text-[11px]">
+                              {item.reason || 'Blocked'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-[#6E5336] font-mono text-[11px]">
+                            {new Date(item.createdAt).toLocaleString()}
+                          </td>
+                          <td className="py-3 px-4 text-[#6E5336]">
+                            {item.blockedBy?.fullName || item.blockedBy?.username || 'Admin'}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => {
+                                setUserToUnblock(item);
+                                setUnblockModalOpen(true);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-bold uppercase tracking-wider transition border border-emerald-200 shadow-sm"
+                            >
+                              Unblock
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'settings' && (
         <div className="space-y-6 animate-fade-in">
           {/* ACCOUNT SETTINGS - CREDENTIALS */}
@@ -3073,6 +3485,173 @@ export default function SuperAdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* BLOCK USER CONFIRMATION MODAL */}
+      {/* ========================================================================= */}
+      {blockModalOpen && itemToBlock && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-rose-100 flex flex-col">
+            <div className="p-6 bg-rose-50 border-b border-rose-100 text-center relative">
+              <button
+                onClick={() => {
+                  setBlockModalOpen(false);
+                  setItemToBlock(null);
+                }}
+                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-rose-100 text-rose-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                <Ban className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-rose-950">Block User from Booking</h3>
+              <p className="text-xs text-rose-700 mt-1">
+                {itemToBlock.registrationNumber
+                  ? `Application #${itemToBlock.registrationNumber}`
+                  : 'Blacklist Attendee'}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4 text-sm text-[#2D1F0E]">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900">
+                <strong className="font-bold">⚠️ Warning:</strong> Once blocked, the user's phone number and Aadhaar card will be prevented from requesting WhatsApp OTPs, booking passes, or being registered at the cashier desk until unblocked.
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#6E5336] mb-2">
+                  Select Attendees to Block:
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {itemToBlock.attendees.map((att) => {
+                    const isSelected = itemToBlock.selectedAttendeeIds.includes(att.id);
+                    return (
+                      <div
+                        key={att.id}
+                        onClick={() => {
+                          const newSelected = isSelected
+                            ? itemToBlock.selectedAttendeeIds.filter((id) => id !== att.id)
+                            : [...itemToBlock.selectedAttendeeIds, att.id];
+                          setItemToBlock({ ...itemToBlock, selectedAttendeeIds: newSelected });
+                        }}
+                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                          isSelected
+                            ? 'bg-rose-50 border-rose-300 text-rose-950'
+                            : 'bg-[#FAF6EE] border-[#EAD9B8] text-[#6E5336]'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-bold">{att.fullName}</div>
+                          <div className="text-xs font-mono text-[#6E5336]">
+                            Phone: {att.phone || '—'} {att.aadhaarMasked ? `• Aadhaar: ${att.aadhaarMasked}` : ''}
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500 cursor-pointer"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#6E5336] mb-1">
+                  Reason for Block (Optional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Fraudulent Aadhaar, Rule violation, Payment chargeback"
+                  value={itemToBlock.reason}
+                  onChange={(e) => setItemToBlock({ ...itemToBlock, reason: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-[#2D1F0E] focus:border-rose-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
+              <button
+                disabled={blockModalLoading}
+                onClick={() => {
+                  setBlockModalOpen(false);
+                  setItemToBlock(null);
+                }}
+                className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition text-xs uppercase tracking-wider"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={blockModalLoading || itemToBlock.selectedAttendeeIds.length === 0}
+                onClick={handleConfirmBlock}
+                className="px-6 py-2.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition text-xs uppercase tracking-wider shadow-lg shadow-rose-600/30 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Ban className="w-4 h-4" />
+                <span>{blockModalLoading ? 'Blocking...' : 'Confirm Block'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* UNBLOCK USER CONFIRMATION MODAL */}
+      {/* ========================================================================= */}
+      {unblockModalOpen && userToUnblock && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-emerald-100 flex flex-col">
+            <div className="p-6 bg-emerald-50 border-b border-emerald-100 text-center relative">
+              <button
+                onClick={() => {
+                  setUnblockModalOpen(false);
+                  setUserToUnblock(null);
+                }}
+                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-emerald-100 text-emerald-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-emerald-950">Unblock User</h3>
+              <p className="text-xs text-emerald-700 mt-1">
+                Restore Pass Booking Privileges
+              </p>
+            </div>
+
+            <div className="p-6 text-center text-[#6E5336] space-y-3">
+              <p>
+                Are you sure you want to unblock <strong className="text-[#2D1F0E]">{userToUnblock.fullName ? `${userToUnblock.fullName} ` : ''}(+91 {userToUnblock.phone})</strong>?
+              </p>
+              <p className="text-xs text-[#8C6019]">
+                They will be removed from the block list and will be able to verify OTPs and book passes again immediately.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#FAF6EE] flex items-center justify-end space-x-3 border-t border-[#EAD9B8]">
+              <button
+                disabled={unblockLoading}
+                onClick={() => {
+                  setUnblockModalOpen(false);
+                  setUserToUnblock(null);
+                }}
+                className="px-5 py-2.5 rounded-xl font-bold text-[#6E5336] bg-white border border-[#EAD9B8] hover:bg-[#F3ECE0] transition text-xs uppercase tracking-wider"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={unblockLoading}
+                onClick={handleConfirmUnblock}
+                className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/30 disabled:opacity-50"
+              >
+                {unblockLoading ? 'Unblocking...' : 'Yes, Unblock'}
+              </button>
+            </div>
           </div>
         </div>
       )}
