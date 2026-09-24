@@ -18,7 +18,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
-
+      </head>
+      <body className="bg-[#FDFBF7] text-[#2D2319] antialiased font-sans">
         {/* Meta Pixel Code */}
         <Script
           id="meta-pixel"
@@ -38,8 +39,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className="bg-[#FDFBF7] text-[#2D2319] antialiased font-sans">
         {/* Meta Pixel Noscript Fallback */}
         <noscript>
           <img
@@ -50,6 +49,7 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+
         {children}
       </body>
     </html>
