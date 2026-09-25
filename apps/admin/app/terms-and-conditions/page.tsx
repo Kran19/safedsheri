@@ -21,7 +21,7 @@ export default function TermsAndConditionsPage() {
             We reserve the right to deny entry if any mismatch is found in your Aadhaar ID or verification documents at the entry gates.
           </p>
           <p>
-            All passes (Single and Couple) are valid for the entire 9-day Navratri festival (October 9-17, 2026).
+            All passes (Single and Couple) are valid for 1 day only.
           </p>
 
           <h5 className="text-lg font-bold text-[#D99427] mt-8">2. Couple Pass Specifics</h5>
