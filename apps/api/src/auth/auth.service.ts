@@ -105,7 +105,7 @@ export class AuthService {
     // Send via Zaple WhatsApp API
     const apiKey = process.env.ZAPLE_API_KEY;
     const apiSecret = process.env.ZAPLE_API_SECRET;
-    const templateId = process.env.ZAPLE_REGISTRATION_TEMPLATE_ID || '126407217877245613697020';
+    const templateId = process.env.ZAPLE_REGISTRATION_TEMPLATE_ID || '301591417881616512919340';
 
     if (apiKey && apiSecret && apiKey.trim() !== '') {
       try {
