@@ -435,15 +435,15 @@ export default function SafedSheriLandingPage() {
     nextSinglePrice: null,
     nextCouplePrice: null,
     nextKidsPrice: null,
-    showSinglePrice: false,
-    showCouplePrice: false,
-    showKidsPrice: false,
+    showSinglePrice: true,
+    showCouplePrice: true,
+    showKidsPrice: true,
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '⚡ Phase 2 Bookings Starting Soon — Opening Oct 2nd at 12:00 AM!',
+    urgencyTagline: '⚡ Phase 1 Active — Lock in passes before midnight tonight!',
     hiddenPriceLabel: 'Price Revealed on Approval',
-    phaseName: 'PHASE 2',
+    phaseName: 'PHASE 1',
   });
 
   // Urgency Reverse Stop Watch State
@@ -465,13 +465,13 @@ export default function SafedSheriLandingPage() {
           setPricing((prev: any) => ({
             ...prev,
             ...json.data,
-            phaseName: json.data.phaseName || 'PHASE 2',
+            phaseName: json.data.phaseName || 'PHASE 1',
             singlePrice: json.data.singlePrice || 4000,
             couplePrice: json.data.couplePrice || 7500,
             kidsPrice: json.data.kidsPrice || 1500,
-            showSinglePrice: json.data.showSinglePrice !== undefined ? json.data.showSinglePrice : false,
-            showCouplePrice: json.data.showCouplePrice !== undefined ? json.data.showCouplePrice : false,
-            showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : false,
+            showSinglePrice: json.data.showSinglePrice !== undefined ? json.data.showSinglePrice : true,
+            showCouplePrice: json.data.showCouplePrice !== undefined ? json.data.showCouplePrice : true,
+            showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
           }));
         }
       } catch (err) {
@@ -2264,7 +2264,7 @@ export default function SafedSheriLandingPage() {
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
-                {pricing.showSinglePrice ? (
+                {!isPassBookingLocked && pricing.showSinglePrice ? (
                   <div className="mb-6">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
@@ -2343,7 +2343,7 @@ export default function SafedSheriLandingPage() {
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
-                {pricing.showCouplePrice ? (
+                {!isPassBookingLocked && pricing.showCouplePrice ? (
                   <div className="mb-6">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-3xl font-serif font-bold text-[#2D1F0E]">
@@ -2419,7 +2419,7 @@ export default function SafedSheriLandingPage() {
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
-                {pricing.showKidsPrice !== false && pricing.showSinglePrice ? (
+                {!isPassBookingLocked && pricing.showKidsPrice !== false && pricing.showSinglePrice ? (
                   <div className="mb-6 space-y-3">
                     <div className="flex justify-between items-center bg-[#FFFDF9] p-3 rounded-xl border border-[#EAD9B8]">
                       <div className="flex flex-col">
