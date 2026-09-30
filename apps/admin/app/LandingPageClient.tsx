@@ -387,11 +387,11 @@ export default function SafedSheriLandingPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedPass, setSelectedPass] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
 
-  // 12 September Pass Booking Lock State (Activates after 12:00 AM IST: 2026-09-09T00:00:00+05:30, until Sep 12, 2026)
-  // Lock is active for passes until official opening on 12 September 2026
+  // 2 October Phase 2 Pass Booking Lock State (Activates after 12:00 AM IST: 2026-09-30T00:00:00+05:30, until Oct 2, 2026 00:00:00 IST)
+  // Lock is active for passes until official Phase 2 opening on 2 October 2026 12:00 AM IST
   const IS_BOOKING_LOCK_ENABLED = true;
-  const BOOKING_LOCK_START_TIMESTAMP = new Date('2026-09-09T00:00:00+05:30').getTime();
-  const BOOKING_START_TIMESTAMP = new Date('2026-09-12T00:00:00+05:30').getTime();
+  const BOOKING_LOCK_START_TIMESTAMP = new Date('2026-09-30T00:00:00+05:30').getTime();
+  const BOOKING_START_TIMESTAMP = new Date('2026-10-02T00:00:00+05:30').getTime();
 
   const [isBookingSoonModalOpen, setIsBookingSoonModalOpen] = useState(false);
   const [noticePassType, setNoticePassType] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
@@ -401,9 +401,9 @@ export default function SafedSheriLandingPage() {
     hours: number;
     minutes: number;
     seconds: number;
-  }>({ days: 3, hours: 1, minutes: 6, seconds: 43 });
+  }>({ days: 1, hours: 5, minutes: 45, seconds: 0 });
 
-  // Synchronize lock state and live countdown to 12 September 2026
+  // Synchronize lock state and live countdown to 2 October 2026
   useEffect(() => {
     const updateLockStatus = () => {
       const isPreview = typeof window !== 'undefined' && (
@@ -414,7 +414,7 @@ export default function SafedSheriLandingPage() {
       const locked = isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
       setIsPassBookingLocked(locked);
 
-      // Live countdown to 12 September 2026 00:00:00 IST
+      // Live countdown to 2 October 2026 00:00:00 IST
       const diff = Math.max(0, BOOKING_START_TIMESTAMP - now);
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -435,15 +435,15 @@ export default function SafedSheriLandingPage() {
     nextSinglePrice: null,
     nextCouplePrice: null,
     nextKidsPrice: null,
-    showSinglePrice: true,
-    showCouplePrice: true,
-    showKidsPrice: true,
+    showSinglePrice: false,
+    showCouplePrice: false,
+    showKidsPrice: false,
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '⚡ Early Pass Window Active — Lock in passes before price escalates!',
+    urgencyTagline: '⚡ Phase 2 Bookings Starting Soon — Opening Oct 2nd at 12:00 AM!',
     hiddenPriceLabel: 'Price Revealed on Approval',
-    phaseName: 'EARLY PASS',
+    phaseName: 'PHASE 2',
   });
 
   // Urgency Reverse Stop Watch State
@@ -453,7 +453,7 @@ export default function SafedSheriLandingPage() {
     minutes: number;
     seconds: number;
     expired: boolean;
-  }>({ days: 3, hours: 14, minutes: 22, seconds: 45, expired: false });
+  }>({ days: 1, hours: 5, minutes: 45, seconds: 0, expired: false });
 
   // Live Pricing & Urgency Phase Sync
   useEffect(() => {
@@ -465,11 +465,13 @@ export default function SafedSheriLandingPage() {
           setPricing((prev: any) => ({
             ...prev,
             ...json.data,
-            phaseName: json.data.phaseName || 'EARLY PASS',
+            phaseName: json.data.phaseName || 'PHASE 2',
             singlePrice: json.data.singlePrice || 4000,
             couplePrice: json.data.couplePrice || 7500,
             kidsPrice: json.data.kidsPrice || 1500,
-            showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
+            showSinglePrice: json.data.showSinglePrice !== undefined ? json.data.showSinglePrice : false,
+            showCouplePrice: json.data.showCouplePrice !== undefined ? json.data.showCouplePrice : false,
+            showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : false,
           }));
         }
       } catch (err) {
@@ -885,7 +887,7 @@ export default function SafedSheriLandingPage() {
     garbaAudio.playGhunghroo();
     setSelectedPass(type);
 
-    // Check if bookings are paused until 12 September (activates after 1:30 hours or via previewLock=true)
+    // Check if bookings are paused until Phase 2 opening on 2 October
     const isPreview = typeof window !== 'undefined' && (
       window.location.search.includes('previewLock=true') ||
       window.location.search.includes('preview=true')
@@ -1038,8 +1040,8 @@ export default function SafedSheriLandingPage() {
     );
     const now = Date.now();
     if (isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
-      setBookingError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
-      setOtpError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+      setBookingError('Pass bookings are currently paused for Phase 2 and will officially commence on 2nd October 2026 at 12:00 AM.');
+      setOtpError('Pass bookings are currently paused for Phase 2 and will officially commence on 2nd October 2026 at 12:00 AM.');
       setIsBookingSoonModalOpen(true);
       return;
     }
@@ -1112,7 +1114,7 @@ export default function SafedSheriLandingPage() {
     );
     const now = Date.now();
     if (isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP)) {
-      setBookingError('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+      setBookingError('Pass bookings are currently paused for Phase 2 and will officially commence on 2nd October 2026 at 12:00 AM.');
       setIsBookingSoonModalOpen(true);
       return;
     }
@@ -1438,7 +1440,7 @@ export default function SafedSheriLandingPage() {
     const now = Date.now();
     const locked = isPreview || (IS_BOOKING_LOCK_ENABLED && now >= BOOKING_LOCK_START_TIMESTAMP && now < BOOKING_START_TIMESTAMP);
     if (locked) {
-      alert('The Early Bird pass payment window has officially closed as of 12:00 AM midnight. Pass bookings and payments will reopen on 12th September 2026.');
+      alert('The Phase 1 pass payment window has officially closed as of 12:00 AM midnight. Phase 2 pass bookings and payments will reopen on 2nd October 2026 at 12:00 AM.');
       setIsBookingSoonModalOpen(true);
       return;
     }
@@ -2308,7 +2310,7 @@ export default function SafedSheriLandingPage() {
               {isPassBookingLocked && (
                 <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FDF4DF] border border-[#E5A93C] text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
                   <Sparkles className="w-3.5 h-3.5 text-[#D99427] animate-pulse" />
-                  <span>Bookings Open 12th Sept</span>
+                  <span>Bookings Open 2nd Oct</span>
                 </div>
               )}
 
@@ -2316,7 +2318,7 @@ export default function SafedSheriLandingPage() {
                 onClick={() => handlePassSelect('SINGLE')}
                 className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md flex items-center justify-center space-x-2"
               >
-                <span>{isPassBookingLocked ? 'Apply (Opens 12th Sept)' : 'Apply for Single Female Pass'}</span>
+                <span>{isPassBookingLocked ? 'Apply (Opens 2nd Oct)' : 'Apply for Single Female Pass'}</span>
               </button>
             </div>
 
@@ -2387,7 +2389,7 @@ export default function SafedSheriLandingPage() {
               {isPassBookingLocked && (
                 <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FDF4DF] border border-[#E5A93C] text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
                   <Sparkles className="w-3.5 h-3.5 text-[#D99427] animate-pulse" />
-                  <span>Bookings Open 12th Sept</span>
+                  <span>Bookings Open 2nd Oct</span>
                 </div>
               )}
 
@@ -2395,7 +2397,7 @@ export default function SafedSheriLandingPage() {
                 onClick={() => handlePassSelect('COUPLE')}
                 className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2"
               >
-                <span>{isPassBookingLocked ? 'Apply (Opens 12th Sept)' : 'Apply for Couple Pass'}</span>
+                <span>{isPassBookingLocked ? 'Apply (Opens 2nd Oct)' : 'Apply for Couple Pass'}</span>
               </button>
             </div>
 
@@ -2467,7 +2469,7 @@ export default function SafedSheriLandingPage() {
               {isPassBookingLocked && (
                 <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] to-[#FDF4DF] border border-[#E5A93C] text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
                   <Sparkles className="w-3.5 h-3.5 text-[#D99427] animate-pulse" />
-                  <span>Bookings Open 12th Sept</span>
+                  <span>Bookings Open 2nd Oct</span>
                 </div>
               )}
 
@@ -2475,7 +2477,7 @@ export default function SafedSheriLandingPage() {
                 onClick={() => handlePassSelect('KIDS')}
                 className="w-full py-3.5 rounded-2xl bg-[#2D1F0E] text-white font-bold text-xs tracking-widest uppercase hover:bg-[#4A351B] transition shadow-md flex items-center justify-center space-x-2"
               >
-                <span>{isPassBookingLocked ? 'Apply (Opens 12th Sept)' : 'Apply for Kids Pass'}</span>
+                <span>{isPassBookingLocked ? 'Apply (Opens 2nd Oct)' : 'Apply for Kids Pass'}</span>
               </button>
             </div>
           </div>
@@ -2644,7 +2646,7 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* PREMIUM POP-UP MODAL: PASS BOOKINGS COMMENCING 12TH SEPTEMBER */}
+      {/* PREMIUM POP-UP MODAL: PHASE 2 PASS BOOKINGS COMMENCING 2ND OCTOBER */}
       {/* ========================================================================= */}
       {isBookingSoonModalOpen && (
         <div
@@ -2677,18 +2679,18 @@ export default function SafedSheriLandingPage() {
 
               <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-2 shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D99427] animate-ping" />
-                <span>Official Proclamation • Navratri 2026</span>
+                <span>Phase 2 Official Proclamation • Navratri 2026</span>
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
-                Pass Bookings &amp; Payments <br />
+                Phase 2 Pass Bookings &amp; Payments <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019]">
-                  Commencing 12th September 2026
+                  Commencing 2nd October 2026
                 </span>
               </h3>
 
               <p className="text-xs sm:text-sm text-[#6E5336] mt-2 max-w-md leading-relaxed">
-                The official window for Safed Sheri pass applications &amp; payments will commence on <strong className="text-[#2D1F0E]">12th September 2026</strong>. Early Bird applications and payments have closed as of 12:00 AM midnight.
+                The official window for <strong className="text-[#2D1F0E]">Phase 2</strong> pass applications &amp; payments will commence on <strong className="text-[#2D1F0E]">2nd October 2026 at 12:00 AM midnight</strong>. Phase 1 applications and payments have closed as of 12:00 AM today.
               </p>
             </div>
 
@@ -2710,7 +2712,7 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
               <span className="px-3 py-1 rounded-full bg-[#FAF6EE] text-[10px] font-bold text-[#8C6019] border border-[#EAD9B8] uppercase shadow-sm">
-                Opens Sep 12
+                Opens Oct 2
               </span>
             </div>
 
@@ -2718,7 +2720,7 @@ export default function SafedSheriLandingPage() {
             <div className="mb-5">
               <div className="text-center text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-2 flex items-center justify-center space-x-1.5">
                 <Clock className="w-3.5 h-3.5 text-[#D99427]" />
-                <span>Countdown to Booking Window</span>
+                <span>Countdown to Phase 2 Booking Window</span>
               </div>
 
               <div className="grid grid-cols-4 gap-2 sm:gap-3">
@@ -2753,7 +2755,7 @@ export default function SafedSheriLandingPage() {
             <div className="mb-6 p-4 rounded-2xl bg-[#FFF9EE] border border-[#EAD9B8] text-xs space-y-2">
               <div className="font-bold text-[#8C6019] text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
                 <Shield className="w-3.5 h-3.5 text-[#D99427]" />
-                <span>Prepare for Instant Verification on 12th September</span>
+                <span>Prepare for Instant Phase 2 Verification on 2nd October</span>
               </div>
               <div className="space-y-1.5 text-[#6E5336] text-[11px] leading-relaxed">
                 <div className="flex items-start space-x-2">
@@ -2766,7 +2768,7 @@ export default function SafedSheriLandingPage() {
                 </div>
                 <div className="flex items-start space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
-                  <span><strong>Limited Allotment:</strong> Passes are released on a curated first-come verified quota.</span>
+                  <span><strong>Limited Allotment:</strong> Phase 2 passes are released on a curated first-come verified quota.</span>
                 </div>
               </div>
             </div>
@@ -2774,7 +2776,7 @@ export default function SafedSheriLandingPage() {
             {/* Action CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <a
-                href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Team%2C%20please%20notify%20me%20immediately%20when%20pass%20bookings%20open%20on%2012th%20September%202026!"
+                href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Team%2C%20please%20notify%20me%20immediately%20when%20Phase%202%20pass%20bookings%20open%20on%202nd%20October%202026!"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => garbaAudio.playDhol()}
@@ -3721,7 +3723,7 @@ export default function SafedSheriLandingPage() {
                             <p className="text-[11px] text-[#6E5336] leading-relaxed">
                               Your document verification is complete. {isPassBookingLocked ? (
                                 <span className="text-[#8C6019] font-medium block mt-1">
-                                  ⚠️ The Early Bird payment window has concluded at 12:00 AM midnight. Pass payments will resume on <strong>12th September 2026</strong>.
+                                  ⚠️ Phase 1 payment window has concluded at 12:00 AM midnight. Phase 2 pass payments will resume on <strong>2nd October 2026</strong>.
                                 </span>
                               ) : (
                                 <>Complete the online payment of <strong>₹{p.amountDue?.toLocaleString() || '4,000'}</strong> to activate and download your official entry pass.</>
@@ -3738,7 +3740,7 @@ export default function SafedSheriLandingPage() {
                                     }}
                                     className="px-6 py-2.5 rounded-full bg-[#FFF5DC] border border-[#D99427] text-[#8C6019] font-bold text-xs uppercase tracking-wider hover:bg-[#FAF6EE] transition shadow-sm flex items-center space-x-1.5 cursor-pointer"
                                   >
-                                    <span>Payments Resume Sep 12 →</span>
+                                    <span>Payments Resume Oct 2 →</span>
                                   </button>
                                 ) : (
                                   <button
@@ -3998,10 +4000,10 @@ export default function SafedSheriLandingPage() {
                     <div className="p-4 rounded-2xl bg-[#FFF9EE] border border-[#E5A93C] text-center space-y-2">
                       <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-[#8C6019] uppercase tracking-wider">
                         <Clock className="w-4 h-4 text-[#D99427]" />
-                        <span>Early Bird Payment Window Concluded</span>
+                        <span>Phase 1 Payment Window Concluded</span>
                       </div>
                       <p className="text-xs text-[#6E5336] leading-relaxed">
-                        Online pass payments have paused as of 12:00 AM midnight. Pass checkouts will officially resume on <strong>12th September 2026</strong>.
+                        Online pass payments have paused as of 12:00 AM midnight. Phase 2 pass checkouts will officially resume on <strong>2nd October 2026</strong>.
                       </p>
                       <button
                         onClick={() => {

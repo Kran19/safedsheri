@@ -243,14 +243,14 @@ export class PaymentsService {
   }
 
   async getOrderDetails(paymentLinkId: string) {
-    // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST - toggleable while preserving logic)
+    // PASS BOOKING & PAYMENT LOCK (Sep 30 12:00 AM IST to Oct 2 12:00 AM IST - Phase 2 transition)
     const isPaymentLockEnabled = true;
-    const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
-    const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+    const lockStart = new Date('2026-09-30T00:00:00+05:30').getTime();
+    const lockEnd = new Date('2026-10-02T00:00:00+05:30').getTime();
     const now = Date.now();
     if (isPaymentLockEnabled && now >= lockStart && now < lockEnd) {
       throw new BadRequestException(
-        'The Early Bird pass payment window has officially closed as of 8th September 12:00 AM midnight. Pass bookings and payments will reopen on 12th September 2026.',
+        'The Phase 1 pass payment window has officially closed as of 12:00 AM midnight. Phase 2 pass bookings and payments will reopen on 2nd October 2026 at 12:00 AM.',
       );
     }
 
@@ -667,12 +667,12 @@ export class PaymentsService {
   async createStandardOrder(dto: { amount: number; currency?: string; receipt?: string; notes?: any }) {
     // PASS BOOKING & PAYMENT LOCK (Sep 9 12:00 AM IST to Sep 12 12:00 AM IST - toggleable while preserving logic)
     const isPaymentLockEnabled = true;
-    const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
-    const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+    const lockStart = new Date('2026-09-30T00:00:00+05:30').getTime();
+    const lockEnd = new Date('2026-10-02T00:00:00+05:30').getTime();
     const now = Date.now();
     if (isPaymentLockEnabled && now >= lockStart && now < lockEnd) {
       throw new BadRequestException(
-        'Pass payments are currently paused. The payment window will reopen on 12th September 2026.',
+        'Pass payments are currently paused for Phase 2. The payment window will reopen on 2nd October 2026 at 12:00 AM.',
       );
     }
 

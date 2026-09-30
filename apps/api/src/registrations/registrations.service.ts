@@ -346,13 +346,13 @@ export class RegistrationsService {
     }
 
     try {
-      // Check if bookings are paused until 12 September 2026 (lock toggleable while preserving logic)
+      // Check if Phase 2 bookings are paused until 2 October 2026 12:00 AM (lock toggleable while preserving logic)
       const isBookingLockEnabled = true;
-      const lockStart = new Date('2026-09-09T00:00:00+05:30').getTime();
-      const lockEnd = new Date('2026-09-12T00:00:00+05:30').getTime();
+      const lockStart = new Date('2026-09-30T00:00:00+05:30').getTime();
+      const lockEnd = new Date('2026-10-02T00:00:00+05:30').getTime();
       const now = Date.now();
       if (isBookingLockEnabled && now >= lockStart && now < lockEnd) {
-        throw new BadRequestException('Pass bookings are currently paused and will officially commence on 12th September 2026.');
+        throw new BadRequestException('Pass bookings are currently paused for Phase 2 and will officially commence on 2nd October 2026 at 12:00 AM.');
       }
 
       let activeEvent = await this.prisma.event.findFirst({
