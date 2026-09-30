@@ -230,21 +230,36 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
                   {/* Main Logo / Content Area */}
                   <div className="flex flex-col items-center justify-center text-center my-auto space-y-2 w-full h-full">
                     {!sponsor.isPlaceholder && sponsor.logoSrc ? (
-                      /* Real Sponsor Logo (Radhika) - Filter converts dark logo text to PURE BRIGHT WHITE on dark card */
-                      <div className="relative w-full h-full max-h-[160px] flex items-center justify-center p-2">
-                        <Image
-                          src={sponsor.logoSrc}
-                          alt={sponsor.name}
-                          width={240}
-                          height={120}
-                          className="object-contain max-h-full drop-shadow-xl transition-all duration-500 hover:scale-105"
-                          style={{
-                            filter: isCenter 
-                              ? 'invert(1) hue-rotate(180deg) brightness(2) contrast(1.25)' 
-                              : 'none'
-                          }}
-                          priority
-                        />
+                      /* Real Sponsor Logo (Radhika) with clear gap between emblem icon & text */
+                      <div className="flex flex-col items-center justify-center w-full h-full max-h-[170px] space-y-3 py-1">
+                        {/* Gemstone Emblem Icon */}
+                        <div className="relative w-full h-18 sm:h-20 md:h-22 flex items-center justify-center">
+                          <Image
+                            src="/images/sponsoe1-icon.png"
+                            alt="Radhika Emblem Icon"
+                            width={160}
+                            height={90}
+                            className="object-contain max-h-full drop-shadow-md transition-transform duration-300 hover:scale-105"
+                            priority
+                          />
+                        </div>
+
+                        {/* Gap & Pure White Text on Dark Card */}
+                        <div className="relative w-full h-9 sm:h-11 flex items-center justify-center">
+                          <Image
+                            src="/images/sponsoe1-text.png"
+                            alt="Radhika Crafting Eternal Elegance"
+                            width={220}
+                            height={55}
+                            className="object-contain max-h-full transition-all duration-500"
+                            style={{
+                              filter: isCenter 
+                                ? 'invert(1) brightness(2.2) contrast(1.2)' 
+                                : 'none'
+                            }}
+                            priority
+                          />
+                        </div>
                       </div>
                     ) : (
                       /* Placeholder Cards: Clean "BE OUR SPONSOR" */
