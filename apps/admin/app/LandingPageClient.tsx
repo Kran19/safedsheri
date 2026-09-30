@@ -14,7 +14,7 @@ import { PremiumDatePicker } from './components/PremiumDatePicker';
 import { Sponsor3DGallery } from './components/Sponsor3DGallery';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X, Calendar, Bell, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X, Menu, Calendar, Bell, CheckCircle2, MessageSquare } from 'lucide-react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
@@ -289,6 +289,7 @@ export default function SafedSheriLandingPage() {
 
   // Active Navbar Section Spy
   const [activeSection, setActiveSection] = useState('call');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // GSAP Horizontal Scroll Refs (Chapter II)
   const colourSectionRef = useRef<HTMLElement>(null);
@@ -1507,29 +1508,28 @@ export default function SafedSheriLandingPage() {
             <LogoSlot size="sm" showText={true} showDate={false} hideTextOnMobile={true} />
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8 text-xs tracking-[0.2em] uppercase font-semibold text-[#6E5336]">
-            <a href="#call" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'call' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+          <div className="hidden md:flex items-center space-x-2 md:space-x-3 lg:space-x-5 xl:space-x-7 text-[10px] md:text-[11px] lg:text-xs tracking-wider lg:tracking-[0.16em] uppercase font-semibold text-[#6E5336] shrink-0">
+            <a href="#call" className={`whitespace-nowrap relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'call' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               The Concept
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'call' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
-            <a href="#colour" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'colour' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+            <a href="#colour" className={`whitespace-nowrap relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'colour' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Dress Code
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'colour' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
-            <a href="#gallery" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gallery' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+            <a href="#gallery" className={`whitespace-nowrap relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gallery' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Gallery
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'gallery' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
-            <a href="#gazebos" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gazebos' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+            <a href="#gazebos" className={`whitespace-nowrap relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'gazebos' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Gazebo Lounges
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'gazebos' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
-
-            <a href="#passes" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'passes' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+            <a href="#passes" className={`whitespace-nowrap relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'passes' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Passes
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'passes' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
-            <a href="#sponsors" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'sponsors' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+            <a href="#sponsors" className={`whitespace-nowrap relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'sponsors' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Sponsors
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'sponsors' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
@@ -1561,8 +1561,66 @@ export default function SafedSheriLandingPage() {
             >
               Book Pass
             </a>
+
+            {/* Mobile Menu Toggle Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-[#8C6019] hover:bg-[#F3ECE0] transition"
+              aria-label="Toggle Mobile Menu"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-3 pt-3 border-t border-[#EAD9B8] bg-white/98 rounded-2xl p-4 shadow-xl flex flex-col space-y-3 text-xs tracking-widest uppercase font-bold text-[#6E5336] animate-fade-in">
+            <a 
+              href="#call" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg hover:bg-[#FAF6EE] hover:text-[#D99427] transition"
+            >
+              The Concept
+            </a>
+            <a 
+              href="#colour" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg hover:bg-[#FAF6EE] hover:text-[#D99427] transition"
+            >
+              Dress Code
+            </a>
+            <a 
+              href="#gallery" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg hover:bg-[#FAF6EE] hover:text-[#D99427] transition"
+            >
+              Gallery
+            </a>
+            <a 
+              href="#gazebos" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg hover:bg-[#FAF6EE] hover:text-[#D99427] transition"
+            >
+              Gazebo Lounges
+            </a>
+            <a 
+              href="#passes" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg hover:bg-[#FAF6EE] hover:text-[#D99427] transition"
+            >
+              Pass Privilege
+            </a>
+            <a 
+              href="#sponsors" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg bg-[#FAF6EE] text-[#D99427] font-extrabold flex items-center justify-between"
+            >
+              <span>Sponsors</span>
+              <Sparkles className="w-4 h-4 text-[#D99427]" />
+            </a>
+          </div>
+        )}
       </header>
 
       {/* 75% WHITE RULE FLOATING COMPULSORY BANNER */}

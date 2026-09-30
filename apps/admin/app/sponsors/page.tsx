@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Sponsor3DGallery } from '../components/Sponsor3DGallery';
 import LogoSlot from '../components/LogoSlot';
-import { ArrowLeft, Sparkles, Crown } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export default function SponsorsPage() {
   const [isSponsorModalOpen, setIsSponsorModalOpen] = useState(false);
