@@ -2419,7 +2419,7 @@ export default function SafedSheriLandingPage() {
                 </p>
 
                 {/* PRICE VISIBILITY TOGGLE CHECK */}
-                {!isPassBookingLocked && pricing.showKidsPrice !== false && pricing.showSinglePrice ? (
+                {!isPassBookingLocked && pricing.showKidsPrice !== false ? (
                   <div className="mb-6 space-y-3">
                     <div className="flex justify-between items-center bg-[#FFFDF9] p-3 rounded-xl border border-[#EAD9B8]">
                       <div className="flex flex-col">
