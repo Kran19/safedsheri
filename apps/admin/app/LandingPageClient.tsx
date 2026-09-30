@@ -389,7 +389,7 @@ export default function SafedSheriLandingPage() {
 
   // 2 October Phase 2 Pass Booking Lock State (Activates after 12:00 AM IST tonight: 2026-10-01T00:00:00+05:30, until Oct 2, 2026 00:00:00 IST)
   // Lock becomes active for passes after 12:00 AM tonight until official Phase 2 opening on 2 October 2026 12:00 AM IST
-  const IS_BOOKING_LOCK_ENABLED = true;
+  const IS_BOOKING_LOCK_ENABLED = false; // Disabled for now, set to true to enable lock
   const BOOKING_LOCK_START_TIMESTAMP = new Date('2026-10-01T00:00:00+05:30').getTime();
   const BOOKING_START_TIMESTAMP = new Date('2026-10-02T00:00:00+05:30').getTime();
 

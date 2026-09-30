@@ -347,7 +347,7 @@ export class RegistrationsService {
 
     try {
       // Check if Phase 2 bookings are paused until 2 October 2026 12:00 AM (lock toggleable while preserving logic)
-      const isBookingLockEnabled = true;
+      const isBookingLockEnabled = false; // Disabled for now, set to true to enable lock
       const lockStart = new Date('2026-10-01T00:00:00+05:30').getTime();
       const lockEnd = new Date('2026-10-02T00:00:00+05:30').getTime();
       const now = Date.now();
