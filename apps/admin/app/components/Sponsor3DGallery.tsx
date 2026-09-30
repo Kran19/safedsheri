@@ -150,11 +150,6 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
           {/* Carousel Cards Track */}
           <div className="relative w-full max-w-5xl h-full flex items-center justify-center overflow-hidden">
             {SPONSORS_LIST.map((sponsor, idx) => {
-              // Position math for 4 items:
-              // offset 0: center active card
-              // offset 1: right card
-              // offset 3: left card
-              // offset 2: hidden back card
               const rawOffset = (idx - activeIndex + numSponsors) % numSponsors;
 
               let translateX = 0;
@@ -235,14 +230,19 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
                   {/* Main Logo / Content Area */}
                   <div className="flex flex-col items-center justify-center text-center my-auto space-y-2 w-full h-full">
                     {!sponsor.isPlaceholder && sponsor.logoSrc ? (
-                      /* Real Sponsor Logo (Radhika) - Clean Logo image without double text */
+                      /* Real Sponsor Logo (Radhika) - Filter converts dark logo text to PURE BRIGHT WHITE on dark card */
                       <div className="relative w-full h-full max-h-[160px] flex items-center justify-center p-2">
                         <Image
                           src={sponsor.logoSrc}
                           alt={sponsor.name}
                           width={240}
                           height={120}
-                          className="object-contain max-h-full drop-shadow-lg transition-transform duration-300 hover:scale-105"
+                          className="object-contain max-h-full drop-shadow-xl transition-all duration-500 hover:scale-105"
+                          style={{
+                            filter: isCenter 
+                              ? 'invert(1) hue-rotate(180deg) brightness(2) contrast(1.25)' 
+                              : 'none'
+                          }}
                           priority
                         />
                       </div>
