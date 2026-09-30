@@ -11,6 +11,7 @@ import CinematicTigressIntro from './components/CinematicTigressIntro';
 
 import { Vibe3DOrbit } from './components/Vibe3DOrbit';
 import { PremiumDatePicker } from './components/PremiumDatePicker';
+import { Sponsor3DGallery } from './components/Sponsor3DGallery';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Volume2, VolumeX, Sparkles, Music, Crown, Shield, Lock, ArrowRight, AlertCircle, ChevronRight, ChevronLeft, Plus, Minus, Users, Check, RotateCcw, Timer, Clock, Flame, EyeOff, Store, Send, X, Calendar, Bell, CheckCircle2, MessageSquare } from 'lucide-react';
@@ -2419,6 +2420,9 @@ export default function SafedSheriLandingPage() {
         </div>
       </section>
 
+      {/* SPONSORS 3D GALLERY SECTION */}
+      <Sponsor3DGallery onOpenSponsorModal={() => setIsSponsorModalOpen(true)} />
+
       {/* FOOTER */}
       <footer className="py-8 px-6 bg-[#FAF6EE] z-10 relative overflow-hidden">
         <div className="absolute inset-0 w-full h-full -z-10 pointer-events-none">
@@ -2442,6 +2446,8 @@ export default function SafedSheriLandingPage() {
               <a href="#gazebos" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Gazebo Lounges</a>
               <span className="text-[#D99427] text-xs">✦</span>
               <a href="#passes" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Pass Privilege</a>
+              <span className="text-[#D99427] text-xs">✦</span>
+              <a href="#sponsors" className="hover:text-[#D99427] transition" onClick={() => garbaAudio.playDandiya()}>Sponsors</a>
             </div>
           </div>
 
