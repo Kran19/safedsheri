@@ -356,7 +356,7 @@ export default function SafedSheriLandingPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['call', 'colour', 'gallery', 'gazebos', 'the-women', 'passes'];
+      const sections = ['call', 'colour', 'gallery', 'gazebos', 'the-women', 'passes', 'sponsors'];
       let current = '';
 
       for (const section of sections) {
@@ -1528,6 +1528,10 @@ export default function SafedSheriLandingPage() {
             <a href="#passes" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'passes' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
               Passes
               <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'passes' ? 'scale-x-100' : 'scale-x-0'}`} />
+            </a>
+            <a href="#sponsors" className={`relative hover:text-[#D99427] transition-colors duration-300 pb-1.5 ${activeSection === 'sponsors' ? 'text-[#D99427]' : ''}`} onMouseEnter={() => garbaAudio.playDandiya(0.15)}>
+              Sponsors
+              <span className={`absolute left-0 bottom-0 w-full h-[2px] bg-[#D99427] transition-transform duration-500 delay-100 ease-out origin-left ${activeSection === 'sponsors' ? 'scale-x-100' : 'scale-x-0'}`} />
             </a>
           </div>
 
