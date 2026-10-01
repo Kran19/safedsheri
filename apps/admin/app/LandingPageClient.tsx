@@ -2595,7 +2595,7 @@ export default function SafedSheriLandingPage() {
           <div
             data-lenis-prevent="true"
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-xl bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2.5rem] p-6 sm:p-9 text-[#2D1F0E] overflow-hidden"
+            className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2.5rem] p-6 sm:p-8 text-[#2D1F0E]"
           >
             {/* Ambient Royal Gold Glow in Background */}
             <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full bg-gradient-to-br from-[#F6C85F]/30 to-[#D99427]/10 blur-3xl pointer-events-none" />
@@ -2604,16 +2604,16 @@ export default function SafedSheriLandingPage() {
             {/* Close button */}
             <button
               onClick={() => setIsBookingSoonModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-white/80 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer"
+              className="absolute top-5 right-5 p-2 rounded-full bg-white/80 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer z-10"
               title="Close announcement"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Header Emblem & Pill */}
-            <div className="flex flex-col items-center text-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#FFF5DC] via-white to-[#F6C85F]/30 border-2 border-[#D99427] flex items-center justify-center text-[#D99427] shadow-lg shadow-[#D99427]/20 mb-3">
-                <Sparkles className="w-7 h-7" />
+            <div className="flex flex-col items-center text-center mb-5 pt-1">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FFF5DC] via-white to-[#F6C85F]/30 border-2 border-[#D99427] flex items-center justify-center text-[#D99427] shadow-lg shadow-[#D99427]/20 mb-3">
+                <Sparkles className="w-6 h-6" />
               </div>
 
               <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-rose-100 border border-rose-300 text-[10px] font-bold tracking-[0.2em] text-rose-900 uppercase mb-2 shadow-sm">
@@ -2638,29 +2638,29 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* Selected Pass Notice Card */}
-            <div className="mb-5 p-4 rounded-2xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
+            <div className="mb-4 p-3.5 sm:p-4 rounded-2xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427]">
-                  <Crown className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427]">
+                  <Crown className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider font-bold text-[#8C6019]">
                     Selected Pass Category
                   </div>
-                  <div className="text-sm font-bold text-[#2D1F0E]">
+                  <div className="text-xs sm:text-sm font-bold text-[#2D1F0E]">
                     {noticePassType === 'SINGLE' && 'Single Female Pass (Verified Entry)'}
                     {noticePassType === 'COUPLE' && 'Couple Pass (1 Female + 1 Male Entry)'}
                     {noticePassType === 'KIDS' && 'Kids Pass (Children 10–15 Yrs Entry)'}
                   </div>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-rose-100 text-[10px] font-bold text-rose-800 border border-rose-200 uppercase shadow-sm">
+              <span className="px-3 py-1 rounded-full bg-rose-100 text-[10px] font-bold text-rose-800 border border-rose-200 uppercase shadow-sm whitespace-nowrap">
                 Booking Closed
               </span>
             </div>
 
             {/* Live Glowing Countdown */}
-            <div className="mb-5">
+            <div className="mb-4">
               <div className="text-center text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-2 flex items-center justify-center space-x-1.5">
                 <Clock className="w-3.5 h-3.5 text-[#D99427]" />
                 <span>{isPendingPaymentClosed ? 'Pending Payment Window Closed' : 'Pending Payment Window Closes Today at 6:00 PM'}</span>
@@ -2668,19 +2668,19 @@ export default function SafedSheriLandingPage() {
 
               {!isPendingPaymentClosed ? (
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
                     <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
                       {String(sep12Countdown.hours).padStart(2, '0')}
                     </div>
                     <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Hours</div>
                   </div>
-                  <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
                     <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
                       {String(sep12Countdown.minutes).padStart(2, '0')}
                     </div>
                     <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Mins</div>
                   </div>
-                  <div className="p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                  <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
                     <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#D99427]">
                       {String(sep12Countdown.seconds).padStart(2, '0')}
                     </div>
@@ -2695,7 +2695,7 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* Key Preparation Instructions */}
-            <div className="mb-6 p-4 rounded-2xl bg-[#FFF9EE] border border-[#EAD9B8] text-xs space-y-2">
+            <div className="mb-5 p-3.5 sm:p-4 rounded-2xl bg-[#FFF9EE] border border-[#EAD9B8] text-xs space-y-2">
               <div className="font-bold text-[#8C6019] text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
                 <Shield className="w-3.5 h-3.5 text-[#D99427]" />
                 <span>Prepare for Instant Phase 2 Verification on 2nd October</span>
@@ -2717,13 +2717,13 @@ export default function SafedSheriLandingPage() {
             </div>
 
             {/* Action CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
               <a
                 href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Team%2C%20please%20notify%20me%20immediately%20when%20Phase%202%20pass%20bookings%20open%20on%202nd%20October%202026!"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => garbaAudio.playDhol()}
-                className="w-full sm:flex-1 py-3.5 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
+                className="w-full sm:flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 <span>Notify Me on WhatsApp</span>
@@ -2734,7 +2734,7 @@ export default function SafedSheriLandingPage() {
                   garbaAudio.playDandiya();
                   setIsBookingSoonModalOpen(false);
                 }}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] font-bold text-xs tracking-wider uppercase transition shadow-sm cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3 rounded-full bg-white hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] font-bold text-xs tracking-wider uppercase transition shadow-sm cursor-pointer"
               >
                 I'll Be Ready
               </button>
