@@ -53,7 +53,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
   // Manual On-Spot Form State
   const [manualForm, setManualForm] = useState({
     passType: 'SINGLE' as 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO',
-    customAmount: 4000,
+    customAmount: 4500,
     paymentMethod: 'CUSTOM_DIRECT' as 'CUSTOM_DIRECT' | 'UPI_QR',
     notes: 'On-spot walk-in booking by Desk Executive',
   });
@@ -118,10 +118,10 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
 
   // Handle Pass Type Switch
   function handlePassTypeChange(newType: 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO') {
-    let defaultAmount = 4000;
-    if (newType === 'SINGLE') defaultAmount = 4000;
-    if (newType === 'COUPLE') defaultAmount = 7500;
-    if (newType === 'KIDS') defaultAmount = 0;
+    let defaultAmount = 4500;
+    if (newType === 'SINGLE') defaultAmount = 4500;
+    if (newType === 'COUPLE') defaultAmount = 8500;
+    if (newType === 'KIDS') defaultAmount = 1800;
     if (newType === 'GAZEBO') defaultAmount = 85000;
 
     let newAttendees: CashierAttendee[] = [];

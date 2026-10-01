@@ -442,9 +442,9 @@ export default function SafedSheriLandingPage() {
   }, []);
 
   const [pricing, setPricing] = useState<any>({
-    singlePrice: 4000,
-    couplePrice: 7500,
-    kidsPrice: 1500,
+    singlePrice: 4500,
+    couplePrice: 8500,
+    kidsPrice: 1800,
     nextSinglePrice: null,
     nextCouplePrice: null,
     nextKidsPrice: null,
@@ -454,9 +454,9 @@ export default function SafedSheriLandingPage() {
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '🚨 Pass Bookings Closed for All 3 Pass Types | ⌛ Pending Payment Booking Closes at 6:00 PM Today',
+    urgencyTagline: '🚨 Pass Bookings Closed for All 3 Pass Types | ⚡ Phase 2 Bookings Reopen 2nd October at 12:00 AM',
     hiddenPriceLabel: 'Price Revealed on Approval',
-    phaseName: 'PHASE 1',
+    phaseName: 'PHASE 2',
   });
 
   // Urgency Reverse Stop Watch State
@@ -478,10 +478,10 @@ export default function SafedSheriLandingPage() {
           setPricing((prev: any) => ({
             ...prev,
             ...json.data,
-            phaseName: json.data.phaseName || 'PHASE 1',
-            singlePrice: json.data.singlePrice || 4000,
-            couplePrice: json.data.couplePrice || 7500,
-            kidsPrice: json.data.kidsPrice || 1500,
+            phaseName: json.data.phaseName || 'PHASE 2',
+            singlePrice: json.data.singlePrice || 4500,
+            couplePrice: json.data.couplePrice || 8500,
+            kidsPrice: json.data.kidsPrice || 1800,
             showSinglePrice: json.data.showSinglePrice !== undefined ? json.data.showSinglePrice : true,
             showCouplePrice: json.data.showCouplePrice !== undefined ? json.data.showCouplePrice : true,
             showKidsPrice: json.data.showKidsPrice !== undefined ? json.data.showKidsPrice : true,
@@ -681,10 +681,10 @@ export default function SafedSheriLandingPage() {
         setPricing((prev: any) => ({
           ...prev,
           ...json.data,
-          phaseName: json.data.phaseName || 'EARLY PASS',
-          singlePrice: json.data.singlePrice || 4000,
-          couplePrice: json.data.couplePrice || 7500,
-          kidsPrice: json.data.kidsPrice || 1500,
+          phaseName: json.data.phaseName || 'PHASE 2',
+          singlePrice: json.data.singlePrice || 4500,
+          couplePrice: json.data.couplePrice || 8500,
+          kidsPrice: json.data.kidsPrice || 1800,
         }));
       }
     } catch (e) {
@@ -767,7 +767,7 @@ export default function SafedSheriLandingPage() {
       const diffMs = Date.now() - dobDate.getTime();
       const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
       if (age <= 10) return 0; // Free pass for 10 and under
-      if (age > 10 && age <= 15) return pricing.kidsPrice || 1500; // ₹1,500 for 11 to 15
+      if (age > 10 && age <= 15) return pricing.kidsPrice || 1800; // ₹1,800 for 11 to 15
       return 0;
     }
     return 0;

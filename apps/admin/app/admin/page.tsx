@@ -145,9 +145,9 @@ export default function SuperAdminDashboard() {
   }
 
   const [pricingSettings, setPricingSettings] = useState<any>({
-    phaseName: 'EARLY PASS',
-    singlePrice: 4000,
-    couplePrice: 7500,
+    phaseName: 'PHASE 2',
+    singlePrice: 4500,
+    couplePrice: 8500,
     nextSinglePrice: null,
     nextCouplePrice: null,
     showSinglePrice: true,
@@ -155,7 +155,7 @@ export default function SuperAdminDashboard() {
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-    urgencyTagline: 'Early Pass Window Active — Lock in Your Passes Before Price Hike!',
+    urgencyTagline: 'Phase 2 Pass Booking Active!',
     hiddenPriceLabel: 'Price Revealed on Approval',
   });
   const [pricingSaving, setPricingSaving] = useState(false);
@@ -3234,7 +3234,7 @@ export default function SuperAdminDashboard() {
               const totalGuests = selectedApp.attendees?.length || 0;
               const approvedCount = Object.values(attendeeDecisions).filter((d) => d.status === 'APPROVED').length;
               const rejectedCount = totalGuests - approvedCount;
-              const singlePrice = Number(selectedApp.pricingPhase?.singlePrice || 4000);
+              const singlePrice = Number(selectedApp.pricingPhase?.singlePrice || 4500);
               const recalculatedAmount =
                 selectedApp.passType === 'COUPLE'
                   ? Number(selectedApp.amountDue)
@@ -3244,7 +3244,7 @@ export default function SuperAdminDashboard() {
                         if (attWrapper.attendee.dob) {
                           const diffMs = Date.now() - new Date(attWrapper.attendee.dob).getTime();
                           const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
-                          if (age > 10 && age <= 15) return sum + 1500;
+                          if (age > 10 && age <= 15) return sum + 1800;
                           return sum; // Free for <= 10
                         }
                         return sum; // Fallback
