@@ -243,14 +243,12 @@ export class PaymentsService {
   }
 
   async getOrderDetails(paymentLinkId: string) {
-    // PASS BOOKING & PAYMENT LOCK (Oct 1 12:00 AM IST to Oct 2 12:00 AM IST - Phase 2 transition)
-    const isPaymentLockEnabled = false; // Disabled for now, set to true to enable lock
-    const lockStart = new Date('2026-10-01T00:00:00+05:30').getTime();
-    const lockEnd = new Date('2026-10-02T00:00:00+05:30').getTime();
+    // PENDING PAYMENT BOOKING CUTOFF (Closes at 6:00 PM IST today: 2026-10-01T18:00:00+05:30)
+    const pendingPaymentCutoff = new Date('2026-10-01T18:00:00+05:30').getTime();
     const now = Date.now();
-    if (isPaymentLockEnabled && now >= lockStart && now < lockEnd) {
+    if (now >= pendingPaymentCutoff) {
       throw new BadRequestException(
-        'The Phase 1 pass payment window has officially closed as of 12:00 AM midnight. Phase 2 pass bookings and payments will reopen on 2nd October 2026 at 12:00 AM.',
+        'The Pending Payment booking window officially closed at 6:00 PM today.',
       );
     }
 
