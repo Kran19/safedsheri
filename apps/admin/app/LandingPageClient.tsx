@@ -2661,39 +2661,18 @@ export default function SafedSheriLandingPage() {
                 </span>
               </div>
 
-              {/* Live Glowing Countdown */}
-              <div>
-                <div className="text-center text-[9px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-1.5 flex items-center justify-center space-x-1.5">
-                  <Clock className="w-3 h-3 text-[#D99427]" />
-                  <span>{isPendingPaymentClosed ? 'Pending Payment Window Closed' : 'Pending Payment Window Closes Today at 6:00 PM'}</span>
+              {/* Phase 2 Reopening Announcement Card */}
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] via-[#FFF9EE] to-[#FFF5DC] border border-[#EAD9B8] shadow-sm text-center">
+                <div className="text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-1 flex items-center justify-center space-x-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D99427]" />
+                  <span>Phase 2 Reopening Announcement</span>
                 </div>
-
-                {!isPendingPaymentClosed ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                      <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
-                        {String(sep12Countdown.hours).padStart(2, '0')}
-                      </div>
-                      <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Hours</div>
-                    </div>
-                    <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                      <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
-                        {String(sep12Countdown.minutes).padStart(2, '0')}
-                      </div>
-                      <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Mins</div>
-                    </div>
-                    <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                      <div className="text-lg sm:text-xl font-serif font-extrabold text-[#D99427]">
-                        {String(sep12Countdown.seconds).padStart(2, '0')}
-                      </div>
-                      <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Secs</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-center text-rose-800 font-bold text-xs">
-                    Pending Payment Booking window officially closed at 6:00 PM today.
-                  </div>
-                )}
+                <div className="text-sm sm:text-base font-serif font-bold text-[#2D1F0E]">
+                  Pass Bookings Will Reopen on <span className="text-[#D99427]">2nd October 2026 at 12:00 AM Midnight</span>
+                </div>
+                <div className="text-[10px] text-[#8C6019] font-medium mt-0.5">
+                  ⚡ Limited verified quota available on a first-come, first-served basis.
+                </div>
               </div>
 
               {/* Key Preparation Instructions */}
