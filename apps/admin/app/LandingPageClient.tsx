@@ -392,6 +392,9 @@ export default function SafedSheriLandingPage() {
   
   // Pending Payment Booking Cutoff (Closes at 6:00 PM IST today: 2026-10-01T18:00:00+05:30)
   const PENDING_PAYMENT_CUTOFF_TIMESTAMP = new Date('2026-10-01T18:00:00+05:30').getTime();
+  
+  // Phase 2 Reopening Timestamp (Opens 2nd October 2026 at 12:00 AM Midnight: 2026-10-02T00:00:00+05:30)
+  const PHASE_2_REOPENING_TIMESTAMP = new Date('2026-10-02T00:00:00+05:30').getTime();
 
   const [isBookingSoonModalOpen, setIsBookingSoonModalOpen] = useState(false);
   const [noticePassType, setNoticePassType] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
@@ -403,8 +406,13 @@ export default function SafedSheriLandingPage() {
     minutes: number;
     seconds: number;
   }>({ days: 0, hours: 5, minutes: 15, seconds: 0 });
+  const [phase2Countdown, setPhase2Countdown] = useState<{
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({ hours: 9, minutes: 39, seconds: 0 });
 
-  // Synchronize lock state and live countdown for 6:00 PM today Pending Payment cutoff
+  // Synchronize lock state and live countdowns
   useEffect(() => {
     const updateLockStatus = () => {
       const now = Date.now();
@@ -419,6 +427,13 @@ export default function SafedSheriLandingPage() {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
       setSep12Countdown({ days: 0, hours, minutes, seconds });
+
+      // Countdown to Phase 2 Reopening (2nd Oct 12:00 AM Midnight)
+      const p2Diff = Math.max(0, PHASE_2_REOPENING_TIMESTAMP - now);
+      const p2Hours = Math.floor(p2Diff / (1000 * 60 * 60));
+      const p2Minutes = Math.floor((p2Diff % (1000 * 60 * 60)) / (1000 * 60));
+      const p2Seconds = Math.floor((p2Diff % (1000 * 60)) / 1000);
+      setPhase2Countdown({ hours: p2Hours, minutes: p2Minutes, seconds: p2Seconds });
     };
 
     updateLockStatus();
@@ -2661,16 +2676,39 @@ export default function SafedSheriLandingPage() {
                 </span>
               </div>
 
-              {/* Phase 2 Reopening Announcement Card */}
+              {/* Phase 2 Reopening Announcement Card with Live Counter */}
               <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] via-[#FFF9EE] to-[#FFF5DC] border border-[#EAD9B8] shadow-sm text-center">
                 <div className="text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-1 flex items-center justify-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#D99427]" />
-                  <span>Phase 2 Reopening Announcement</span>
+                  <Clock className="w-3.5 h-3.5 text-[#D99427]" />
+                  <span>Countdown to Phase 2 Reopening</span>
                 </div>
-                <div className="text-sm sm:text-base font-serif font-bold text-[#2D1F0E]">
-                  Pass Bookings Will Reopen on <span className="text-[#D99427]">2nd October 2026 at 12:00 AM Midnight</span>
+                <div className="text-xs sm:text-sm font-serif font-bold text-[#2D1F0E]">
+                  Pass Bookings Reopen on <span className="text-[#D99427]">2nd October at 12:00 AM Midnight</span>
                 </div>
-                <div className="text-[10px] text-[#8C6019] font-medium mt-0.5">
+
+                {/* Live Glowing Countdown Grid */}
+                <div className="grid grid-cols-3 gap-2 mt-2 mb-2">
+                  <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                    <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
+                      {String(phase2Countdown.hours).padStart(2, '0')}
+                    </div>
+                    <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Hours</div>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                    <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
+                      {String(phase2Countdown.minutes).padStart(2, '0')}
+                    </div>
+                    <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Mins</div>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                    <div className="text-lg sm:text-xl font-serif font-extrabold text-[#D99427]">
+                      {String(phase2Countdown.seconds).padStart(2, '0')}
+                    </div>
+                    <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Secs</div>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-[#8C6019] font-medium">
                   ⚡ Limited verified quota available on a first-come, first-served basis.
                 </div>
               </div>
