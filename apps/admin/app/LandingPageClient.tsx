@@ -2585,17 +2585,17 @@ export default function SafedSheriLandingPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* PREMIUM POP-UP MODAL: PHASE 2 PASS BOOKINGS COMMENCING 2ND OCTOBER */}
+      {/* PREMIUM POP-UP MODAL: PHASE 2 PASS BOOKING ANNOUNCEMENT */}
       {/* ========================================================================= */}
       {isBookingSoonModalOpen && (
         <div
-          className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-fade-in"
+          className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-fade-in"
           onClick={() => setIsBookingSoonModalOpen(false)}
         >
           <div
             data-lenis-prevent="true"
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2.5rem] p-6 sm:p-8 text-[#2D1F0E]"
+            className="relative w-full max-w-md sm:max-w-lg max-h-[90vh] flex flex-col bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2rem] p-4 sm:p-6 text-[#2D1F0E] overflow-hidden"
           >
             {/* Ambient Royal Gold Glow in Background */}
             <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full bg-gradient-to-br from-[#F6C85F]/30 to-[#D99427]/10 blur-3xl pointer-events-none" />
@@ -2604,128 +2604,131 @@ export default function SafedSheriLandingPage() {
             {/* Close button */}
             <button
               onClick={() => setIsBookingSoonModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-white/80 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer z-10"
+              className="absolute top-3.5 right-3.5 p-2 rounded-full bg-white/80 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer z-20"
               title="Close announcement"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            {/* Header Emblem & Pill */}
-            <div className="flex flex-col items-center text-center mb-5 pt-1">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FFF5DC] via-white to-[#F6C85F]/30 border-2 border-[#D99427] flex items-center justify-center text-[#D99427] shadow-lg shadow-[#D99427]/20 mb-3">
-                <Sparkles className="w-6 h-6" />
+            {/* Scrollable Content Body */}
+            <div className="overflow-y-auto pr-1 custom-scrollbar space-y-3 pt-1 pb-1">
+              {/* Header Emblem & Pill */}
+              <div className="flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FFF5DC] via-white to-[#F6C85F]/30 border-2 border-[#D99427] flex items-center justify-center text-[#D99427] shadow-md shadow-[#D99427]/20 mb-2">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+
+                <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-[9px] font-bold tracking-[0.2em] text-rose-900 uppercase mb-2 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" />
+                  <span>Safed Sheri 2026 • Official Proclamation</span>
+                </div>
+
+                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
+                  Pass Bookings Closed <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019]">
+                    For All 3 Pass Categories
+                  </span>
+                </h3>
+
+                <p className="text-xs text-[#6E5336] mt-1.5 max-w-sm leading-relaxed">
+                  New pass bookings for <strong className="text-[#2D1F0E]">Single Female, Couple, and Kids passes</strong> are currently <strong className="text-rose-700">CLOSED</strong>.
+                  <br />
+                  <span className="text-[#8C6019] font-medium block mt-1">
+                    ⌛ Applicants with existing approved registrations can complete pending payments until <strong>6:00 PM IST today</strong>.
+                  </span>
+                </p>
               </div>
 
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-rose-100 border border-rose-300 text-[10px] font-bold tracking-[0.2em] text-rose-900 uppercase mb-2 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" />
-                <span>Safed Sheri 2026 • Official Proclamation</span>
-              </div>
-
-              <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
-                Pass Bookings Closed <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019]">
-                  For All 3 Pass Categories
+              {/* Selected Pass Notice Card */}
+              <div className="p-3 rounded-xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427]">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[9px] uppercase tracking-wider font-bold text-[#8C6019]">
+                      Selected Pass Category
+                    </div>
+                    <div className="text-xs font-bold text-[#2D1F0E]">
+                      {noticePassType === 'SINGLE' && 'Single Female Pass (Verified Entry)'}
+                      {noticePassType === 'COUPLE' && 'Couple Pass (1 Female + 1 Male Entry)'}
+                      {noticePassType === 'KIDS' && 'Kids Pass (Children 10–15 Yrs Entry)'}
+                    </div>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-[9px] font-bold text-rose-800 border border-rose-200 uppercase shadow-sm whitespace-nowrap">
+                  Booking Closed
                 </span>
-              </h3>
-
-              <p className="text-xs sm:text-sm text-[#6E5336] mt-2 max-w-md leading-relaxed">
-                New pass bookings for <strong className="text-[#2D1F0E]">Single Female, Couple, and Kids passes</strong> are currently <strong className="text-rose-700">CLOSED</strong>.
-                <br />
-                <span className="text-[#8C6019] font-medium block mt-1">
-                  ⌛ Applicants with existing approved registrations can complete pending payments until <strong>6:00 PM IST today</strong>.
-                </span>
-              </p>
-            </div>
-
-            {/* Selected Pass Notice Card */}
-            <div className="mb-4 p-3.5 sm:p-4 rounded-2xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427]">
-                  <Crown className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-bold text-[#8C6019]">
-                    Selected Pass Category
-                  </div>
-                  <div className="text-xs sm:text-sm font-bold text-[#2D1F0E]">
-                    {noticePassType === 'SINGLE' && 'Single Female Pass (Verified Entry)'}
-                    {noticePassType === 'COUPLE' && 'Couple Pass (1 Female + 1 Male Entry)'}
-                    {noticePassType === 'KIDS' && 'Kids Pass (Children 10–15 Yrs Entry)'}
-                  </div>
-                </div>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-rose-100 text-[10px] font-bold text-rose-800 border border-rose-200 uppercase shadow-sm whitespace-nowrap">
-                Booking Closed
-              </span>
-            </div>
-
-            {/* Live Glowing Countdown */}
-            <div className="mb-4">
-              <div className="text-center text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-2 flex items-center justify-center space-x-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#D99427]" />
-                <span>{isPendingPaymentClosed ? 'Pending Payment Window Closed' : 'Pending Payment Window Closes Today at 6:00 PM'}</span>
               </div>
 
-              {!isPendingPaymentClosed ? (
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                    <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
-                      {String(sep12Countdown.hours).padStart(2, '0')}
+              {/* Live Glowing Countdown */}
+              <div>
+                <div className="text-center text-[9px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-1.5 flex items-center justify-center space-x-1.5">
+                  <Clock className="w-3 h-3 text-[#D99427]" />
+                  <span>{isPendingPaymentClosed ? 'Pending Payment Window Closed' : 'Pending Payment Window Closes Today at 6:00 PM'}</span>
+                </div>
+
+                {!isPendingPaymentClosed ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                      <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
+                        {String(sep12Countdown.hours).padStart(2, '0')}
+                      </div>
+                      <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Hours</div>
                     </div>
-                    <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Hours</div>
-                  </div>
-                  <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                    <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#2D1F0E]">
-                      {String(sep12Countdown.minutes).padStart(2, '0')}
+                    <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                      <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
+                        {String(sep12Countdown.minutes).padStart(2, '0')}
+                      </div>
+                      <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Mins</div>
                     </div>
-                    <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Mins</div>
-                  </div>
-                  <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                    <div className="text-xl sm:text-2xl font-serif font-extrabold text-[#D99427]">
-                      {String(sep12Countdown.seconds).padStart(2, '0')}
+                    <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
+                      <div className="text-lg sm:text-xl font-serif font-extrabold text-[#D99427]">
+                        {String(sep12Countdown.seconds).padStart(2, '0')}
+                      </div>
+                      <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Secs</div>
                     </div>
-                    <div className="text-[9px] font-bold uppercase tracking-wider text-[#8C6019] mt-0.5">Secs</div>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-center text-rose-800 font-bold text-xs">
+                    Pending Payment Booking window officially closed at 6:00 PM today.
+                  </div>
+                )}
+              </div>
+
+              {/* Key Preparation Instructions */}
+              <div className="p-3 rounded-xl bg-[#FFF9EE] border border-[#EAD9B8] text-[11px] space-y-1.5">
+                <div className="font-bold text-[#8C6019] text-[10px] uppercase tracking-wider flex items-center space-x-1.5">
+                  <Shield className="w-3 h-3 text-[#D99427]" />
+                  <span>Prepare for Instant Phase 2 Verification on 2nd October</span>
+                </div>
+                <div className="space-y-1 text-[#6E5336] text-[10px] leading-snug">
+                  <div className="flex items-start space-x-1.5">
+                    <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
+                    <span><strong>Aadhaar Card:</strong> Have clear front &amp; back original ID copies ready for OCR verification.</span>
+                  </div>
+                  <div className="flex items-start space-x-1.5">
+                    <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
+                    <span><strong>75% White Attire:</strong> Pure white traditional Gujarati attire is strictly mandatory.</span>
+                  </div>
+                  <div className="flex items-start space-x-1.5">
+                    <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
+                    <span><strong>Limited Allotment:</strong> Phase 2 passes are released on a curated first-come verified quota.</span>
                   </div>
                 </div>
-              ) : (
-                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-center text-rose-800 font-bold text-xs">
-                  Pending Payment Booking window officially closed at 6:00 PM today.
-                </div>
-              )}
+              </div>
             </div>
 
-            {/* Key Preparation Instructions */}
-            <div className="mb-5 p-3.5 sm:p-4 rounded-2xl bg-[#FFF9EE] border border-[#EAD9B8] text-xs space-y-2">
-              <div className="font-bold text-[#8C6019] text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                <Shield className="w-3.5 h-3.5 text-[#D99427]" />
-                <span>Prepare for Instant Phase 2 Verification on 2nd October</span>
-              </div>
-              <div className="space-y-1.5 text-[#6E5336] text-[11px] leading-relaxed">
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
-                  <span><strong>Aadhaar Card:</strong> Have clear front &amp; back original government ID copies ready for instant OCR verification.</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
-                  <span><strong>75% White Attire:</strong> Pure white traditional Gujarati attire is strictly mandatory for venue entrance.</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
-                  <span><strong>Limited Allotment:</strong> Phase 2 passes are released on a curated first-come verified quota.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+            {/* Action CTA Buttons - Fixed Footer inside Modal */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-3 border-t border-[#EAD9B8]/60 mt-2 flex-shrink-0">
               <a
                 href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Team%2C%20please%20notify%20me%20immediately%20when%20Phase%202%20pass%20bookings%20open%20on%202nd%20October%202026!"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => garbaAudio.playDhol()}
-                className="w-full sm:flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
+                className="w-full sm:flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-md shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-3.5 h-3.5" />
                 <span>Notify Me on WhatsApp</span>
               </a>
 
