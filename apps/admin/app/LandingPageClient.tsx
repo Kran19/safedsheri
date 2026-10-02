@@ -389,6 +389,7 @@ export default function SafedSheriLandingPage() {
 
   // Pass Booking Lock State (Phase 2 Unlocked)
   const IS_BOOKING_LOCK_ENABLED = false; // Pass bookings for Single, Couple, Kids are OPEN for Phase 2
+  const IS_PENDING_PAYMENT_LOCK_ENABLED = false; // Pending payment window is OPEN for Phase 2
   
   // Pending Payment Booking Cutoff (Closes at 6:00 PM IST today: 2026-10-01T18:00:00+05:30)
   const PENDING_PAYMENT_CUTOFF_TIMESTAMP = new Date('2026-10-01T18:00:00+05:30').getTime();
@@ -419,7 +420,7 @@ export default function SafedSheriLandingPage() {
       const isLocked = IS_BOOKING_LOCK_ENABLED && now < PHASE_2_REOPENING_TIMESTAMP;
       setIsPassBookingLocked(isLocked);
 
-      const pendingClosed = now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
+      const pendingClosed = IS_PENDING_PAYMENT_LOCK_ENABLED && (now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP);
       setIsPendingPaymentClosed(pendingClosed);
 
       // Countdown to 6:00 PM IST today
@@ -1397,7 +1398,7 @@ export default function SafedSheriLandingPage() {
     garbaAudio.playDandiya();
 
     const now = Date.now();
-    const pendingClosed = isPassBookingLocked && now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
+    const pendingClosed = IS_PENDING_PAYMENT_LOCK_ENABLED && (now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP);
 
     if (pendingClosed) {
       alert('The Pending Payment booking window officially closed at 6:00 PM today.');
@@ -1427,7 +1428,7 @@ export default function SafedSheriLandingPage() {
 
   const handleSimulatePayment = async () => {
     const now = Date.now();
-    const pendingClosed = isPassBookingLocked && now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
+    const pendingClosed = IS_PENDING_PAYMENT_LOCK_ENABLED && (now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP);
 
     if (pendingClosed) {
       alert('The Pending Payment booking window officially closed at 6:00 PM today.');
