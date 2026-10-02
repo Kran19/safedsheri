@@ -387,8 +387,8 @@ export default function SafedSheriLandingPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedPass, setSelectedPass] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
 
-  // Pass Booking Lock State (All 3 Pass Bookings are CLOSED)
-  const IS_BOOKING_LOCK_ENABLED = true; // Pass bookings for Single, Couple, Kids are CLOSED
+  // Pass Booking Lock State (Phase 2 Unlocked)
+  const IS_BOOKING_LOCK_ENABLED = false; // Pass bookings for Single, Couple, Kids are OPEN for Phase 2
   
   // Pending Payment Booking Cutoff (Closes at 6:00 PM IST today: 2026-10-01T18:00:00+05:30)
   const PENDING_PAYMENT_CUTOFF_TIMESTAMP = new Date('2026-10-01T18:00:00+05:30').getTime();
@@ -398,7 +398,7 @@ export default function SafedSheriLandingPage() {
 
   const [isBookingSoonModalOpen, setIsBookingSoonModalOpen] = useState(false);
   const [noticePassType, setNoticePassType] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
-  const [isPassBookingLocked, setIsPassBookingLocked] = useState(true);
+  const [isPassBookingLocked, setIsPassBookingLocked] = useState(false);
   const [isPendingPaymentClosed, setIsPendingPaymentClosed] = useState(false);
   const [sep12Countdown, setSep12Countdown] = useState<{
     days: number;
@@ -416,7 +416,8 @@ export default function SafedSheriLandingPage() {
   useEffect(() => {
     const updateLockStatus = () => {
       const now = Date.now();
-      setIsPassBookingLocked(true);
+      const isLocked = IS_BOOKING_LOCK_ENABLED && now < PHASE_2_REOPENING_TIMESTAMP;
+      setIsPassBookingLocked(isLocked);
 
       const pendingClosed = now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
       setIsPendingPaymentClosed(pendingClosed);
@@ -454,7 +455,7 @@ export default function SafedSheriLandingPage() {
     showGazeboPrice: false,
     isCountdownActive: true,
     countdownTarget: null,
-    urgencyTagline: '🚨 Pass Bookings Closed for All 3 Pass Types | ⚡ Phase 2 Bookings Reopen 2nd October at 12:00 AM',
+    urgencyTagline: '⚡ Phase 2 Pass Booking Active — Lock in passes now!',
     hiddenPriceLabel: 'Price Revealed on Approval',
     phaseName: 'PHASE 2',
   });
@@ -899,9 +900,34 @@ export default function SafedSheriLandingPage() {
   const handlePassSelect = (type: 'SINGLE' | 'COUPLE' | 'KIDS') => {
     garbaAudio.playGhunghroo();
     setSelectedPass(type);
-    setNoticePassType(type);
-    setIsBookingSoonModalOpen(true);
-    return;
+    setCurrentAttendeeIndex(0);
+
+    if (isPassBookingLocked) {
+      setNoticePassType(type);
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
+
+    if (type === 'SINGLE') {
+      setWizardStep('ATTENDEE');
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+      ]);
+    } else if (type === 'COUPLE') {
+      setWizardStep('ATTENDEE');
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '' },
+        { fullName: '', phone: '', email: '', gender: 'MALE', aadhaarNumber: '', documentKey: '', documentName: '' }
+      ]);
+    } else if (type === 'KIDS') {
+      setWizardStep('ATTENDEE');
+      setAttendees([
+        { fullName: '', phone: '', email: '', gender: 'FEMALE', aadhaarNumber: '', documentKey: '', documentName: '', kidsAgeGroup: kidsCardTier || 'BELOW_10' }
+      ]);
+    }
+    setIsBookingOpen(true);
+    setBookingError(null);
+    setSubmittedApplication(null);
   };
 
   const handleFileUpload = async (index: number, side: 'front' | 'back', e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2267,17 +2293,28 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
 
-              <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                <span>Pass Booking Closed</span>
-              </div>
+              {isPassBookingLocked ? (
+                <>
+                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+                    <span>Pass Booking Closed</span>
+                  </div>
 
-              <button
-                onClick={() => handlePassSelect('SINGLE')}
-                className="w-full py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
-              >
-                <span>Pass Booking Closed</span>
-              </button>
+                  <button
+                    onClick={() => handlePassSelect('SINGLE')}
+                    className="w-full py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
+                  >
+                    <span>Pass Booking Closed</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => handlePassSelect('SINGLE')}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] hover:opacity-95 text-[#2D1F0E] font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
+                >
+                  <span>Request Single Pass Allocation →</span>
+                </button>
+              )}
             </div>
 
             {/* COUPLE PASS */}
@@ -2344,17 +2381,28 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
 
-              <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                <span>Pass Booking Closed</span>
-              </div>
+              {isPassBookingLocked ? (
+                <>
+                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+                    <span>Pass Booking Closed</span>
+                  </div>
 
-              <button
-                onClick={() => handlePassSelect('COUPLE')}
-                className="w-full py-3.5 rounded-full bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-lg flex items-center justify-center space-x-2"
-              >
-                <span>Pass Booking Closed</span>
-              </button>
+                  <button
+                    onClick={() => handlePassSelect('COUPLE')}
+                    className="w-full py-3.5 rounded-full bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <span>Pass Booking Closed</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => handlePassSelect('COUPLE')}
+                  className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] hover:opacity-95 text-[#2D1F0E] font-bold text-xs tracking-widest uppercase transition shadow-lg flex items-center justify-center space-x-2"
+                >
+                  <span>Request Couple Pass Allocation →</span>
+                </button>
+              )}
             </div>
 
             {/* KIDS PASS */}
@@ -2422,17 +2470,28 @@ export default function SafedSheriLandingPage() {
                 </div>
               </div>
 
-              <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                <span>Pass Booking Closed</span>
-              </div>
+              {isPassBookingLocked ? (
+                <>
+                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+                    <span>Pass Booking Closed</span>
+                  </div>
 
-              <button
-                onClick={() => handlePassSelect('KIDS')}
-                className="w-full py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
-              >
-                <span>Pass Booking Closed</span>
-              </button>
+                  <button
+                    onClick={() => handlePassSelect('KIDS')}
+                    className="w-full py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
+                  >
+                    <span>Pass Booking Closed</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => handlePassSelect('KIDS')}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] hover:opacity-95 text-[#2D1F0E] font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
+                >
+                  <span>Request Kids Pass Allocation →</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
