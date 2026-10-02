@@ -347,7 +347,7 @@ export class RegistrationsService {
 
     try {
       // Check if pass bookings are closed for all 3 categories (Single, Couple, Kids)
-      const isBookingLockEnabled = true;
+      const isBookingLockEnabled = false;
       if (isBookingLockEnabled) {
         throw new BadRequestException('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
       }

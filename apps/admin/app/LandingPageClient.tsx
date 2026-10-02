@@ -1041,10 +1041,12 @@ export default function SafedSheriLandingPage() {
   };
 
   const submitRegistrationWithToken = async (verifiedToken: string) => {
-    setBookingError('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
-    setOtpError('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
-    setIsBookingSoonModalOpen(true);
-    return;
+    if (isPassBookingLocked) {
+      setBookingError('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
+      setOtpError('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
 
     setBookingLoading(true);
     setBookingError(null);
@@ -1108,9 +1110,11 @@ export default function SafedSheriLandingPage() {
     e.preventDefault();
     garbaAudio.playDhol();
 
-    setBookingError('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
-    setIsBookingSoonModalOpen(true);
-    return;
+    if (isPassBookingLocked) {
+      setBookingError('Pass bookings for all categories (Single Female, Couple, Kids) are currently CLOSED.');
+      setIsBookingSoonModalOpen(true);
+      return;
+    }
 
     setBookingLoading(true);
     setBookingError(null);
@@ -1393,7 +1397,7 @@ export default function SafedSheriLandingPage() {
     garbaAudio.playDandiya();
 
     const now = Date.now();
-    const pendingClosed = now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
+    const pendingClosed = isPassBookingLocked && now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
 
     if (pendingClosed) {
       alert('The Pending Payment booking window officially closed at 6:00 PM today.');
@@ -1423,7 +1427,7 @@ export default function SafedSheriLandingPage() {
 
   const handleSimulatePayment = async () => {
     const now = Date.now();
-    const pendingClosed = now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
+    const pendingClosed = isPassBookingLocked && now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP;
 
     if (pendingClosed) {
       alert('The Pending Payment booking window officially closed at 6:00 PM today.');
