@@ -243,10 +243,11 @@ export class PaymentsService {
   }
 
   async getOrderDetails(paymentLinkId: string) {
-    // PENDING PAYMENT BOOKING CUTOFF (Closes at 6:00 PM IST today: 2026-10-01T18:00:00+05:30)
+    // PENDING PAYMENT BOOKING CUTOFF (Disabled for Phase 2)
+    const isPendingPaymentLockEnabled = false;
     const pendingPaymentCutoff = new Date('2026-10-01T18:00:00+05:30').getTime();
     const now = Date.now();
-    if (now >= pendingPaymentCutoff) {
+    if (isPendingPaymentLockEnabled && now >= pendingPaymentCutoff) {
       throw new BadRequestException(
         'The Pending Payment booking window officially closed at 6:00 PM today.',
       );
