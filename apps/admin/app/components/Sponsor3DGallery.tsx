@@ -54,13 +54,10 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
             <div className="relative w-full h-full max-h-[180px] flex items-center justify-center py-2 px-4">
               <Image
                 src="/images/sponsoe1.png"
-                alt="Radhika"
+                alt="Radhika Jewellers"
                 width={260}
                 height={140}
                 className="object-contain max-h-full drop-shadow-2xl transition-all duration-500 hover:scale-105"
-                style={{
-                  filter: 'invert(1) hue-rotate(180deg) brightness(2) contrast(1.25)'
-                }}
                 priority
               />
             </div>
