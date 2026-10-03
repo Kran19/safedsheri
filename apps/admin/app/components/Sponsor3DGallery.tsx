@@ -43,29 +43,29 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
         </div>
 
         {/* SINGLE RADHIKA SPONSOR CARD */}
-        <div className="w-[280px] sm:w-[320px] md:w-[360px] h-[300px] sm:h-[340px] rounded-3xl p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(184,134,11,0.35)] ring-2 ring-[#D99427] bg-[#1c1917] backdrop-blur-xl relative transition-all duration-300 hover:scale-105">
+        <div className="w-[300px] sm:w-[340px] md:w-[380px] h-[320px] sm:h-[360px] rounded-3xl p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(217,148,39,0.2)] ring-1 ring-[#D99427]/50 bg-white/95 backdrop-blur-xl relative transition-all duration-300 hover:scale-105">
           {/* Top Badge area */}
           <div className="flex justify-end items-center w-full">
-            <Sparkles className="w-4 h-4 text-[#F6C85F] animate-pulse" />
+            <Sparkles className="w-4 h-4 text-[#D99427] animate-pulse" />
           </div>
 
           {/* Main Logo Content Area */}
-          <div className="flex flex-col items-center justify-center text-center my-auto space-y-3 w-full h-full py-4">
-            <div className="relative w-full h-full max-h-[180px] flex items-center justify-center py-2 px-4">
+          <div className="flex flex-col items-center justify-center text-center my-auto space-y-3 w-full h-full py-2">
+            <div className="relative w-full h-full max-h-[220px] flex items-center justify-center py-2 px-2">
               <Image
                 src="/images/sponsoe1.png"
                 alt="Radhika Jewellers"
-                width={260}
-                height={140}
-                className="object-contain max-h-full drop-shadow-2xl transition-all duration-500 hover:scale-105"
+                width={300}
+                height={200}
+                className="object-contain max-h-full transition-all duration-500 hover:scale-105"
                 priority
               />
             </div>
           </div>
 
           {/* Card Bottom Tagline */}
-          <div className="pt-3 border-t border-[#D99427]/30 bg-[#241e1a] text-center rounded-b-2xl -mx-6 -mb-6 p-3.5">
-            <p className="text-xs sm:text-sm font-sans font-medium italic text-amber-200">
+          <div className="pt-3 border-t border-[#D99427]/20 bg-[#FAF6EE] text-center rounded-b-2xl -mx-6 -mb-6 p-3.5">
+            <p className="text-xs sm:text-sm font-serif font-semibold italic text-[#8C6019]">
               &ldquo;Powered By&rdquo;
             </p>
           </div>
