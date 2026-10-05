@@ -82,13 +82,13 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
 
             {/* Main Logo Content Area */}
             <div className="flex flex-col items-center justify-center text-center my-auto space-y-3 w-full h-full py-2">
-              <div className="relative w-full h-full max-h-[220px] flex items-center justify-center py-2 px-2">
+              <div className="relative w-full h-full max-h-[220px] flex items-center justify-center p-1">
                 <Image
                   src="/images/sadguru-logo.png"
                   alt="Shree Sadguru Lifestyle"
-                  width={300}
-                  height={200}
-                  className="object-contain max-h-full transition-all duration-500 hover:scale-105 rounded-xl"
+                  width={340}
+                  height={220}
+                  className="object-contain max-h-full w-full transition-all duration-500 hover:scale-105"
                   priority
                 />
               </div>
