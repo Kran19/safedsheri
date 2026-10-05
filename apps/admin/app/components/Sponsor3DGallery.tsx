@@ -46,11 +46,8 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
         <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 w-full max-w-4xl">
           {/* RADHIKA JEWELLERS - POWERED BY */}
           <div className="w-[300px] sm:w-[340px] md:w-[360px] h-[320px] sm:h-[360px] rounded-3xl p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(217,148,39,0.2)] ring-1 ring-[#D99427]/50 bg-white/95 backdrop-blur-xl relative transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_60px_rgba(217,148,39,0.3)]">
-            {/* Top Badge area */}
-            <div className="flex justify-between items-center w-full">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-[#8C6019] uppercase bg-[#FAF6EE] px-2.5 py-1 rounded-full border border-[#D99427]/30">
-                TITLE SPONSOR
-              </span>
+            {/* Top Sparkle icon area */}
+            <div className="flex justify-end items-center w-full">
               <Sparkles className="w-4 h-4 text-[#D99427] animate-pulse" />
             </div>
 
@@ -78,11 +75,8 @@ export function Sponsor3DGallery({ onOpenSponsorModal }: Sponsor3DGalleryProps) 
 
           {/* SHREE SADGURU LIFESTYLE - CO-POWERED BY */}
           <div className="w-[300px] sm:w-[340px] md:w-[360px] h-[320px] sm:h-[360px] rounded-3xl p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(217,148,39,0.2)] ring-1 ring-[#D99427]/50 bg-white/95 backdrop-blur-xl relative transition-all duration-300 hover:scale-105 hover:shadow-[0_25px_60px_rgba(217,148,39,0.3)]">
-            {/* Top Badge area */}
-            <div className="flex justify-between items-center w-full">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-[#8C6019] uppercase bg-[#FAF6EE] px-2.5 py-1 rounded-full border border-[#D99427]/30">
-                CO-POWERED SPONSOR
-              </span>
+            {/* Top Sparkle icon area */}
+            <div className="flex justify-end items-center w-full">
               <Sparkles className="w-4 h-4 text-[#D99427] animate-pulse" />
             </div>
 
