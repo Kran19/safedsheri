@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest, getAuthToken, getStoredUser } from '../../lib/api';
-import { CheckCircle2, XCircle, RefreshCw, Camera, Keyboard, Lock, Shield } from 'lucide-react';
-import { useRef } from 'react';
+import { CheckCircle2, XCircle, RefreshCw, Camera, Lock, Shield, AlertTriangle, Users, Ticket, Crown } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 
 export default function SecurityScannerPage() {
@@ -14,13 +13,41 @@ export default function SecurityScannerPage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [html5Scanner, setHtml5Scanner] = useState<any>(null);
   const scanningRef = useRef(false);
+
   useEffect(() => {
     scanningRef.current = scanning;
   }, [scanning]);
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Selected Gate Terminal State (defaults to GATE_1)
+  const [selectedGate, setSelectedGate] = useState<string>('GATE_1');
+
+  // Live Counter & Stats State
+  const [liveStats, setLiveStats] = useState<{
+    myScansCount: number;
+    gateScansCount: number;
+    totalAttendeesScanned: number;
+    breakdown: {
+      couple: number;
+      single: number;
+      kids: number;
+      gazebo: number;
+    };
+    gateBreakdown: Record<string, number>;
+  }>({
+    myScansCount: 0,
+    gateScansCount: 0,
+    totalAttendeesScanned: 0,
+    breakdown: { couple: 0, single: 0, kids: 0, gazebo: 0 },
+    gateBreakdown: {},
+  });
+
   const [scanResult, setScanResult] = useState<{
     status: 'VALID' | 'NOT_VALID' | null;
     reason?: string;
+    message?: string;
     attendeeName?: string;
     passType?: string;
     passCode?: string;
@@ -29,6 +56,7 @@ export default function SecurityScannerPage() {
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
 
+  // Load User & Saved Gate Preference
   useEffect(() => {
     const token = getAuthToken();
     const user = getStoredUser();
@@ -36,8 +64,34 @@ export default function SecurityScannerPage() {
       setIsAuthenticated(false);
       return;
     }
+    setCurrentUser(user);
     setIsAuthenticated(true);
+
+    const savedGate = localStorage.getItem('safedsheri_selected_gate');
+    if (savedGate) {
+      setSelectedGate(savedGate);
+    }
   }, []);
+
+  // Poll Live Stats every 4 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchLiveStats();
+    const interval = setInterval(fetchLiveStats, 4000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, selectedGate]);
+
+  async function fetchLiveStats() {
+    const res = await apiRequest(`/entries/gate-stats?gateId=${selectedGate}`);
+    if (res.success && res.data) {
+      setLiveStats(res.data);
+    }
+  }
+
+  function handleGateChange(gateId: string) {
+    setSelectedGate(gateId);
+    localStorage.setItem('safedsheri_selected_gate', gateId);
+  }
 
   useEffect(() => {
     if (isAuthenticated !== true) return;
@@ -79,7 +133,6 @@ export default function SecurityScannerPage() {
       }
     };
 
-    // Add a small delay to ensure DOM is fully painted and stable
     const timer = setTimeout(() => {
       initScanner();
     }, 100);
@@ -106,7 +159,7 @@ export default function SecurityScannerPage() {
 
     const res = await apiRequest('/entries/scan', {
       method: 'POST',
-      body: JSON.stringify({ token: token.trim() }),
+      body: JSON.stringify({ token: token.trim(), gateId: selectedGate }),
     });
 
     if (res.success && res.data) {
@@ -115,21 +168,25 @@ export default function SecurityScannerPage() {
       setRecentScans((prev) => [
         {
           token,
+          gateId: selectedGate,
           status: res.data.status,
           reason: res.data.reason,
+          message: res.data.message,
           name: res.data.attendeeName,
           passType: res.data.passType,
           passCode: res.data.passCode,
           time: new Date().toLocaleTimeString(),
         },
-        ...prev.slice(0, 5),
+        ...prev.slice(0, 7),
       ]);
+
+      fetchLiveStats();
 
       setTimeout(() => {
         setScanResult({ status: null });
         scanningRef.current = false;
         setScanning(false);
-      }, 3000);
+      }, 3500);
     } else {
       if (res.error?.code === 'UNAUTHORIZED') {
         setIsAuthenticated(false);
@@ -143,7 +200,7 @@ export default function SecurityScannerPage() {
         setScanResult({ status: null });
         scanningRef.current = false;
         setScanning(false);
-      }, 3000);
+      }, 3500);
     }
   }
 
@@ -164,6 +221,8 @@ export default function SecurityScannerPage() {
     processScan(manualToken);
     setManualToken('');
   }
+
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.username === 'masteradmin@safedsheri.com';
 
   if (isAuthenticated === false) {
     return (
@@ -191,19 +250,133 @@ export default function SecurityScannerPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 animate-fade-in text-[#2D1F0E] pb-12">
+    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in text-[#2D1F0E] pb-12 px-4">
       {/* HEADER */}
       <div className="text-center space-y-2">
         <div className="flex justify-center mb-1">
           <LogoSlot size="md" />
         </div>
         <span className="text-[10px] font-mono tracking-[0.25em] font-bold text-[#8C6019] uppercase">
-          GATE ACCESS CONTROL
+          OCTOBER 9TH GATE ACCESS SYSTEM
         </span>
-        <h1 className="text-2xl font-serif font-bold text-[#2D1F0E]">Security Pass Scanner</h1>
+        <h1 className="text-2xl font-serif font-bold text-[#2D1F0E]">Security Gate Pass Scanner</h1>
         <p className="text-xs text-[#6E5336]">
-          Scan guest QR codes or enter visible pass code to validate entry.
+          Select designated gate terminal below to enforce pass category access controls.
         </p>
+      </div>
+
+      {/* GATE TERMINAL SELECTOR */}
+      <div className="p-4 rounded-3xl bg-white border-2 border-[#EAD9B8] shadow-md space-y-3">
+        <div className="flex justify-between items-center px-1">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#8C6019] flex items-center gap-1.5">
+            <Shield className="w-4 h-4 text-[#D99427]" /> Select Active Gate Terminal:
+          </span>
+          <span className="text-[11px] font-mono font-bold bg-[#FFF5DC] text-[#8C6019] px-2.5 py-0.5 rounded-full border border-[#E5A93C]">
+            ACTIVE: {selectedGate.replace('_', ' ')}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button
+            type="button"
+            onClick={() => handleGateChange('GATE_1')}
+            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+              selectedGate === 'GATE_1'
+                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+            }`}
+          >
+            <div className="text-[10px] font-bold uppercase opacity-80">GATE 1</div>
+            <div className="text-xs font-bold font-serif mt-1">COUPLE PASS</div>
+            <div className="text-[9px] opacity-70 mt-1 font-mono">Couple Only</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleGateChange('GATE_2')}
+            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+              selectedGate === 'GATE_2'
+                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+            }`}
+          >
+            <div className="text-[10px] font-bold uppercase opacity-80">GATE 2</div>
+            <div className="text-xs font-bold font-serif mt-1">FEMALE / SINGLE</div>
+            <div className="text-[9px] opacity-70 mt-1 font-mono">Single Only</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleGateChange('GATE_3')}
+            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+              selectedGate === 'GATE_3'
+                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+            }`}
+          >
+            <div className="text-[10px] font-bold uppercase opacity-80">GATE 3</div>
+            <div className="text-xs font-bold font-serif mt-1">KIDS PASS</div>
+            <div className="text-[9px] opacity-70 mt-1 font-mono">Kids Only</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleGateChange('GATE_4')}
+            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+              selectedGate === 'GATE_4'
+                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+            }`}
+          >
+            <div className="text-[10px] font-bold uppercase opacity-80">GATE 4</div>
+            <div className="text-xs font-bold font-serif mt-1">GAZEBO PASS</div>
+            <div className="text-[9px] opacity-70 mt-1 font-mono">Gazebo VIP</div>
+          </button>
+        </div>
+
+        {/* MASTER ADMIN OVERRIDE BUTTON */}
+        {isSuperAdmin && (
+          <button
+            type="button"
+            onClick={() => handleGateChange('MASTER_ADMIN')}
+            className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition ${
+              selectedGate === 'MASTER_ADMIN'
+                ? 'bg-amber-500 text-black border-amber-600 shadow-md font-extrabold'
+                : 'bg-[#FFF5DC] text-[#8C6019] border-[#E5A93C] hover:bg-[#FCEBB8]'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-[#8C6019]" />
+            Master Admin Mode (Scans ALL Passes Without Restriction)
+          </button>
+        )}
+      </div>
+
+      {/* LIVE COUNTERS & EVENT BREAKDOWN BANNER */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+        <div className="p-3 bg-white border border-[#EAD9B8] rounded-2xl shadow-sm space-y-0.5">
+          <div className="text-[10px] font-mono uppercase text-[#8C6019]">MY SCANS</div>
+          <div className="text-xl font-bold text-[#2D1F0E]">{liveStats.myScansCount}</div>
+        </div>
+
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm space-y-0.5">
+          <div className="text-[10px] font-mono uppercase text-emerald-800">COUPLE</div>
+          <div className="text-xl font-bold text-emerald-950">{liveStats.breakdown.couple}</div>
+        </div>
+
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm space-y-0.5">
+          <div className="text-[10px] font-mono uppercase text-blue-800">FEMALE / SINGLE</div>
+          <div className="text-xl font-bold text-blue-950">{liveStats.breakdown.single}</div>
+        </div>
+
+        <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl shadow-sm space-y-0.5">
+          <div className="text-[10px] font-mono uppercase text-purple-800">KIDS</div>
+          <div className="text-xl font-bold text-purple-950">{liveStats.breakdown.kids}</div>
+        </div>
+
+        <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl shadow-sm space-y-0.5 col-span-2 sm:col-span-1">
+          <div className="text-[10px] font-mono uppercase text-amber-900 font-bold">TOTAL INSIDE</div>
+          <div className="text-xl font-bold text-amber-950">{liveStats.totalAttendeesScanned}</div>
+        </div>
       </div>
 
       {/* SCAN RESULT OVERLAY BANNER */}
@@ -212,12 +385,16 @@ export default function SecurityScannerPage() {
           className={`p-6 rounded-3xl border-2 text-center space-y-3 shadow-xl transition animate-scale-up ${
             scanResult.status === 'VALID'
               ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
+              : scanResult.reason === 'WRONG_GATE'
+              ? 'bg-amber-50 border-amber-400 text-amber-950'
               : 'bg-red-50 border-red-400 text-red-950'
           }`}
         >
           <div className="flex justify-center">
             {scanResult.status === 'VALID' ? (
               <CheckCircle2 className="w-16 h-16 text-emerald-600 animate-pulse" />
+            ) : scanResult.reason === 'WRONG_GATE' ? (
+              <AlertTriangle className="w-16 h-16 text-amber-600 animate-bounce" />
             ) : (
               <XCircle className="w-16 h-16 text-red-600 animate-pulse" />
             )}
@@ -225,12 +402,16 @@ export default function SecurityScannerPage() {
 
           <div>
             <div className="text-2xl font-serif font-extrabold tracking-wide">
-              {scanResult.status === 'VALID' ? 'ENTRY GRANTED' : 'ENTRY DENIED'}
+              {scanResult.status === 'VALID'
+                ? 'ENTRY GRANTED'
+                : scanResult.reason === 'WRONG_GATE'
+                ? 'WRONG GATE PASS'
+                : 'ENTRY DENIED'}
             </div>
             <div className="text-xs font-mono mt-1 font-bold">
               {scanResult.status === 'VALID'
-                ? `Welcome to Safed Sheri 2026`
-                : `Reason: ${scanResult.reason || 'INVALID_TOKEN'}`}
+                ? `Welcome to Safed Sheri 2026 (${selectedGate.replace('_', ' ')})`
+                : scanResult.message || `Reason: ${scanResult.reason || 'INVALID_TOKEN'}`}
             </div>
           </div>
 
@@ -267,7 +448,7 @@ export default function SecurityScannerPage() {
 
         <form onSubmit={handleManualSubmit} className="space-y-3">
           <label className="block text-xs font-bold text-[#6E5336]">
-            Manual QR Token or Pass Code Entry
+            Manual QR Token or Pass Code Entry ({selectedGate.replace('_', ' ')})
           </label>
           <div className="flex gap-2">
             <input
@@ -293,20 +474,24 @@ export default function SecurityScannerPage() {
       {recentScans.length > 0 && (
         <div className="p-5 rounded-3xl bg-white border border-[#EAD9B8] shadow-sm space-y-3">
           <div className="text-xs font-bold uppercase tracking-wider text-[#8C6019]">
-            Recent Gate Scans
+            Recent Terminal Gate Scans
           </div>
           <div className="divide-y divide-[#EAD9B8] text-xs">
             {recentScans.map((s, idx) => (
               <div key={idx} className="py-2.5 flex justify-between items-center">
                 <div>
                   <div className="font-semibold text-[#2D1F0E]">{s.name || s.token.slice(0, 16)}</div>
-                  <div className="text-[10px] font-mono text-[#6E5336]">{s.passCode || s.time}</div>
+                  <div className="text-[10px] font-mono text-[#6E5336]">
+                    {s.passType || 'PASS'} • {s.passCode || s.time} • <span className="font-bold text-[#8C6019]">{s.gateId}</span>
+                  </div>
                 </div>
                 <div>
                   <span
                     className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                       s.status === 'VALID'
                         ? 'bg-emerald-100 text-emerald-800'
+                        : s.reason === 'WRONG_GATE'
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300'
                         : 'bg-red-100 text-red-800'
                     }`}
                   >

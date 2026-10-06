@@ -14,14 +14,25 @@ export class ScanAttemptsService {
       where,
       include: {
         scannedBy: {
-          select: { id: true, fullName: true, role: true },
+          select: { id: true, fullName: true, role: true, username: true },
         },
         credential: {
-          select: { id: true, credentialNumber: true },
+          select: {
+            id: true,
+            credentialNumber: true,
+            passCode: true,
+            secureToken: true,
+            attendee: {
+              select: { id: true, fullName: true, phone: true },
+            },
+            registration: {
+              select: { id: true, registrationNumber: true, passType: true },
+            },
+          },
         },
       },
       orderBy: { scannedAt: 'desc' },
-      take: 100,
+      take: 200,
     });
 
     return { success: true, data: scans };

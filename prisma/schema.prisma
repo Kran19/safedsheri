@@ -228,6 +228,7 @@ model ScanAttempt {
   eventId         String
   credentialId    String?
   scannedById     String
+  gateId          String?     @default("GATE_1")
   result          ScanResult
   rawTokenScanned String
   scannedAt       DateTime    @default(now())
@@ -248,6 +249,7 @@ model Entry {
   attendeeId         String?
   registrationId     String?
   credentialId       String?
+  gateId             String?            @default("GATE_1")
   entryType          EntryType          @default(QR)
   verificationMethod VerificationMethod @default(QR_SCAN)
   verifiedById       String
@@ -453,6 +455,7 @@ enum ScanResult {
   WRONG_EVENT
   PAYMENT_NOT_CONFIRMED
   EXPIRED
+  WRONG_GATE
 }
 
 enum EntryType {

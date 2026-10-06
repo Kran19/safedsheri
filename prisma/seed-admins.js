@@ -8,7 +8,7 @@ function hashPassword(password) {
 }
 
 async function main() {
-  console.log('🛡️ Auto-Synchronizing 3 Super Admin Accounts...');
+  console.log('🛡️ Auto-Synchronizing Admin & Gate Scanner Accounts...');
 
   const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'AdminPass123!';
   const adminPassHash = hashPassword(defaultPassword);
@@ -16,7 +16,7 @@ async function main() {
   const adminAccounts = [
     {
       username: 'masteradmin@safedsheri.com',
-      fullName: 'Master Admin (Main Owner)',
+      fullName: 'Master Admin (Main Owner - All Gates Scanner)',
       role: 'SUPER_ADMIN',
       password: process.env.MASTER_ADMIN_PASSWORD || 'MasterPass123!',
     },
@@ -44,28 +44,34 @@ async function main() {
       role: 'TICKETING_FINANCE',
       password: process.env.CASHIER_DEFAULT_PASSWORD || 'CashierPass123!',
     },
+    // GATE SCANNERS (4 GATES)
     {
       username: 'gate1@safedsheri.com',
-      fullName: 'Gate Verification Lead (Digvijay Jadeja)',
+      fullName: 'Gate 1 Scanner (Couple Pass Only)',
       role: 'ENTRY_VERIFICATION',
-      password: process.env.GATE_DEFAULT_PASSWORD || 'SecurityPass123!',
+      password: process.env.GATE1_PASSWORD || 'SecurityPass123!',
+    },
+    {
+      username: 'gate2@safedsheri.com',
+      fullName: 'Gate 2 Scanner (Female/Single Pass Only)',
+      role: 'ENTRY_VERIFICATION',
+      password: process.env.GATE2_PASSWORD || 'SecurityPass123!',
+    },
+    {
+      username: 'gate3@safedsheri.com',
+      fullName: 'Gate 3 Scanner (Kids Pass Only)',
+      role: 'ENTRY_VERIFICATION',
+      password: process.env.GATE3_PASSWORD || 'SecurityPass123!',
+    },
+    {
+      username: 'gate4@safedsheri.com',
+      fullName: 'Gate 4 Scanner (Gazebo Pass Only)',
+      role: 'ENTRY_VERIFICATION',
+      password: process.env.GATE4_PASSWORD || 'SecurityPass123!',
     },
   ];
 
-  // Clean up old legacy admin
-  try {
-    const deleted = await prisma.user.deleteMany({
-      where: { username: 'admin@safedsheri.com' },
-    });
-    if (deleted.count > 0) {
-      console.log('✓ Cleaned up legacy admin@safedsheri.com');
-    }
-  } catch (err) {
-    // ignore
-  }
-
   for (const account of adminAccounts) {
-    // Only set default password if user does not exist yet (so any password changes by the admin are preserved)
     const existing = await prisma.user.findUnique({
       where: { username: account.username },
     });
@@ -94,7 +100,7 @@ async function main() {
     }
   }
 
-  console.log('🎉 Super Admin Accounts Ready!');
+  console.log('🎉 Super Admin & Gate Scanner Accounts Ready!');
 }
 
 main()

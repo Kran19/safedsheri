@@ -2490,21 +2490,60 @@ export default function SuperAdminDashboard() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 8: SECURITY SCANS */}
+      {/* TAB 8: SECURITY SCANS & GATE PASS MASTER AUDIT */}
       {/* ========================================================================= */}
       {activeTab === 'scans' && (
-        <AdvancedTabulatorTable
-          data={scans}
-          columns={[
-            { key: 'id', title: 'Scan ID', sortable: true, render: (r) => <span className="font-mono text-[11px]">{r.id.slice(0, 8)}...</span> },
-            { key: 'status', title: 'Result', sortable: true, render: (r) => <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.status === 'VALID' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{r.status}</span> },
-            { key: 'reason', title: 'Scan Verdict Details', sortable: true, render: (r) => <span>{r.reason || 'Verified Entry'}</span> },
-            { key: 'createdAt', title: 'Timestamp', sortable: true, getValue: (r) => new Date(r.createdAt).toISOString(), render: (r) => <span className="font-mono text-[11px] text-[#6E5336]">{new Date(r.createdAt).toLocaleString()}</span> },
-          ]}
-          keyField="id"
-          title="Security Gate Scanner Verification Log"
-          subtitle="Real-time access logs and anti-passback duplicate attempts"
-        />
+        <div className="space-y-4">
+          <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-[#EAD9B8]">
+            <div>
+              <h3 className="text-lg font-serif font-bold text-[#2D1F0E]">Master Security Gate Scanner Audit</h3>
+              <p className="text-xs text-[#6E5336]">Real-time gate pass validation logs, attendee details, anti-passback attempts & gate restrictions.</p>
+            </div>
+            <button
+              onClick={() => loadTabContent('scans')}
+              className="px-4 py-2 bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C] font-bold text-xs rounded-xl hover:bg-[#FCEBB8] transition flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh Scans Log
+            </button>
+          </div>
+
+          <AdvancedTabulatorTable
+            data={scans}
+            columns={[
+              { key: 'gateId', title: 'Gate', sortable: true, render: (r) => <span className="font-mono font-bold text-xs bg-[#FFF5DC] text-[#8C6019] px-2 py-0.5 rounded border border-[#E5A93C]">{r.gateId || 'GATE_1'}</span> },
+              { key: 'result', title: 'Scan Result', sortable: true, render: (r) => (
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                  r.result === 'VALID' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                  r.result === 'WRONG_GATE' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                  'bg-red-100 text-red-800 border border-red-300'
+                }`}>
+                  {r.result}
+                </span>
+              )},
+              { key: 'passType', title: 'Pass Category', sortable: true, getValue: (r) => r.credential?.registration?.passType || 'N/A', render: (r) => (
+                <span className="font-serif font-bold text-xs text-[#2D1F0E]">{r.credential?.registration?.passType || 'N/A'}</span>
+              )},
+              { key: 'attendeeName', title: 'Attendee Name & Phone', sortable: true, getValue: (r) => r.credential?.attendee?.fullName || 'N/A', render: (r) => (
+                <div>
+                  <div className="font-bold text-xs text-[#2D1F0E]">{r.credential?.attendee?.fullName || 'Guest / Token Scan'}</div>
+                  <div className="text-[10px] font-mono text-[#6E5336]">{r.credential?.attendee?.phone || r.rawTokenScanned}</div>
+                </div>
+              )},
+              { key: 'passCode', title: 'Pass Code', sortable: true, getValue: (r) => r.credential?.passCode || r.credential?.credentialNumber || 'N/A', render: (r) => (
+                <span className="font-mono text-xs text-[#8C6019] font-bold">{r.credential?.passCode || r.credential?.credentialNumber || '—'}</span>
+              )},
+              { key: 'scannedBy', title: 'Gate Officer', sortable: true, getValue: (r) => r.scannedBy?.fullName || 'System', render: (r) => (
+                <span className="text-xs text-[#2D1F0E]">{r.scannedBy?.fullName || 'System'}</span>
+              )},
+              { key: 'scannedAt', title: 'Timestamp', sortable: true, getValue: (r) => new Date(r.scannedAt || r.createdAt).toISOString(), render: (r) => (
+                <span className="font-mono text-[11px] text-[#6E5336]">{new Date(r.scannedAt || r.createdAt).toLocaleString()}</span>
+              )},
+            ]}
+            keyField="id"
+            title="Gate Pass Access Verification Log"
+            subtitle="Master Admin View of all Couple, Single, Kids, and Gazebo Pass scans"
+          />
+        </div>
       )}
 
       {/* ========================================================================= */}
