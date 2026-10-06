@@ -276,6 +276,144 @@ async function clearTestScans() {
   console.log(`\nAll gate terminals will now start fresh at 0 scans on event day!`);
 }
 
+async function exportCustomerContactsPdf() {
+  console.log('📄 GENERATING CATEGORY-WISE SEPARATED CUSTOMER CONTACT PDFS & CSVS...');
+
+  const PDFDocument = require('pdfkit');
+
+  const registrations = await prisma.registration.findMany({
+    where: { deletedAt: null },
+    include: {
+      attendees: { include: { attendee: true } },
+      credentials: { select: { passCode: true } },
+      createdBy: { select: { username: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const categorized: Record<string, any[]> = {
+    SINGLE: [],
+    COUPLE: [],
+    KIDS: [],
+    GAZEBO: [],
+  };
+
+  for (const reg of registrations) {
+    const pt = reg.passType || 'SINGLE';
+    for (const ra of reg.attendees) {
+      const att = ra.attendee;
+      if (!att) continue;
+
+      let email = att.email;
+      if (!email || email === 'N/A') {
+        if (reg.createdBy?.username?.includes('@')) {
+          email = reg.createdBy.username;
+        } else {
+          email = `${att.fullName.toLowerCase().replace(/\s+/g, '.')}@safedsheri.guest`;
+        }
+      }
+
+      const item = {
+        fullName: att.fullName,
+        phone: att.phone,
+        email: email,
+        passType: pt,
+        registrationNumber: reg.registrationNumber,
+        passCode: reg.credentials?.[0]?.passCode || 'N/A',
+        status: reg.status,
+      };
+
+      if (categorized[pt]) {
+        categorized[pt].push(item);
+      } else {
+        categorized.SINGLE.push(item);
+      }
+    }
+  }
+
+  const generateCategoryPdf = (catKey: string, fileName: string, title: string, items: any[]) => {
+    return new Promise<void>((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 30, size: 'A4' });
+      const stream = fs.createWriteStream(fileName);
+      doc.pipe(stream);
+
+      doc.fontSize(18).fillColor('#2D1F0E').text('SAFED SHERI 2026', { align: 'center' });
+      doc.fontSize(12).fillColor('#8C6019').text(title.toUpperCase(), { align: 'center' });
+      doc.fontSize(9).fillColor('#6E5336').text(`Total Contacts: ${items.length} • Generated: ${new Date().toLocaleString()}`, { align: 'center' });
+      doc.moveDown(1);
+
+      let y = doc.y;
+      doc.fontSize(8).fillColor('#8C6019').font('Helvetica-Bold');
+      doc.text('#', 30, y);
+      doc.text('Customer Name', 55, y);
+      doc.text('WhatsApp / Phone', 190, y);
+      doc.text('Email Address', 310, y);
+      doc.text('Pass Code', 470, y);
+
+      doc.moveTo(30, y + 12).lineTo(565, y + 12).strokeColor('#EAD9B8').stroke();
+      y += 18;
+
+      doc.font('Helvetica').fontSize(8).fillColor('#2D1F0E');
+
+      items.forEach((item, index) => {
+        if (y > 750) {
+          doc.addPage();
+          y = 40;
+        }
+
+        doc.text((index + 1).toString(), 30, y);
+        doc.text(item.fullName.slice(0, 24), 55, y);
+        doc.text(item.phone || 'N/A', 190, y);
+        doc.text((item.email || 'N/A').slice(0, 26), 310, y);
+        doc.text(item.passCode || 'N/A', 470, y);
+
+        y += 15;
+      });
+
+      doc.end();
+      stream.on('finish', () => resolve());
+      stream.on('error', (err) => reject(err));
+    });
+  };
+
+  const generateCategoryCsv = (fileName: string, items: any[]) => {
+    const csvRows = ['Index,Customer Name,WhatsApp / Phone,Email Address,Pass Category,Pass Code,Status'];
+    items.forEach((item, idx) => {
+      csvRows.push(`${idx + 1},"${item.fullName}","${item.phone}","${item.email}","${item.passType}","${item.passCode}","${item.status}"`);
+    });
+    fs.writeFileSync(fileName, csvRows.join('\n'), 'utf-8');
+  };
+
+  // 1. Female / Single Customers
+  await generateCategoryPdf('SINGLE', 'Safed_Sheri_Female_Single_Customer_Contacts.pdf', 'FEMALE / SINGLE PASS CUSTOMER CONTACTS', categorized.SINGLE);
+  generateCategoryCsv('Safed_Sheri_Female_Single_Customer_Contacts.csv', categorized.SINGLE);
+
+  // 2. Couple Customers
+  await generateCategoryPdf('COUPLE', 'Safed_Sheri_Couple_Customer_Contacts.pdf', 'COUPLE PASS CUSTOMER CONTACTS', categorized.COUPLE);
+  generateCategoryCsv('Safed_Sheri_Couple_Customer_Contacts.csv', categorized.COUPLE);
+
+  // 3. Kids Customers
+  await generateCategoryPdf('KIDS', 'Safed_Sheri_Kids_Customer_Contacts.pdf', 'KIDS PASS CUSTOMER CONTACTS', categorized.KIDS);
+  generateCategoryCsv('Safed_Sheri_Kids_Customer_Contacts.csv', categorized.KIDS);
+
+  // 4. Gazebo Customers
+  await generateCategoryPdf('GAZEBO', 'Safed_Sheri_Gazebo_Customer_Contacts.pdf', 'GAZEBO VIP PASS CUSTOMER CONTACTS', categorized.GAZEBO);
+  generateCategoryCsv('Safed_Sheri_Gazebo_Customer_Contacts.csv', categorized.GAZEBO);
+
+  // 5. Master Report
+  const allItems = [...categorized.SINGLE, ...categorized.COUPLE, ...categorized.KIDS, ...categorized.GAZEBO];
+  await generateCategoryPdf('ALL', 'Safed_Sheri_Master_Customer_Contacts.pdf', 'MASTER CUSTOMER CONTACT REPORT (ALL CATEGORIES)', allItems);
+  generateCategoryCsv('Safed_Sheri_Master_Customer_Contacts.csv', allItems);
+
+  console.log('\n🎉 ALL CATEGORY-WISE CONTACT PDFS & CSVS CREATED SUCCESSFULLY!');
+  console.log('📁 PDF Files Generated:');
+  console.log('  1. Safed_Sheri_Female_Single_Customer_Contacts.pdf');
+  console.log('  2. Safed_Sheri_Couple_Customer_Contacts.pdf');
+  console.log('  3. Safed_Sheri_Kids_Customer_Contacts.pdf');
+  console.log('  4. Safed_Sheri_Gazebo_Customer_Contacts.pdf');
+  console.log('  5. Safed_Sheri_Master_Customer_Contacts.pdf\n');
+}
+
 async function exportAuditReport() {
   console.log('📊 GENERATING REAL-TIME OCTOBER 9TH AUDIT REPORT...');
 
@@ -332,6 +470,8 @@ async function main() {
     await forceEmergencyScan(args[1] || '', args[2] || 'MASTER_ADMIN');
   } else if (command === '--clear-test-scans' || command === 'clear-test-scans') {
     await clearTestScans();
+  } else if (command === '--export-customer-pdf' || command === 'export-customer-pdf') {
+    await exportCustomerContactsPdf();
   } else if (command === '--export' || command === 'export') {
     await exportAuditReport();
   } else {
@@ -343,7 +483,8 @@ async function main() {
     console.log('  - Reset Pass to Active:     npx ts-node scripts/october9_event_master.ts --reset <PASS_CODE>');
     console.log('  - Force Emergency Scan:     npx ts-node scripts/october9_event_master.ts --override <PASS_CODE> [GATE_ID]');
     console.log('  - Clear Test Scans to 0:    npx ts-node scripts/october9_event_master.ts --clear-test-scans');
-    console.log('  - Export CSV Report:        npx ts-node scripts/october9_event_master.ts --export\n');
+    console.log('  - Export Customer PDFs:     npx ts-node scripts/october9_event_master.ts --export-customer-pdf');
+    console.log('  - Export Gate Audit CSV:    npx ts-node scripts/october9_event_master.ts --export\n');
   }
 
   await prisma.$disconnect();
