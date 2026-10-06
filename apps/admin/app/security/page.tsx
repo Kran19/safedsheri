@@ -56,7 +56,7 @@ export default function SecurityScannerPage() {
 
   const [recentScans, setRecentScans] = useState<any[]>([]);
 
-  // Load User & Saved Gate Preference
+  // Load User & Assign Gate Based on Credentials
   useEffect(() => {
     const token = getAuthToken();
     const user = getStoredUser();
@@ -67,9 +67,24 @@ export default function SecurityScannerPage() {
     setCurrentUser(user);
     setIsAuthenticated(true);
 
-    const savedGate = localStorage.getItem('safedsheri_selected_gate');
-    if (savedGate) {
-      setSelectedGate(savedGate);
+    const uname = (user.username || '').toLowerCase();
+    const isMaster = user.role === 'SUPER_ADMIN' || uname === 'masteradmin@safedsheri.com';
+
+    if (!isMaster) {
+      if (uname.includes('gate2')) {
+        setSelectedGate('GATE_2');
+      } else if (uname.includes('gate3')) {
+        setSelectedGate('GATE_3');
+      } else if (uname.includes('gate4')) {
+        setSelectedGate('GATE_4');
+      } else {
+        setSelectedGate('GATE_1');
+      }
+    } else {
+      const savedGate = localStorage.getItem('safedsheri_selected_gate');
+      if (savedGate) {
+        setSelectedGate(savedGate);
+      }
     }
   }, []);
 
@@ -224,6 +239,14 @@ export default function SecurityScannerPage() {
 
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.username === 'masteradmin@safedsheri.com';
 
+  const gateDescriptions: Record<string, { title: string; subtitle: string }> = {
+    GATE_1: { title: 'GATE 1 TERMINAL', subtitle: 'COUPLE PASS SCANNER ONLY' },
+    GATE_2: { title: 'GATE 2 TERMINAL', subtitle: 'FEMALE / SINGLE PASS SCANNER ONLY' },
+    GATE_3: { title: 'GATE 3 TERMINAL', subtitle: 'KIDS PASS SCANNER ONLY' },
+    GATE_4: { title: 'GATE 4 TERMINAL', subtitle: 'GAZEBO VIP PASS SCANNER ONLY' },
+    MASTER_ADMIN: { title: 'MASTER ADMIN TERMINAL', subtitle: 'ALL PASS CATEGORIES PERMITTED' },
+  };
+
   if (isAuthenticated === false) {
     return (
       <div className="min-h-screen bg-white text-[#2D1F0E] flex flex-col justify-center items-center p-6">
@@ -249,6 +272,8 @@ export default function SecurityScannerPage() {
     );
   }
 
+  const gateInfo = gateDescriptions[selectedGate] || { title: selectedGate, subtitle: 'PASS SCANNER' };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in text-[#2D1F0E] pb-12 px-4">
       {/* HEADER */}
@@ -261,81 +286,82 @@ export default function SecurityScannerPage() {
         </span>
         <h1 className="text-2xl font-serif font-bold text-[#2D1F0E]">Security Gate Pass Scanner</h1>
         <p className="text-xs text-[#6E5336]">
-          Select designated gate terminal below to enforce pass category access controls.
+          {isSuperAdmin
+            ? 'Master Admin Terminal: Select active gate below to simulate or override scanner controls.'
+            : `${gateInfo.title} • ${gateInfo.subtitle}`}
         </p>
       </div>
 
-      {/* GATE TERMINAL SELECTOR */}
-      <div className="p-4 rounded-3xl bg-white border-2 border-[#EAD9B8] shadow-md space-y-3">
-        <div className="flex justify-between items-center px-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#8C6019] flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-[#D99427]" /> Select Active Gate Terminal:
-          </span>
-          <span className="text-[11px] font-mono font-bold bg-[#FFF5DC] text-[#8C6019] px-2.5 py-0.5 rounded-full border border-[#E5A93C]">
-            ACTIVE: {selectedGate.replace('_', ' ')}
-          </span>
-        </div>
+      {/* GATE TERMINAL HEADER / SELECTOR */}
+      {isSuperAdmin ? (
+        <div className="p-4 rounded-3xl bg-white border-2 border-[#EAD9B8] shadow-md space-y-3">
+          <div className="flex justify-between items-center px-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8C6019] flex items-center gap-1.5">
+              <Crown className="w-4 h-4 text-[#D99427]" /> Master Admin Gate Terminal Selector:
+            </span>
+            <span className="text-[11px] font-mono font-bold bg-[#FFF5DC] text-[#8C6019] px-2.5 py-0.5 rounded-full border border-[#E5A93C]">
+              ACTIVE: {selectedGate.replace('_', ' ')}
+            </span>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button
-            type="button"
-            onClick={() => handleGateChange('GATE_1')}
-            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
-              selectedGate === 'GATE_1'
-                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
-                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
-            }`}
-          >
-            <div className="text-[10px] font-bold uppercase opacity-80">GATE 1</div>
-            <div className="text-xs font-bold font-serif mt-1">COUPLE PASS</div>
-            <div className="text-[9px] opacity-70 mt-1 font-mono">Couple Only</div>
-          </button>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={() => handleGateChange('GATE_1')}
+              className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+                selectedGate === 'GATE_1'
+                  ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                  : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+              }`}
+            >
+              <div className="text-[10px] font-bold uppercase opacity-80">GATE 1</div>
+              <div className="text-xs font-bold font-serif mt-1">COUPLE PASS</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Couple Only</div>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleGateChange('GATE_2')}
-            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
-              selectedGate === 'GATE_2'
-                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
-                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
-            }`}
-          >
-            <div className="text-[10px] font-bold uppercase opacity-80">GATE 2</div>
-            <div className="text-xs font-bold font-serif mt-1">FEMALE / SINGLE</div>
-            <div className="text-[9px] opacity-70 mt-1 font-mono">Single Only</div>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleGateChange('GATE_2')}
+              className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+                selectedGate === 'GATE_2'
+                  ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                  : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+              }`}
+            >
+              <div className="text-[10px] font-bold uppercase opacity-80">GATE 2</div>
+              <div className="text-xs font-bold font-serif mt-1">FEMALE / SINGLE</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Single Only</div>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleGateChange('GATE_3')}
-            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
-              selectedGate === 'GATE_3'
-                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
-                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
-            }`}
-          >
-            <div className="text-[10px] font-bold uppercase opacity-80">GATE 3</div>
-            <div className="text-xs font-bold font-serif mt-1">KIDS PASS</div>
-            <div className="text-[9px] opacity-70 mt-1 font-mono">Kids Only</div>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleGateChange('GATE_3')}
+              className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+                selectedGate === 'GATE_3'
+                  ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                  : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+              }`}
+            >
+              <div className="text-[10px] font-bold uppercase opacity-80">GATE 3</div>
+              <div className="text-xs font-bold font-serif mt-1">KIDS PASS</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Kids Only</div>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleGateChange('GATE_4')}
-            className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
-              selectedGate === 'GATE_4'
-                ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
-                : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
-            }`}
-          >
-            <div className="text-[10px] font-bold uppercase opacity-80">GATE 4</div>
-            <div className="text-xs font-bold font-serif mt-1">GAZEBO PASS</div>
-            <div className="text-[9px] opacity-70 mt-1 font-mono">Gazebo VIP</div>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleGateChange('GATE_4')}
+              className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
+                selectedGate === 'GATE_4'
+                  ? 'bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-[#D99427] shadow-lg scale-[1.02]'
+                  : 'bg-[#FAF6EE] text-[#2D1F0E] border-[#EAD9B8] hover:bg-[#F5ECCB]'
+              }`}
+            >
+              <div className="text-[10px] font-bold uppercase opacity-80">GATE 4</div>
+              <div className="text-xs font-bold font-serif mt-1">GAZEBO PASS</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Gazebo VIP</div>
+            </button>
+          </div>
 
-        {/* MASTER ADMIN OVERRIDE BUTTON */}
-        {isSuperAdmin && (
           <button
             type="button"
             onClick={() => handleGateChange('MASTER_ADMIN')}
@@ -348,8 +374,20 @@ export default function SecurityScannerPage() {
             <Crown className="w-4 h-4 text-[#8C6019]" />
             Master Admin Mode (Scans ALL Passes Without Restriction)
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] border-2 border-[#D99427] shadow-lg text-center space-y-1">
+          <div className="text-[10px] font-mono tracking-widest uppercase font-bold text-[#EAD9B8]">
+            ASSIGNED GATE TERMINAL
+          </div>
+          <div className="text-xl font-serif font-extrabold text-[#F6C85F]">
+            {gateInfo.title}
+          </div>
+          <div className="text-xs font-mono font-bold text-white bg-black/30 inline-block px-3 py-1 rounded-full border border-white/10 mt-1">
+            {gateInfo.subtitle}
+          </div>
+        </div>
+      )}
 
       {/* LIVE COUNTERS & EVENT BREAKDOWN BANNER */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">

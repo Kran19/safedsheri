@@ -67,6 +67,11 @@ export class EntriesService {
       },
       include: {
         registration: { select: { passType: true } },
+        credential: {
+          select: {
+            registration: { select: { passType: true } },
+          },
+        },
       },
     });
 
@@ -76,7 +81,7 @@ export class EntriesService {
     let gazeboCount = 0;
 
     for (const entry of allEntries) {
-      const pt = entry.registration?.passType;
+      const pt = entry.registration?.passType || entry.credential?.registration?.passType;
       if (pt === PassType.COUPLE) coupleCount++;
       else if (pt === PassType.SINGLE) singleCount++;
       else if (pt === PassType.KIDS) kidsCount++;
