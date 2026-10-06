@@ -1,7 +1,6 @@
 import { PrismaClient, ScanResult, CredentialStatus, EntryType, VerificationMethod } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as readline from 'readline';
 
 const prisma = new PrismaClient();
 
@@ -257,6 +256,26 @@ async function forceEmergencyScan(passCode: string, gateId: string = 'MASTER_ADM
   console.log(`  - Timestamp: ${now.toLocaleString()}\n`);
 }
 
+async function clearTestScans() {
+  console.log('🧹 CLEARING PREVIOUS TEST SCAN LOGS & RESETTING ALL PASSES TO ACTIVE (START FROM 0)...');
+
+  const updatedCreds = await prisma.credential.updateMany({
+    data: {
+      status: CredentialStatus.ACTIVE,
+      usedAt: null,
+    },
+  });
+
+  const deletedEntries = await prisma.entry.deleteMany({});
+  const deletedScanAttempts = await prisma.scanAttempt.deleteMany({});
+
+  console.log(`\n🎉 EVENT SCANNER CLEANUP COMPLETE!`);
+  console.log(`  - Reactivated Credentials: ${updatedCreds.count}`);
+  console.log(`  - Deleted Test Entries: ${deletedEntries.count}`);
+  console.log(`  - Deleted Test Scan Attempts: ${deletedScanAttempts.count}`);
+  console.log(`\nAll gate terminals will now start fresh at 0 scans on event day!`);
+}
+
 async function exportAuditReport() {
   console.log('📊 GENERATING REAL-TIME OCTOBER 9TH AUDIT REPORT...');
 
@@ -311,18 +330,20 @@ async function main() {
     await resetPassStatus(args[1] || '');
   } else if (command === '--override' || command === 'override') {
     await forceEmergencyScan(args[1] || '', args[2] || 'MASTER_ADMIN');
+  } else if (command === '--clear-test-scans' || command === 'clear-test-scans') {
+    await clearTestScans();
   } else if (command === '--export' || command === 'export') {
     await exportAuditReport();
   } else {
-    // Default: Run Diagnostic & Prompt Menu
     await runHealthDiagnostic();
 
     console.log('\n💡 AVAILABLE SCRIPT CLI COMMANDS:');
-    console.log('  - Run Diagnostic:         npx ts-node scripts/october9_event_master.ts --diag');
-    console.log('  - Inspect Pass:           npx ts-node scripts/october9_event_master.ts --inspect <PASS_CODE_OR_PHONE>');
-    console.log('  - Reset Pass to Active:   npx ts-node scripts/october9_event_master.ts --reset <PASS_CODE>');
-    console.log('  - Force Emergency Scan:   npx ts-node scripts/october9_event_master.ts --override <PASS_CODE> [GATE_ID]');
-    console.log('  - Export CSV Report:      npx ts-node scripts/october9_event_master.ts --export\n');
+    console.log('  - Run Diagnostic:           npx ts-node scripts/october9_event_master.ts --diag');
+    console.log('  - Inspect Pass:             npx ts-node scripts/october9_event_master.ts --inspect <PASS_CODE_OR_PHONE>');
+    console.log('  - Reset Pass to Active:     npx ts-node scripts/october9_event_master.ts --reset <PASS_CODE>');
+    console.log('  - Force Emergency Scan:     npx ts-node scripts/october9_event_master.ts --override <PASS_CODE> [GATE_ID]');
+    console.log('  - Clear Test Scans to 0:    npx ts-node scripts/october9_event_master.ts --clear-test-scans');
+    console.log('  - Export CSV Report:        npx ts-node scripts/october9_event_master.ts --export\n');
   }
 
   await prisma.$disconnect();

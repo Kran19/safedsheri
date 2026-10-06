@@ -40,27 +40,33 @@ export class EntriesService {
 
     const eventId = activeEvent?.id;
 
-    // Total valid scans performed by this scanner operator
+    // Start of today (00:00:00 local time)
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+    // Total valid scans performed by this scanner operator TODAY
     const myScansCount = await this.prisma.scanAttempt.count({
       where: {
         scannedById: scannedById,
         result: ScanResult.VALID,
+        scannedAt: { gte: todayStart },
         ...(eventId ? { eventId } : {}),
       },
     });
 
-    // Total valid scans for the specified gate
+    // Total valid scans for the specified gate TODAY
     const gateScansCount = gateId
       ? await this.prisma.scanAttempt.count({
           where: {
             gateId: gateId,
             result: ScanResult.VALID,
+            scannedAt: { gte: todayStart },
             ...(eventId ? { eventId } : {}),
           },
         })
       : 0;
 
-    // 1. Calculate Total Issued Passes per category
+    // 1. Calculate Total Issued Passes per category (All Active / Used Credentials)
     const credentials = await this.prisma.credential.findMany({
       select: {
         registration: { select: { passType: true } },
@@ -96,9 +102,10 @@ export class EntriesService {
       }
     }
 
-    // 2. Attendance breakdown by pass type from created entries
+    // 2. Attendance breakdown by pass type from created entries TODAY
     const allEntries = await this.prisma.entry.findMany({
       where: {
+        createdAt: { gte: todayStart },
         ...(eventId ? { eventId } : {}),
       },
       include: {
