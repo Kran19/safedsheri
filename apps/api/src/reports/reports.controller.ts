@@ -8,26 +8,32 @@ import { Role } from '@prisma/client';
 import { Response } from 'express';
 
 @ApiTags('Reports')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Get('overview')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
   @ApiOperation({ summary: 'System operational overview metrics (Super Admin only)' })
   async getOverview() {
     return this.reportsService.getOverview();
   }
 
   @Get('payments')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
   @ApiOperation({ summary: 'Financial reconciliation breakdown by method and location' })
   async getPaymentsReport() {
     return this.reportsService.getPaymentsReport();
   }
 
   @Get('customer-contacts')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
   @ApiOperation({ summary: 'Customer contact details (Email, WhatsApp) separated by Pass Category' })
   @ApiQuery({ name: 'category', required: false })
   async getCustomerContacts(@Query('category') category?: string) {
@@ -36,18 +42,20 @@ export class ReportsController {
   }
 
   @Get('export-customer-pdf')
-  @ApiOperation({ summary: 'Download Category-wise Customer Contacts PDF' })
+  @ApiOperation({ summary: 'Download Category-wise Customer Contacts PDF (Browser Accessible)' })
   @ApiQuery({ name: 'category', required: false })
   async downloadCustomerPdf(@Query('category') category: string = 'ALL', @Res() res: Response) {
-    const pdfBuffer = await this.reportsService.generateCustomerContactsPdf(category);
-    const filename = `Safed_Sheri_${category}_Customer_Contacts.pdf`;
+    const cleanCategory = (category || 'ALL').toUpperCase();
+    const pdfBuffer = await this.reportsService.generateCustomerContactsPdf(cleanCategory);
+    const filename = `Safed_Sheri_${cleanCategory}_Customer_Contacts.pdf`;
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Content-Length': pdfBuffer.length,
+      'Content-Disposition': `inline; filename="${filename}"`,
+      'Content-Length': pdfBuffer.length.toString(),
+      'Cache-Control': 'no-cache',
     });
 
-    res.end(pdfBuffer);
+    res.send(pdfBuffer);
   }
 }
