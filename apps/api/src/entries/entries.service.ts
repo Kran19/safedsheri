@@ -81,7 +81,28 @@ export class EntriesService {
     let gazeboCount = 0;
 
     for (const entry of allEntries) {
-      const pt = entry.registration?.passType || entry.credential?.registration?.passType;
+      let pt = entry.registration?.passType || entry.credential?.registration?.passType;
+
+      if (!pt && entry.gateId) {
+        if (entry.gateId === 'GATE_1') pt = PassType.COUPLE;
+        else if (entry.gateId === 'GATE_2') pt = PassType.SINGLE;
+        else if (entry.gateId === 'GATE_3') pt = PassType.KIDS;
+        else if (entry.gateId === 'GATE_4') pt = PassType.GAZEBO;
+      }
+
+      if (!pt && entry.notes) {
+        const notesUpper = entry.notes.toUpperCase();
+        if (notesUpper.includes('COUPLE')) pt = PassType.COUPLE;
+        else if (notesUpper.includes('SINGLE') || notesUpper.includes('FEMALE')) pt = PassType.SINGLE;
+        else if (notesUpper.includes('KIDS')) pt = PassType.KIDS;
+        else if (notesUpper.includes('GAZEBO')) pt = PassType.GAZEBO;
+      }
+
+      // Default unclassified entries to COUPLE if scanned at main gate
+      if (!pt) {
+        pt = PassType.COUPLE;
+      }
+
       if (pt === PassType.COUPLE) coupleCount++;
       else if (pt === PassType.SINGLE) singleCount++;
       else if (pt === PassType.KIDS) kidsCount++;
