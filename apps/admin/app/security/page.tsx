@@ -35,12 +35,19 @@ export default function SecurityScannerPage() {
       kids: number;
       gazebo: number;
     };
+    metrics?: Record<string, { issued: number; scanned: number; remaining: number }>;
     gateBreakdown: Record<string, number>;
   }>({
     myScansCount: 0,
     gateScansCount: 0,
     totalAttendeesScanned: 0,
     breakdown: { couple: 0, single: 0, kids: 0, gazebo: 0 },
+    metrics: {
+      COUPLE: { issued: 0, scanned: 0, remaining: 0 },
+      SINGLE: { issued: 0, scanned: 0, remaining: 0 },
+      KIDS: { issued: 0, scanned: 0, remaining: 0 },
+      GAZEBO: { issued: 0, scanned: 0, remaining: 0 },
+    },
     gateBreakdown: {},
   });
 
@@ -239,12 +246,12 @@ export default function SecurityScannerPage() {
 
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.username === 'masteradmin@safedsheri.com';
 
-  const gateDescriptions: Record<string, { title: string; subtitle: string }> = {
-    GATE_1: { title: 'GATE 1 TERMINAL', subtitle: 'COUPLE PASS SCANNER ONLY' },
-    GATE_2: { title: 'GATE 2 TERMINAL', subtitle: 'FEMALE / SINGLE PASS SCANNER ONLY' },
-    GATE_3: { title: 'GATE 3 TERMINAL', subtitle: 'KIDS PASS SCANNER ONLY' },
-    GATE_4: { title: 'GATE 4 TERMINAL', subtitle: 'GAZEBO VIP PASS SCANNER ONLY' },
-    MASTER_ADMIN: { title: 'MASTER ADMIN TERMINAL', subtitle: 'ALL PASS CATEGORIES PERMITTED' },
+  const gateDescriptions: Record<string, { title: string; subtitle: string; categoryKey: string; label: string }> = {
+    GATE_1: { title: 'GATE 1 TERMINAL', subtitle: 'COUPLE PASS SCANNER ONLY', categoryKey: 'COUPLE', label: 'COUPLE PASSES' },
+    GATE_2: { title: 'GATE 2 TERMINAL', subtitle: 'FEMALE / SINGLE PASS SCANNER ONLY', categoryKey: 'SINGLE', label: 'FEMALE / SINGLE PASSES' },
+    GATE_3: { title: 'GATE 3 TERMINAL', subtitle: 'KIDS PASS SCANNER ONLY', categoryKey: 'KIDS', label: 'KIDS PASSES' },
+    GATE_4: { title: 'GATE 4 TERMINAL', subtitle: 'GAZEBO VIP PASS SCANNER ONLY', categoryKey: 'GAZEBO', label: 'GAZEBO VIP PASSES' },
+    MASTER_ADMIN: { title: 'MASTER ADMIN TERMINAL', subtitle: 'ALL PASS CATEGORIES PERMITTED', categoryKey: 'ALL', label: 'ALL PASSES' },
   };
 
   if (isAuthenticated === false) {
@@ -272,7 +279,8 @@ export default function SecurityScannerPage() {
     );
   }
 
-  const gateInfo = gateDescriptions[selectedGate] || { title: selectedGate, subtitle: 'PASS SCANNER' };
+  const gateInfo = gateDescriptions[selectedGate] || { title: selectedGate, subtitle: 'PASS SCANNER', categoryKey: 'COUPLE', label: 'COUPLE PASSES' };
+  const currentCategoryMetrics = liveStats.metrics?.[gateInfo.categoryKey] || { issued: 0, scanned: 0, remaining: 0 };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in text-[#2D1F0E] pb-12 px-4">
@@ -287,7 +295,7 @@ export default function SecurityScannerPage() {
         <h1 className="text-2xl font-serif font-bold text-[#2D1F0E]">Security Gate Pass Scanner</h1>
         <p className="text-xs text-[#6E5336]">
           {isSuperAdmin
-            ? 'Master Admin Terminal: Select active gate below to simulate or override scanner controls.'
+            ? 'Master Admin Control Terminal: Switch active gate below to simulate or scan any pass.'
             : `${gateInfo.title} • ${gateInfo.subtitle}`}
         </p>
       </div>
@@ -389,33 +397,95 @@ export default function SecurityScannerPage() {
         </div>
       )}
 
-      {/* LIVE COUNTERS & EVENT BREAKDOWN BANNER */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
-        <div className="p-3 bg-white border border-[#EAD9B8] rounded-2xl shadow-sm space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-[#8C6019]">MY SCANS</div>
-          <div className="text-xl font-bold text-[#2D1F0E]">{liveStats.myScansCount}</div>
-        </div>
+      {/* LIVE COUNTERS BANNER */}
+      {!isSuperAdmin ? (
+        /* STRICT SINGLE GATE OPERATOR VIEW: Shows ONLY 4 Cards Relevant to THIS Specific Gate! */
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+          <div className="p-3.5 bg-white border border-[#EAD9B8] rounded-2xl shadow-sm space-y-0.5">
+            <div className="text-[10px] font-mono uppercase font-bold text-[#8C6019]">MY GATE SCANS</div>
+            <div className="text-2xl font-bold font-serif text-[#2D1F0E]">{liveStats.myScansCount}</div>
+            <div className="text-[9px] text-[#6E5336]">Scans Completed</div>
+          </div>
 
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-emerald-800">COUPLE</div>
-          <div className="text-xl font-bold text-emerald-950">{liveStats.breakdown.couple}</div>
-        </div>
+          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm space-y-0.5">
+            <div className="text-[10px] font-mono uppercase font-bold text-blue-900">TOTAL ISSUED</div>
+            <div className="text-2xl font-bold font-serif text-blue-950">{currentCategoryMetrics.issued}</div>
+            <div className="text-[9px] text-blue-800">{gateInfo.label}</div>
+          </div>
 
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-blue-800">FEMALE / SINGLE</div>
-          <div className="text-xl font-bold text-blue-950">{liveStats.breakdown.single}</div>
-        </div>
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm space-y-0.5">
+            <div className="text-[10px] font-mono uppercase font-bold text-emerald-900">SCANNED (INSIDE)</div>
+            <div className="text-2xl font-bold font-serif text-emerald-950">{currentCategoryMetrics.scanned}</div>
+            <div className="text-[9px] text-emerald-800">Entered Venue</div>
+          </div>
 
-        <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl shadow-sm space-y-0.5">
-          <div className="text-[10px] font-mono uppercase text-purple-800">KIDS</div>
-          <div className="text-xl font-bold text-purple-950">{liveStats.breakdown.kids}</div>
+          <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl shadow-sm space-y-0.5">
+            <div className="text-[10px] font-mono uppercase font-bold text-amber-900">REMAINING (LEFT)</div>
+            <div className="text-2xl font-bold font-serif text-amber-950">{currentCategoryMetrics.remaining}</div>
+            <div className="text-[9px] text-amber-800">Left to Enter</div>
+          </div>
         </div>
+      ) : (
+        /* MASTER ADMIN VIEW: Shows Full Event Overview Breakdown Across All Pass Categories */
+        <div className="space-y-3">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#8C6019] flex items-center justify-between px-1">
+            <span>MASTER ADMIN LIVE ATTENDANCE DASHBOARD</span>
+            <span className="text-[10px] font-mono font-bold bg-[#FFF5DC] px-2 py-0.5 rounded border border-[#E5A93C]">
+              TOTAL INSIDE: {liveStats.totalAttendeesScanned}
+            </span>
+          </div>
 
-        <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl shadow-sm space-y-0.5 col-span-2 sm:col-span-1">
-          <div className="text-[10px] font-mono uppercase text-amber-900 font-bold">TOTAL INSIDE</div>
-          <div className="text-xl font-bold text-amber-950">{liveStats.totalAttendeesScanned}</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            {/* COUPLE */}
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1">
+              <div className="text-[10px] font-mono font-bold uppercase text-emerald-900">COUPLE PASSES</div>
+              <div className="text-xs text-emerald-950 space-x-1 font-mono">
+                <span>Issued: <strong>{liveStats.metrics?.COUPLE?.issued || 0}</strong></span> • 
+                <span>In: <strong className="text-emerald-700">{liveStats.metrics?.COUPLE?.scanned || 0}</strong></span>
+              </div>
+              <div className="text-[11px] font-bold text-emerald-800 bg-white/70 rounded py-0.5 border border-emerald-200">
+                Left: {liveStats.metrics?.COUPLE?.remaining || 0}
+              </div>
+            </div>
+
+            {/* FEMALE / SINGLE */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl space-y-1">
+              <div className="text-[10px] font-mono font-bold uppercase text-blue-900">FEMALE / SINGLE</div>
+              <div className="text-xs text-blue-950 space-x-1 font-mono">
+                <span>Issued: <strong>{liveStats.metrics?.SINGLE?.issued || 0}</strong></span> • 
+                <span>In: <strong className="text-blue-700">{liveStats.metrics?.SINGLE?.scanned || 0}</strong></span>
+              </div>
+              <div className="text-[11px] font-bold text-blue-800 bg-white/70 rounded py-0.5 border border-blue-200">
+                Left: {liveStats.metrics?.SINGLE?.remaining || 0}
+              </div>
+            </div>
+
+            {/* KIDS */}
+            <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
+              <div className="text-[10px] font-mono font-bold uppercase text-purple-900">KIDS PASSES</div>
+              <div className="text-xs text-purple-950 space-x-1 font-mono">
+                <span>Issued: <strong>{liveStats.metrics?.KIDS?.issued || 0}</strong></span> • 
+                <span>In: <strong className="text-purple-700">{liveStats.metrics?.KIDS?.scanned || 0}</strong></span>
+              </div>
+              <div className="text-[11px] font-bold text-purple-800 bg-white/70 rounded py-0.5 border border-purple-200">
+                Left: {liveStats.metrics?.KIDS?.remaining || 0}
+              </div>
+            </div>
+
+            {/* GAZEBO */}
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-2xl space-y-1">
+              <div className="text-[10px] font-mono font-bold uppercase text-amber-900">GAZEBO VIP</div>
+              <div className="text-xs text-amber-950 space-x-1 font-mono">
+                <span>Issued: <strong>{liveStats.metrics?.GAZEBO?.issued || 0}</strong></span> • 
+                <span>In: <strong className="text-amber-700">{liveStats.metrics?.GAZEBO?.scanned || 0}</strong></span>
+              </div>
+              <div className="text-[11px] font-bold text-amber-800 bg-white/70 rounded py-0.5 border border-amber-200">
+                Left: {liveStats.metrics?.GAZEBO?.remaining || 0}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* SCAN RESULT OVERLAY BANNER */}
       {scanResult.status && (

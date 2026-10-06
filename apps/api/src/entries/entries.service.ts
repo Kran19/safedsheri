@@ -60,7 +60,43 @@ export class EntriesService {
         })
       : 0;
 
-    // Attendance breakdown by pass type from created entries
+    // 1. Calculate Total Issued Passes per category
+    const credentials = await this.prisma.credential.findMany({
+      select: {
+        registration: { select: { passType: true } },
+      },
+    });
+
+    let issuedCouple = 0;
+    let issuedSingle = 0;
+    let issuedKids = 0;
+    let issuedGazebo = 0;
+
+    for (const cred of credentials) {
+      const pt = cred.registration?.passType;
+      if (pt === PassType.COUPLE) issuedCouple++;
+      else if (pt === PassType.SINGLE) issuedSingle++;
+      else if (pt === PassType.KIDS) issuedKids++;
+      else if (pt === PassType.GAZEBO) issuedGazebo++;
+    }
+
+    // Fallback if credentials table is empty: Count from confirmed registrations
+    if (issuedCouple === 0 && issuedSingle === 0 && issuedKids === 0 && issuedGazebo === 0) {
+      const confirmedRegs = await this.prisma.registration.findMany({
+        where: {
+          status: { in: ['APPROVED', 'PAYMENT_CONFIRMED', 'PASS_ISSUED'] },
+        },
+        select: { passType: true },
+      });
+      for (const reg of confirmedRegs) {
+        if (reg.passType === PassType.COUPLE) issuedCouple++;
+        else if (reg.passType === PassType.SINGLE) issuedSingle++;
+        else if (reg.passType === PassType.KIDS) issuedKids++;
+        else if (reg.passType === PassType.GAZEBO) issuedGazebo++;
+      }
+    }
+
+    // 2. Attendance breakdown by pass type from created entries
     const allEntries = await this.prisma.entry.findMany({
       where: {
         ...(eventId ? { eventId } : {}),
@@ -98,7 +134,6 @@ export class EntriesService {
         else if (notesUpper.includes('GAZEBO')) pt = PassType.GAZEBO;
       }
 
-      // Default unclassified entries to COUPLE if scanned at main gate
       if (!pt) {
         pt = PassType.COUPLE;
       }
@@ -142,6 +177,28 @@ export class EntriesService {
           single: singleCount,
           kids: kidsCount,
           gazebo: gazeboCount,
+        },
+        metrics: {
+          COUPLE: {
+            issued: issuedCouple,
+            scanned: coupleCount,
+            remaining: Math.max(0, issuedCouple - coupleCount),
+          },
+          SINGLE: {
+            issued: issuedSingle,
+            scanned: singleCount,
+            remaining: Math.max(0, issuedSingle - singleCount),
+          },
+          KIDS: {
+            issued: issuedKids,
+            scanned: kidsCount,
+            remaining: Math.max(0, issuedKids - kidsCount),
+          },
+          GAZEBO: {
+            issued: issuedGazebo,
+            scanned: gazeboCount,
+            remaining: Math.max(0, issuedGazebo - gazeboCount),
+          },
         },
         gateBreakdown: gateCounts,
       },
