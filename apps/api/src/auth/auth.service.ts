@@ -21,9 +21,23 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { username: dto.username },
+    const cleanUsername = (dto.username || '').trim();
+    let user = await this.prisma.user.findUnique({
+      where: { username: cleanUsername },
     });
+
+    if (!user && cleanUsername.toLowerCase().includes('@saefsheri.com')) {
+      const corrected = cleanUsername.replace(/@saefsheri\.com/i, '@safedsheri.com');
+      user = await this.prisma.user.findUnique({
+        where: { username: corrected },
+      });
+    }
+
+    if (!user) {
+      user = await this.prisma.user.findFirst({
+        where: { username: { equals: cleanUsername, mode: 'insensitive' } },
+      });
+    }
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Invalid credentials or account is disabled');
