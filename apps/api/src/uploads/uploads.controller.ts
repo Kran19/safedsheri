@@ -100,8 +100,6 @@ export class UploadsController {
   }
 
   @Get('direct/:storageKey')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
   async getDocumentDirect(
     @Param('storageKey') storageKey: string,
     @Res() res: Response,

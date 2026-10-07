@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/encryption.service';
-import { CredentialStatus, RegistrationStatus, PassType } from '@prisma/client';
+import { CredentialStatus, RegistrationStatus, PassType, GazeboInquiryStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 import { AuthService } from '../auth/auth.service';
 
@@ -262,6 +262,53 @@ export class CredentialsService {
     });
 
     if (!initialAttendees || initialAttendees.length === 0) {
+      // Check if this phone number or Aadhaar belongs to an active Gazebo reservation
+      const activeInquiry = await this.prisma.gazeboInquiry.findFirst({
+        where: {
+          OR: [
+            { phone: { contains: cleanDigits.slice(-10) } },
+            { notes: { contains: cleanDigits.slice(-10) } },
+            ...(cleanDigits.length === 12 ? [{ notes: { contains: cleanDigits } }] : [])
+          ],
+          status: { notIn: [GazeboInquiryStatus.REJECTED, GazeboInquiryStatus.CANCELLED] }
+        },
+        include: { gazebo: true }
+      });
+
+      if (activeInquiry) {
+        const isApproved = activeInquiry.status === GazeboInquiryStatus.APPROVED || activeInquiry.status === GazeboInquiryStatus.CONFIRMED;
+        return {
+          success: true,
+          data: [{
+            attendeeId: activeInquiry.id,
+            attendeeName: activeInquiry.fullName,
+            phone: activeInquiry.phone,
+            gender: 'VIP HOST',
+            aadhaarMasked: 'In Gazebo Record',
+            registrationId: activeInquiry.id,
+            registrationNumber: activeInquiry.inquiryNumber,
+            registrationStatus: isApproved ? 'APPROVED' : 'UNDER_REVIEW',
+            attendeeStatus: isApproved ? 'APPROVED' : 'UNDER_REVIEW',
+            passType: 'GAZEBO',
+            paymentLinkId: null,
+            amountDue: activeInquiry.gazebo?.price ? Number(activeInquiry.gazebo.price) : (activeInquiry.level === 3 ? 125000 : activeInquiry.level === 2 ? 100000 : 85000),
+            reviewNotes: isApproved 
+              ? `Your VIP Gazebo reservation (${activeInquiry.gazebo?.gazeboNumber || `Level ${activeInquiry.level}`}) is Approved! VIP Passes are active in our executive system.`
+              : `Your VIP Gazebo reservation is currently under review by our executive concierge.`,
+            submittedAt: activeInquiry.createdAt,
+            hasActivePass: false,
+            hasUsedPass: false,
+            credential: null,
+            isPaymentPending: false,
+            isUnderReview: !isApproved,
+            isRejected: false,
+            isCancelled: false,
+            isPrimary: true,
+          }],
+          message: `Active Gazebo reservation found.`,
+        };
+      }
+
       return {
         success: true,
         data: [],

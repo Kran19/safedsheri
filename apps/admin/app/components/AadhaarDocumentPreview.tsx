@@ -29,8 +29,13 @@ export function AadhaarDocumentPreview({ document, token, directUrlFront, direct
   }
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-  const docFrontUrl = directUrlFront || `${apiBase}/uploads/document/${document?.id}?side=front${token ? `&token=${encodeURIComponent(token)}` : ''}`;
-  const docBackUrl = directUrlBack || `${apiBase}/uploads/document/${document?.id}?side=back${token ? `&token=${encodeURIComponent(token)}` : ''}`;
+  let docFrontUrl = directUrlFront || `${apiBase}/uploads/document/${document?.id}?side=front`;
+  let docBackUrl = directUrlBack || `${apiBase}/uploads/document/${document?.id}?side=back`;
+
+  if (token) {
+    docFrontUrl += (docFrontUrl.includes('?') ? '&' : '?') + `token=${encodeURIComponent(token)}`;
+    docBackUrl += (docBackUrl.includes('?') ? '&' : '?') + `token=${encodeURIComponent(token)}`;
+  }
   const isPdf = document?.mimeType?.includes('pdf') || document?.originalFilename?.toLowerCase().endsWith('.pdf') || directUrlFront?.toLowerCase().endsWith('.pdf');
   const hasBackImage = !!document?.storageKeyBack || !!directUrlBack;
   const displayFilename = filename || document?.originalFilename || 'Aadhaar Document';

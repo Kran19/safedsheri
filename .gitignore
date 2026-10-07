@@ -35,8 +35,8 @@ Thumbs.db
 background/*.mov
 
 # Uploaded files
-uploads/
-**/uploads/
+/uploads/
+!apps/api/src/uploads/
 
 # One-off Debug & Patch Scripts
 /*.js
