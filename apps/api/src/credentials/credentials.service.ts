@@ -122,9 +122,28 @@ export class CredentialsService {
     // 1. If 12 digits starting with '91', check if it's an Indian phone number with country code
     if (rawDigits.length === 12 && rawDigits.startsWith('91')) {
       const phoneCandidate = rawDigits.slice(2);
-      const attendeeByPhone = await this.prisma.attendee.findFirst({
+      let attendeeByPhone = await this.prisma.attendee.findFirst({
         where: { phone: { contains: phoneCandidate } },
       });
+      if (!attendeeByPhone) {
+        const gInq = await this.prisma.gazeboInquiry.findFirst({
+          where: {
+            OR: [
+              { phone: { contains: phoneCandidate } },
+              { notes: { contains: phoneCandidate } },
+            ],
+            status: { notIn: [GazeboInquiryStatus.REJECTED, GazeboInquiryStatus.CANCELLED] },
+          },
+        });
+        if (gInq) {
+          attendeeByPhone = {
+            id: gInq.id,
+            fullName: gInq.fullName,
+            phone: phoneCandidate,
+            isGazeboInquiry: true,
+          } as any;
+        }
+      }
       if (attendeeByPhone) {
         return {
           attendee: attendeeByPhone,
@@ -137,9 +156,39 @@ export class CredentialsService {
 
     // 2. 10-digit mobile number
     if (rawDigits.length === 10) {
-      const attendee = await this.prisma.attendee.findFirst({
+      let attendee = await this.prisma.attendee.findFirst({
         where: { phone: { contains: rawDigits } },
       });
+      if (!attendee) {
+        const gInq = await this.prisma.gazeboInquiry.findFirst({
+          where: {
+            OR: [
+              { phone: { contains: rawDigits } },
+              { notes: { contains: rawDigits } },
+            ],
+            status: { notIn: [GazeboInquiryStatus.REJECTED, GazeboInquiryStatus.CANCELLED] },
+          },
+        });
+        if (gInq) {
+          let guestName = gInq.fullName;
+          if (gInq.notes) {
+            const lines = gInq.notes.split('\n');
+            for (const l of lines) {
+              if (l.includes(rawDigits)) {
+                const nameMatch = l.match(/Guest \d+:\s*([^|]+)/);
+                if (nameMatch) guestName = nameMatch[1].trim();
+                break;
+              }
+            }
+          }
+          attendee = {
+            id: gInq.id,
+            fullName: guestName,
+            phone: rawDigits,
+            isGazeboInquiry: true,
+          } as any;
+        }
+      }
       return {
         attendee,
         targetPhone: attendee ? attendee.phone : rawDigits,
@@ -151,12 +200,44 @@ export class CredentialsService {
     // 3. 12-digit Aadhaar number
     if (rawDigits.length === 12) {
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(rawDigits);
-      const attendee = await this.prisma.attendee.findUnique({
+      let attendee = await this.prisma.attendee.findUnique({
         where: { aadhaarHmac },
       });
+      let targetPhone = attendee ? attendee.phone : '';
+      if (!attendee) {
+        const gInq = await this.prisma.gazeboInquiry.findFirst({
+          where: {
+            notes: { contains: rawDigits },
+            status: { notIn: [GazeboInquiryStatus.REJECTED, GazeboInquiryStatus.CANCELLED] },
+          },
+        });
+        if (gInq) {
+          let guestName = gInq.fullName;
+          let guestPhone = gInq.phone;
+          if (gInq.notes) {
+            const lines = gInq.notes.split('\n');
+            for (const l of lines) {
+              if (l.includes(rawDigits)) {
+                const nameMatch = l.match(/Guest \d+:\s*([^|]+)/);
+                const phoneMatch = l.match(/Ph:\s*([^|]+)/);
+                if (nameMatch) guestName = nameMatch[1].trim();
+                if (phoneMatch) guestPhone = phoneMatch[1].trim();
+                break;
+              }
+            }
+          }
+          attendee = {
+            id: gInq.id,
+            fullName: guestName,
+            phone: guestPhone,
+            isGazeboInquiry: true,
+          } as any;
+          targetPhone = guestPhone;
+        }
+      }
       return {
         attendee,
-        targetPhone: attendee ? attendee.phone : '',
+        targetPhone,
         isPhone: false,
         cleanDigits: rawDigits,
       };
@@ -176,6 +257,33 @@ export class CredentialsService {
           targetPhone: primaryAtt.phone,
           isPhone: true,
           cleanDigits: primaryAtt.phone.replace(/\D/g, '').slice(-10),
+        };
+      }
+    }
+
+    // 5. Gazebo inquiry reference (e.g. GZB-INQ-...)
+    if (query.toUpperCase().includes('GZB-')) {
+      const cleanInqNum = query.trim().toUpperCase();
+      const gInq = await this.prisma.gazeboInquiry.findFirst({
+        where: {
+          OR: [
+            { inquiryNumber: cleanInqNum },
+            { id: { startsWith: cleanInqNum.replace('GZB-INQ-', '').toLowerCase() } }
+          ],
+          status: { notIn: [GazeboInquiryStatus.REJECTED, GazeboInquiryStatus.CANCELLED] }
+        }
+      });
+      if (gInq) {
+        return {
+          attendee: {
+            id: gInq.id,
+            fullName: gInq.fullName,
+            phone: gInq.phone,
+            isGazeboInquiry: true,
+          },
+          targetPhone: gInq.phone,
+          isPhone: true,
+          cleanDigits: gInq.phone.replace(/\D/g, '').slice(-10),
         };
       }
     }
@@ -277,33 +385,71 @@ export class CredentialsService {
 
       if (activeInquiry) {
         const isApproved = activeInquiry.status === GazeboInquiryStatus.APPROVED || activeInquiry.status === GazeboInquiryStatus.CONFIRMED;
+
+        // Parse matching guest from notes
+        let guestName = activeInquiry.fullName;
+        let guestPhone = activeInquiry.phone;
+        let guestAadhaar = 'In Gazebo Record';
+        let isHost = true;
+        let guestIdx = 1;
+
+        if (activeInquiry.notes) {
+          const lines = activeInquiry.notes.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line.includes(cleanDigits.slice(-10)) || (cleanDigits.length === 12 && line.includes(cleanDigits))) {
+              const nameMatch = line.match(/Guest \d+:\s*([^|]+)/);
+              const phoneMatch = line.match(/Ph:\s*([^|]+)/);
+              const aadhMatch = line.match(/Aadh:\s*(\d{12})/);
+              if (nameMatch) guestName = nameMatch[1].trim();
+              if (phoneMatch) guestPhone = phoneMatch[1].trim();
+              if (aadhMatch) guestAadhaar = `XXXX XXXX ${aadhMatch[1].slice(-4)}`;
+              isHost = (i === 0 || line.includes('Guest 1:'));
+              guestIdx = i + 1;
+              break;
+            }
+          }
+        }
+
+        const gzbNum = activeInquiry.gazebo?.gazeboNumber || (activeInquiry.notes?.match(/REQUESTED GAZEBO:\s*#?([^\n\r]+)/)?.[1]?.trim() || `Level ${activeInquiry.level}`);
+        const passSeq = activeInquiry.inquiryNumber || activeInquiry.id.slice(0, 6).toUpperCase();
+        const passCode = `SS26-GZB-${gzbNum.replace(/#/g, '')}-${guestIdx}`;
+        const secureToken = `ss_gzb_${activeInquiry.id}_${guestPhone.replace(/\D/g, '').slice(-10) || guestIdx}`;
+
         return {
           success: true,
           data: [{
-            attendeeId: activeInquiry.id,
-            attendeeName: activeInquiry.fullName,
-            phone: activeInquiry.phone,
-            gender: 'VIP HOST',
-            aadhaarMasked: 'In Gazebo Record',
+            attendeeId: `${activeInquiry.id}-g${guestIdx}`,
+            attendeeName: guestName,
+            phone: guestPhone,
+            gender: isHost ? 'VIP HOST' : 'VIP GUEST',
+            aadhaarMasked: guestAadhaar,
             registrationId: activeInquiry.id,
-            registrationNumber: activeInquiry.inquiryNumber,
-            registrationStatus: isApproved ? 'APPROVED' : 'UNDER_REVIEW',
-            attendeeStatus: isApproved ? 'APPROVED' : 'UNDER_REVIEW',
+            registrationNumber: activeInquiry.inquiryNumber || `GZB-INQ-${activeInquiry.id.slice(0, 6).toUpperCase()}`,
+            registrationStatus: isApproved ? 'PASS_ISSUED' : 'UNDER_REVIEW',
+            attendeeStatus: isApproved ? 'PASS_ISSUED' : 'UNDER_REVIEW',
             passType: 'GAZEBO',
             paymentLinkId: null,
             amountDue: activeInquiry.gazebo?.price ? Number(activeInquiry.gazebo.price) : (activeInquiry.level === 3 ? 125000 : activeInquiry.level === 2 ? 100000 : 85000),
             reviewNotes: isApproved 
-              ? `Your VIP Gazebo reservation (${activeInquiry.gazebo?.gazeboNumber || `Level ${activeInquiry.level}`}) is Approved! VIP Passes are active in our executive system.`
+              ? `Your VIP Gazebo reservation (${gzbNum}) is Approved! Your digital access pass is active.`
               : `Your VIP Gazebo reservation is currently under review by our executive concierge.`,
             submittedAt: activeInquiry.createdAt,
-            hasActivePass: false,
+            hasActivePass: isApproved,
             hasUsedPass: false,
-            credential: null,
+            credential: isApproved ? {
+              credentialNumber: `PASS-GZB-${passSeq}`,
+              passCode,
+              secureToken,
+              status: CredentialStatus.ACTIVE,
+              issuedAt: activeInquiry.createdAt,
+              usedAt: null,
+            } : null,
             isPaymentPending: false,
             isUnderReview: !isApproved,
             isRejected: false,
             isCancelled: false,
-            isPrimary: true,
+            isPrimary: isHost,
           }],
           message: `Active Gazebo reservation found.`,
         };

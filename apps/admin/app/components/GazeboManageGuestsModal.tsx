@@ -18,9 +18,38 @@ interface AttendeeForm {
 }
 
 export default function GazeboManageGuestsModal({ gazebo, onClose, onSuccess }: { gazebo: any, onClose: () => void, onSuccess: () => void }) {
-  const [attendees, setAttendees] = useState<AttendeeForm[]>([
-    { fullName: '', phone: '', email: '', gender: 'MALE', aadhaarNumber: '' }
-  ]);
+  const initialGuests = React.useMemo(() => {
+    const rawNotes = gazebo?.inquiries?.[0]?.notes || gazebo?.notes || '';
+    if (!rawNotes || !rawNotes.includes('Guest ')) {
+      return [{ fullName: gazebo?.inquiries?.[0]?.fullName || '', phone: gazebo?.inquiries?.[0]?.phone || '', email: '', gender: 'MALE' as const, aadhaarNumber: '' }];
+    }
+    const lines = rawNotes.split('\n');
+    const parsed: AttendeeForm[] = [];
+    for (const line of lines) {
+      if (!line.includes('Guest ') || !line.includes('|')) continue;
+      const nameMatch = line.match(/Guest \d+:\s*([^|]+)/);
+      const phoneMatch = line.match(/Ph:\s*([^|]+)/);
+      const emailMatch = line.match(/Email:\s*([^|]+)/);
+      const aadhMatch = line.match(/Aadh:\s*(\d{12})/);
+      const frontMatch = line.match(/\[Aadhaar Front Side\]\(\/api\/v1\/uploads\/direct\/([^\)]+)\)/);
+      const backMatch = line.match(/\[Aadhaar Back Side\]\(\/api\/v1\/uploads\/direct\/([^\)]+)\)/);
+
+      if (nameMatch) {
+        parsed.push({
+          fullName: nameMatch[1].trim(),
+          phone: phoneMatch ? phoneMatch[1].trim() : '',
+          email: emailMatch ? emailMatch[1].trim() : '',
+          gender: 'MALE',
+          aadhaarNumber: aadhMatch ? aadhMatch[1].trim() : '',
+          documentFrontKey: frontMatch ? frontMatch[1] : undefined,
+          documentBackKey: backMatch ? backMatch[1] : undefined,
+        });
+      }
+    }
+    return parsed.length > 0 ? parsed : [{ fullName: '', phone: '', email: '', gender: 'MALE' as const, aadhaarNumber: '' }];
+  }, [gazebo]);
+
+  const [attendees, setAttendees] = useState<AttendeeForm[]>(initialGuests);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<any[] | null>(null);
