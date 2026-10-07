@@ -1001,48 +1001,128 @@ export default function SuperAdminDashboard() {
     return true;
   });
 
+  function extractConciergeNotes(notes?: string): string {
+    if (!notes) return '';
+    const match = notes.match(/Concierge Notes:\s*([\s\S]*?)(?=---|\n\nGuest|\nGuest|$)/i);
+    if (match && match[1].trim()) return match[1].trim();
+    const parts = notes.split(/Guest \d+:/);
+    if (parts.length > 1 && parts[0].trim()) {
+      return parts[0].replace(/REQUESTED GAZEBO:[^\n]*/i, '').replace(/Concierge Notes:/i, '').trim();
+    }
+    return '';
+  }
+
+  function parseGazeboNotes(notes: string | undefined, defaultHostName: string, defaultPhone: string, defaultId: string) {
+    if (!notes) {
+      return [{
+        isPrimary: true,
+        attendeeId: defaultId,
+        attendee: {
+          id: defaultId,
+          fullName: defaultHostName || 'VIP Host',
+          phone: defaultPhone || '',
+          gender: 'VIP HOST',
+          aadhaarMasked: 'Not Provided',
+          document: null
+        }
+      }];
+    }
+
+    const guestLines = notes.split('\n').filter(l => l.trim().startsWith('Guest '));
+    
+    if (guestLines.length === 0) {
+      const links: { title: string, url: string }[] = [];
+      notes.replace(/\[(.*?)\]\((.*?)\)/g, (m, title, url) => { links.push({ title, url }); return ''; });
+      const front = links.find(l => l.title.toLowerCase().includes('front'))?.url;
+      const back = links.find(l => l.title.toLowerCase().includes('back'))?.url;
+      const aadhMatch = notes.match(/\b\d{12}\b/);
+      const aadh = aadhMatch ? `XXXX XXXX ${aadhMatch[0].slice(-4)}` : 'In Document';
+
+      return [{
+        isPrimary: true,
+        attendeeId: defaultId,
+        attendee: {
+          id: defaultId,
+          fullName: defaultHostName || 'VIP Host',
+          phone: defaultPhone || '',
+          gender: 'VIP HOST',
+          aadhaarMasked: aadh,
+          document: front || back ? {
+            id: defaultId,
+            originalFilename: 'Gazebo KYC Document',
+            directUrlFront: front || back,
+            directUrlBack: front && back ? back : undefined,
+            storageKeyBack: front && back ? 'has_back' : undefined
+          } : null
+        }
+      }];
+    }
+
+    return guestLines.map((line, idx) => {
+      const nameMatch = line.match(/Guest \d+:\s*([^|]+)/);
+      const fullName = nameMatch ? nameMatch[1].trim() : (idx === 0 ? defaultHostName : `Guest ${idx + 1}`);
+
+      const phoneMatch = line.match(/Ph:\s*([^|]+)/);
+      const phone = phoneMatch ? phoneMatch[1].trim() : (idx === 0 ? defaultPhone : '');
+
+      const emailMatch = line.match(/Email:\s*([^|]+)/);
+      const email = emailMatch ? emailMatch[1].trim() : '';
+
+      const aadhMatch = line.match(/Aadh:\s*(\d{12})/);
+      const aadhaarMasked = aadhMatch ? `XXXX XXXX ${aadhMatch[1].slice(-4)}` : 'In Document';
+
+      const links: { title: string, url: string }[] = [];
+      line.replace(/\[(.*?)\]\((.*?)\)/g, (m, title, url) => { links.push({ title, url }); return ''; });
+      const front = links.find(l => l.title.toLowerCase().includes('front'))?.url;
+      const back = links.find(l => l.title.toLowerCase().includes('back'))?.url;
+
+      const guestId = `${defaultId}-g${idx + 1}`;
+
+      return {
+        isPrimary: idx === 0,
+        attendeeId: guestId,
+        attendee: {
+          id: guestId,
+          fullName,
+          phone,
+          email,
+          gender: idx === 0 ? 'VIP HOST' : 'VIP GUEST',
+          aadhaarMasked,
+          document: front || back ? {
+            id: guestId,
+            originalFilename: `${fullName} Aadhaar`,
+            directUrlFront: front || back,
+            directUrlBack: front && back ? back : undefined,
+            storageKeyBack: front && back ? 'has_back' : undefined
+          } : null
+        }
+      };
+    });
+  }
+
   if (appStatusFilter === 'GAZEBO') {
     const mappedGazeboInquiries = gazeboInquiries
       .filter((inq: any) => appGazeboFilter === 'ALL' || inq.gazebo?.gazeboNumber === appGazeboFilter)
-      .map((inq: any) => ({
-        id: inq.id,
-        isMappedInquiry: true,
-        registrationNumber: inq.inquiryNumber || `GZB-INQ-${inq.id.substring(0, 4).toUpperCase()}`,
-        passType: 'GAZEBO',
-        amountDue: 0,
-        paymentMethod: 'N/A',
-        status: inq.status,
-        createdAt: inq.createdAt,
-        gazebo: inq.gazebo,
-        attendees: [
-          {
-            isPrimary: true,
-            attendeeId: inq.id,
-            attendee: {
-              id: inq.id,
-              fullName: inq.fullName,
-              phone: inq.phone,
-              gender: 'UNKNOWN',
-              aadhaarMasked: 'In Document',
-              document: (() => {
-                const links: { title: string, url: string }[] = [];
-                inq.notes?.replace(/\[(.*?)\]\((.*?)\)/g, (m: any, title: any, url: any) => { links.push({ title, url }); return ''; });
-                const front = links.find(l => l.title.toLowerCase().includes('front'))?.url;
-                const back = links.find(l => l.title.toLowerCase().includes('back'))?.url;
-                if (!front && !back) return null;
-                return {
-                  id: inq.id,
-                  originalFilename: 'Gazebo KYC Document',
-                  directUrlFront: front || back,
-                  directUrlBack: front && back ? back : undefined,
-                  storageKeyBack: front && back ? 'has_back' : undefined
-                };
-              })()
-            }
-          }
-        ],
-        originalInquiry: inq
-      }));
+      .map((inq: any) => {
+        const attendees = parseGazeboNotes(inq.notes, inq.fullName, inq.phone, inq.id);
+        const conciergeNotes = extractConciergeNotes(inq.notes);
+        const amountDue = inq.gazebo?.price ? Number(inq.gazebo.price) : (inq.level === 3 ? 125000 : inq.level === 2 ? 100000 : 85000);
+
+        return {
+          id: inq.id,
+          isMappedInquiry: true,
+          registrationNumber: inq.inquiryNumber || `GZB-INQ-${inq.id.substring(0, 4).toUpperCase()}`,
+          passType: 'GAZEBO',
+          amountDue,
+          paymentMethod: 'N/A',
+          status: inq.status,
+          createdAt: inq.createdAt,
+          gazebo: inq.gazebo,
+          conciergeNotes,
+          attendees,
+          originalInquiry: inq,
+        };
+      });
     filteredApps = [...filteredApps, ...mappedGazeboInquiries];
   }
 
@@ -1081,11 +1161,17 @@ export default function SuperAdminDashboard() {
       getValue: (row) => row.attendees?.map((a: any) => a.attendee?.fullName).join(' ') || '',
       render: (row) => {
         const primary = row.attendees?.[0]?.attendee;
+        const totalGuests = row.attendees?.length || 1;
         const hasOcrMismatch = row.attendees?.some((ra: any) => ra.attendee?.document?.ocrMismatch);
         return (
           <div>
             <div className="flex items-center space-x-2">
               <span className="font-semibold text-[#2D1F0E]">{primary?.fullName || '—'}</span>
+              {row.isMappedInquiry && totalGuests > 1 && (
+                <span className="px-2 py-0.5 rounded-full bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C] font-mono font-bold text-[10px] shadow-sm">
+                  {totalGuests} GUESTS
+                </span>
+              )}
               {row.isBlocked && (
                 <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[9px] flex items-center space-x-1 shadow-sm">
                   <Ban className="w-2.5 h-2.5" />
@@ -1094,7 +1180,12 @@ export default function SuperAdminDashboard() {
               )}
             </div>
             <div className="text-[10px] text-[#6E5336] flex flex-wrap items-center gap-1.5 mt-0.5">
-              <span>{row.passType === 'SINGLE' && primary?.gender === 'FEMALE' ? 'SINGLE FEMALE' : primary?.gender}</span>
+              <span>{row.isMappedInquiry ? (primary?.gender || 'VIP HOST') : (row.passType === 'SINGLE' && primary?.gender === 'FEMALE' ? 'SINGLE FEMALE' : primary?.gender)}</span>
+              {row.isMappedInquiry && row.originalInquiry?.level && (
+                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 text-[9px] font-bold">
+                  LEVEL {row.originalInquiry.level}
+                </span>
+              )}
               {hasOcrMismatch && (
                 <span className="px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-bold text-[9px] flex items-center space-x-1 animate-pulse">
                   <Flag className="w-2.5 h-2.5 text-rose-600 fill-rose-600" />
@@ -3139,6 +3230,18 @@ export default function SuperAdminDashboard() {
                 Pass Category: <strong>{selectedApp.passType}</strong> • Original Amount: <strong>₹{Number(selectedApp.amountDue)?.toLocaleString()}</strong> • Status: <strong>{selectedApp.status}</strong>
               </p>
             </div>
+
+            {selectedApp.conciergeNotes && (
+              <div className="p-4 rounded-2xl bg-[#FFF9EE] border-2 border-[#E5A93C] text-[#6E5336] text-xs space-y-1.5 shadow-sm">
+                <div className="flex items-center space-x-2 font-bold text-[#8C6019] uppercase tracking-wider text-[11px]">
+                  <span className="text-sm">👑</span>
+                  <span>VIP Concierge & Special Instructions:</span>
+                </div>
+                <div className="text-sm font-semibold text-[#2D1F0E] whitespace-pre-wrap leading-relaxed">
+                  {selectedApp.conciergeNotes}
+                </div>
+              </div>
+            )}
 
             {/* Quick Batch Actions */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8]">

@@ -319,7 +319,6 @@ export class GazebosService {
         },
         data: {
           status: GazeboInquiryStatus.CANCELLED,
-          notes: 'Released back to available inventory by Super Admin',
         },
       });
 
