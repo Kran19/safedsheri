@@ -2306,16 +2306,17 @@ export default function SafedSheriLandingPage() {
 
               {isPassBookingLocked ? (
                 <>
-                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                    <span>Pass Booking Closed</span>
+                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF9EE] via-[#FFF5DC] to-[#FFF9EE] border border-[#E5A93C]/60 text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                    <Sparkles className="w-3 h-3 text-[#D99427]" />
+                    <span>Safed Sheri 2026 • Full House</span>
                   </div>
 
                   <button
                     onClick={() => handlePassSelect('SINGLE')}
-                    className="w-full py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#2D1F0E] via-[#3E2A15] to-[#2D1F0E] hover:from-[#3E2A15] hover:to-[#52381C] text-[#F6C85F] border border-[#D99427]/60 font-bold text-xs tracking-widest uppercase transition-all shadow-lg shadow-[#2D1F0E]/25 flex items-center justify-center space-x-2 cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <span>Pass Booking Closed</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#F6C85F] group-hover:rotate-12 transition-transform" />
+                    <span>See You Next Year ✦</span>
                   </button>
                 </>
               ) : (
@@ -2394,16 +2395,17 @@ export default function SafedSheriLandingPage() {
 
               {isPassBookingLocked ? (
                 <>
-                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                    <span>Pass Booking Closed</span>
+                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF9EE] via-[#FFF5DC] to-[#FFF9EE] border border-[#E5A93C]/60 text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                    <Sparkles className="w-3 h-3 text-[#D99427]" />
+                    <span>Safed Sheri 2026 • Full House</span>
                   </div>
 
                   <button
                     onClick={() => handlePassSelect('COUPLE')}
-                    className="w-full py-3.5 rounded-full bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-lg flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#2D1F0E] via-[#3E2A15] to-[#2D1F0E] hover:from-[#3E2A15] hover:to-[#52381C] text-[#F6C85F] border border-[#D99427]/60 font-bold text-xs tracking-widest uppercase transition-all shadow-xl shadow-[#2D1F0E]/30 flex items-center justify-center space-x-2 cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <span>Pass Booking Closed</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#F6C85F] group-hover:rotate-12 transition-transform" />
+                    <span>See You Next Year ✦</span>
                   </button>
                 </>
               ) : (
@@ -2483,16 +2485,17 @@ export default function SafedSheriLandingPage() {
 
               {isPassBookingLocked ? (
                 <>
-                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                    <span>Pass Booking Closed</span>
+                  <div className="mb-3 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FFF9EE] via-[#FFF5DC] to-[#FFF9EE] border border-[#E5A93C]/60 text-[#8C6019] text-[10px] font-bold tracking-wider uppercase flex items-center justify-center space-x-1.5 shadow-sm">
+                    <Sparkles className="w-3 h-3 text-[#D99427]" />
+                    <span>Safed Sheri 2026 • Full House</span>
                   </div>
 
                   <button
                     onClick={() => handlePassSelect('KIDS')}
-                    className="w-full py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs tracking-widest uppercase transition shadow-md flex items-center justify-center space-x-2"
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#2D1F0E] via-[#3E2A15] to-[#2D1F0E] hover:from-[#3E2A15] hover:to-[#52381C] text-[#F6C85F] border border-[#D99427]/60 font-bold text-xs tracking-widest uppercase transition-all shadow-lg shadow-[#2D1F0E]/25 flex items-center justify-center space-x-2 cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <span>Pass Booking Closed</span>
+                    <Sparkles className="w-3.5 h-3.5 text-[#F6C85F] group-hover:rotate-12 transition-transform" />
+                    <span>See You Next Year ✦</span>
                   </button>
                 </>
               ) : (
@@ -2680,132 +2683,122 @@ export default function SafedSheriLandingPage() {
           <div
             data-lenis-prevent="true"
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md sm:max-w-lg max-h-[90vh] flex flex-col bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2rem] p-4 sm:p-6 text-[#2D1F0E] overflow-hidden"
+            className="relative w-full max-w-md sm:max-w-lg max-h-[92vh] flex flex-col bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-2 border-[#D99427] ring-1 ring-[#F6C85F]/60 shadow-2xl shadow-[#D99427]/30 rounded-[2.2rem] p-5 sm:p-7 text-[#2D1F0E] overflow-hidden"
           >
             {/* Ambient Royal Gold Glow in Background */}
-            <div className="absolute -top-24 -right-24 w-60 h-60 rounded-full bg-gradient-to-br from-[#F6C85F]/30 to-[#D99427]/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-60 h-60 rounded-full bg-gradient-to-tr from-[#D99427]/20 to-[#F6C85F]/10 blur-3xl pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-gradient-to-br from-[#F6C85F]/35 to-[#D99427]/15 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-gradient-to-tr from-[#D99427]/25 to-[#F6C85F]/15 blur-3xl pointer-events-none" />
 
             {/* Close button */}
             <button
               onClick={() => setIsBookingSoonModalOpen(false)}
-              className="absolute top-3.5 right-3.5 p-2 rounded-full bg-white/80 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer z-20"
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/90 hover:bg-[#FAF6EE] text-[#8C6019] hover:text-[#2D1F0E] border border-[#EAD9B8] transition duration-200 shadow-sm hover:rotate-90 cursor-pointer z-20"
               title="Close announcement"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Scrollable Content Body */}
-            <div className="overflow-y-auto pr-1 custom-scrollbar space-y-3 pt-1 pb-1">
-              {/* Header Emblem & Pill */}
+            <div className="overflow-y-auto pr-1 custom-scrollbar space-y-4 pt-1 pb-1">
+              {/* Header Royal Emblem & Pill */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-100 via-white to-amber-100 border-2 border-rose-400 flex items-center justify-center text-rose-700 shadow-md shadow-rose-500/20 mb-2">
-                  <Lock className="w-6 h-6" />
+                <div className="relative mb-2.5">
+                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#FFF7E8] via-[#FAF3E0] to-[#FFFDF8] border-2 border-[#D99427] shadow-xl shadow-[#D99427]/25 flex items-center justify-center text-[#D99427]">
+                    <Crown className="w-8 h-8 text-[#D99427] drop-shadow-sm" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#2D1F0E] border border-[#F6C85F] flex items-center justify-center text-[#F6C85F] shadow-sm">
+                    <Sparkles className="w-3 h-3" />
+                  </div>
                 </div>
 
-                <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-[9px] font-bold tracking-[0.2em] text-rose-900 uppercase mb-2 shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" />
-                  <span>Safed Sheri 2026 • Official Proclamation</span>
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#FFF9EE] border border-[#D99427]/40 text-[10px] font-bold tracking-[0.25em] text-[#8C6019] uppercase mb-2.5 shadow-sm">
+                  <Sparkles className="w-3 h-3 text-[#D99427]" />
+                  <span>Safed Sheri 2026 • Full House</span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
-                  Online Bookings Closed <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-700 via-[#B87515] to-[#8C6019]">
-                    Admin &amp; Box Office Only
+                <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
+                  See You Next Year! <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019] italic">
+                    Thank You, Rajkot!
                   </span>
                 </h3>
 
-                <p className="text-xs text-[#6E5336] mt-1.5 max-w-sm leading-relaxed">
-                  Public online pass booking for <strong className="text-[#2D1F0E]">Single Female, Couple, and Kids passes</strong> closed permanently on <strong className="text-rose-700">8th October at 12:00 PM</strong>.
-                  <br />
-                  <span className="text-[#8C6019] font-medium block mt-1">
-                    🔒 New passes can now only be authorized and issued directly by <strong>Safed Sheri Event Administration</strong>.
-                  </span>
+                <p className="text-xs sm:text-[13px] text-[#6E5336] mt-2 max-w-md leading-relaxed">
+                  We are deeply humbled by the immense love, devotion, and overwhelming enthusiasm from across Gujarat.
+                  Pass bookings for <strong className="text-[#2D1F0E]">Safed Sheri 2026</strong> have officially concluded as all verified quotas are now full.
                 </p>
+
+                <div className="mt-2 text-[11px] text-[#8C6019] font-medium italic">
+                  ✨ We cannot wait to dance under the white moonlight with our confirmed guests — and we warmly look forward to seeing you for <strong className="text-[#2D1F0E] not-italic font-bold">Safed Sheri 2027</strong>!
+                </div>
               </div>
 
               {/* Selected Pass Notice Card */}
-              <div className="p-3 rounded-xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427]">
-                    <Crown className="w-4 h-4" />
+              <div className="p-3.5 rounded-2xl bg-white/95 border border-[#EAD9B8] shadow-sm flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#FFF9EE] border border-[#E5A93C] flex items-center justify-center text-[#D99427] shrink-0">
+                    <Crown className="w-4.5 h-4.5" />
                   </div>
                   <div>
                     <div className="text-[9px] uppercase tracking-wider font-bold text-[#8C6019]">
                       Selected Pass Category
                     </div>
-                    <div className="text-xs font-bold text-[#2D1F0E]">
+                    <div className="text-xs sm:text-sm font-serif font-bold text-[#2D1F0E]">
                       {noticePassType === 'SINGLE' && 'Single Female Pass (Verified Entry)'}
                       {noticePassType === 'COUPLE' && 'Couple Pass (1 Female + 1 Male Entry)'}
                       {noticePassType === 'KIDS' && 'Kids Pass (Children Entry)'}
                     </div>
                   </div>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-[9px] font-bold text-rose-800 border border-rose-200 uppercase shadow-sm whitespace-nowrap">
-                  Booking Closed
+                <span className="px-3 py-1 rounded-full bg-[#FFF5DC] text-[9px] font-bold text-[#8C6019] border border-[#E5A93C]/70 uppercase tracking-wider shadow-sm whitespace-nowrap">
+                  Quota Full
                 </span>
               </div>
 
-              {/* Box Office Allotment Notice */}
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] via-[#FFF9EE] to-[#FFF5DC] border border-[#EAD9B8] shadow-sm text-center">
-                <div className="text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-1 flex items-center justify-center space-x-1.5">
-                  <Shield className="w-3.5 h-3.5 text-[#D99427]" />
-                  <span>Administrative Allocation Desk</span>
-                </div>
-                <div className="text-xs sm:text-sm font-serif font-bold text-[#2D1F0E]">
-                  Require a Pass or VIP Access?
-                </div>
-                <p className="text-[11px] text-[#6E5336] mt-1.5 leading-relaxed">
-                  Pass issuance is now strictly managed by event administration. For urgent requests, sponsorship, or VIP table inquiries, please contact our official administration desk.
-                </p>
-              </div>
-
-              {/* Instructions for existing pass holders */}
-              <div className="p-3 rounded-xl bg-[#FFF9EE] border border-[#EAD9B8] text-[11px] space-y-1.5">
-                <div className="font-bold text-[#8C6019] text-[10px] uppercase tracking-wider flex items-center space-x-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              {/* Instructions for existing confirmed pass holders */}
+              <div className="p-4 rounded-2xl bg-[#FFF9EE] border border-[#EAD9B8] space-y-2">
+                <div className="font-bold text-[#8C6019] text-[11px] uppercase tracking-wider flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>Notice For Confirmed Pass Holders</span>
                 </div>
-                <div className="space-y-1 text-[#6E5336] text-[10px] leading-snug">
-                  <div className="flex items-start space-x-1.5">
-                    <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
+                <div className="space-y-1.5 text-[#6E5336] text-[11px] leading-relaxed">
+                  <div className="flex items-start space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
                     <span><strong>Confirmed Passes:</strong> All existing approved &amp; issued passes remain 100% valid for entry.</span>
                   </div>
-                  <div className="flex items-start space-x-1.5">
-                    <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
-                    <span><strong>Retrieve Passes:</strong> Use the "Find My Pass" feature below at any time to download your digital QR pass.</span>
+                  <div className="flex items-start space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
+                    <span><strong>Retrieve Passes:</strong> Use the <strong>"Find My Pass"</strong> portal at any time to download your digital QR pass.</span>
                   </div>
-                  <div className="flex items-start space-x-1.5">
-                    <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
-                    <span><strong>White Attire:</strong> 75% pure white traditional Gujarati dress code is strictly enforced.</span>
+                  <div className="flex items-start space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#D99427] flex-shrink-0 mt-0.5" />
+                    <span><strong>White Attire:</strong> 75%+ pure white traditional Gujarati dress code is strictly mandatory.</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Action CTA Buttons - Fixed Footer inside Modal */}
-            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-3 border-t border-[#EAD9B8]/60 mt-2 flex-shrink-0">
-              <a
-                href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Admin%20Desk%2C%20I%20am%20inquiring%20about%20pass%20allocation."
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => garbaAudio.playDhol()}
-                className="w-full sm:flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-md shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <Bell className="w-3.5 h-3.5" />
-                <span>Contact Admin Desk</span>
-              </a>
-
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-3.5 border-t border-[#EAD9B8]/70 mt-2 flex-shrink-0">
               <button
                 onClick={() => {
-                  garbaAudio.playDandiya();
+                  garbaAudio.playDhol();
                   setIsBookingSoonModalOpen(false);
                   const el = document.getElementById('find-pass');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full sm:w-auto px-6 py-3 rounded-full bg-white hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] font-bold text-xs tracking-wider uppercase transition shadow-sm cursor-pointer"
+                className="w-full sm:flex-1 py-3.5 px-6 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] hover:brightness-105 active:scale-[0.99] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center transition shadow-lg shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
               >
-                Find My Pass
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Find My Pass</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => setIsBookingSoonModalOpen(false)}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white hover:bg-[#FAF6EE] text-[#6E5336] hover:text-[#2D1F0E] border border-[#EAD9B8] font-bold text-xs tracking-wider uppercase transition shadow-sm cursor-pointer"
+              >
+                See You in 2027 ✦
               </button>
             </div>
           </div>

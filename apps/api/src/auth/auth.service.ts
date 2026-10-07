@@ -26,8 +26,8 @@ export class AuthService {
       where: { username: cleanUsername },
     });
 
-    if (!user && cleanUsername.toLowerCase().includes('@saefsheri.com')) {
-      const corrected = cleanUsername.replace(/@saefsheri\.com/i, '@safedsheri.com');
+    if (!user && /@(safessheri|saefsheri|safedshri|safdsheri)\.com/i.test(cleanUsername)) {
+      const corrected = cleanUsername.replace(/@(safessheri|saefsheri|safedshri|safdsheri)\.com/i, '@safedsheri.com');
       user = await this.prisma.user.findUnique({
         where: { username: corrected },
       });

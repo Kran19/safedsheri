@@ -33,9 +33,10 @@ export default function LoginPage() {
     setError('');
 
     try {
+      const cleanUsername = username.trim().replace(/@(safessheri|saefsheri|safedshri|safdsheri)\.com/i, '@safedsheri.com');
       const res = await apiRequest('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: cleanUsername, password: password.trim() }),
       });
 
       if (res.success && res.data?.accessToken) {

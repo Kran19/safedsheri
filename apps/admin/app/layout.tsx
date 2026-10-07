@@ -39,16 +39,6 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Meta Pixel Noscript Fallback */}
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            src="https://www.facebook.com/tr?id=1316758214856903&ev=PageView&noscript=1"
-            alt=""
-          />
-        </noscript>
 
         {children}
       </body>
