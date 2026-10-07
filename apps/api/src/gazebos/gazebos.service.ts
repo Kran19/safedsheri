@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomUUID } from 'crypto';
-import { GazeboStatus, GazeboInquiryStatus, RegistrationStatus, PassType } from '@prisma/client';
+import { GazeboStatus, GazeboInquiryStatus, RegistrationStatus, PassType, CredentialStatus } from '@prisma/client';
 import { CredentialsService } from '../credentials/credentials.service';
 import { EncryptionService } from '../common/encryption.service';
 import { AuthService } from '../auth/auth.service';
@@ -302,10 +302,13 @@ export class GazebosService {
     }
 
     return await this.prisma.$transaction(async (tx) => {
-      // 1. Reset Gazebo status to AVAILABLE
+      // 1. Reset Gazebo status to AVAILABLE and clear inviteToken
       const updatedGazebo = await tx.gazebo.update({
         where: { id },
-        data: { status: GazeboStatus.AVAILABLE },
+        data: {
+          status: GazeboStatus.AVAILABLE,
+          inviteToken: null,
+        },
       });
 
       // 2. Mark active inquiries as CANCELLED
@@ -319,6 +322,26 @@ export class GazebosService {
           notes: 'Released back to available inventory by Super Admin',
         },
       });
+
+      // 3. Cancel any Registrations linked to this gazebo and revoke their credentials
+      const linkedRegs = await tx.registration.findMany({
+        where: { gazeboId: id },
+        select: { id: true },
+      });
+      if (linkedRegs.length > 0) {
+        const regIds = linkedRegs.map((r) => r.id);
+        await tx.registration.updateMany({
+          where: { id: { in: regIds } },
+          data: {
+            status: RegistrationStatus.CANCELLED,
+            deletedAt: new Date(),
+          },
+        });
+        await tx.credential.updateMany({
+          where: { registrationId: { in: regIds } },
+          data: { status: CredentialStatus.CANCELLED },
+        });
+      }
 
       // 3. Audit Log
       await tx.auditLog.create({

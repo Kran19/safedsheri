@@ -9,13 +9,14 @@ import {
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
   Tag, MapPin, Settings, Trash2, Lock, Flag, X, ChevronDown,
-  Ban, UserX, ShieldAlert
+  Ban, UserX, ShieldAlert, RotateCcw
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
 import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
 import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenance';
 import BookingDesk from '../components/BookingDesk';
+import GazeboManageGuestsModal from '../components/GazeboManageGuestsModal';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
@@ -195,6 +196,8 @@ export default function SuperAdminDashboard() {
     status: 'CONFIRMED',
   });
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [selectedGazeboForGuests, setSelectedGazeboForGuests] = useState<any | null>(null);
+  const [releaseLoadingId, setReleaseLoadingId] = useState<string | null>(null);
 
   // Helper: Colored status badge for inquiry status
   function getInquiryStatusBadge(status: string) {
@@ -949,6 +952,27 @@ export default function SuperAdminDashboard() {
       loadTabContent('gazebos');
     } else {
       setError(res.error?.message || 'Failed to book gazebo');
+    }
+  }
+
+  async function handleReleaseGazebo(gz: any) {
+    if (!window.confirm(`Are you sure you want to UNDO booking for Gazebo ${gz.gazeboNumber}?\n\nThis will release it back to AVAILABLE and cancel any active holds or guest passes.`)) {
+      return;
+    }
+    setReleaseLoadingId(gz.id);
+    setMessage('');
+    setError('');
+
+    const res = await apiRequest(`/gazebos/${gz.id}/release`, {
+      method: 'POST',
+    });
+
+    setReleaseLoadingId(null);
+    if (res.success) {
+      setMessage(`✅ Gazebo ${gz.gazeboNumber} booking undone! It is now AVAILABLE for booking.`);
+      loadTabContent('gazebos');
+    } else {
+      setError(res.error?.message || 'Failed to release gazebo');
     }
   }
 
@@ -2056,19 +2080,20 @@ export default function SuperAdminDashboard() {
                   </div>
 
                   {/* Body: Guest Information or Available Status */}
-                  {(isBooked || isHeld) && activeInquiry ? (
+                  {(isBooked || isHeld) ? (
                     <div className="p-3 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs space-y-1">
-                      <div className="text-[9px] font-mono text-[#8C6019] uppercase tracking-wider font-bold">
-                        {isBooked ? 'BOOKED FOR GUEST' : 'RESERVED ON HOLD FOR'}
+                      <div className="text-[9px] font-mono text-[#8C6019] uppercase tracking-wider font-bold flex items-center justify-between">
+                        <span>{isBooked ? 'BOOKED FOR GUEST' : 'RESERVED ON HOLD FOR'}</span>
+                        {gz.price && <span className="text-[#2D1F0E]">₹{Number(gz.price).toLocaleString('en-IN')}</span>}
                       </div>
                       <div className="font-serif font-bold text-sm text-[#2D1F0E] truncate">
-                        {activeInquiry.fullName}
+                        {activeInquiry?.fullName || `VIP Host (Gazebo ${gz.gazeboNumber})`}
                       </div>
                       <div className="text-[11px] text-[#6E5336] font-mono flex items-center space-x-1">
                         <Phone className="w-3 h-3 text-[#D99427]" />
-                        <span>{activeInquiry.phone}</span>
+                        <span>{activeInquiry?.phone || 'Contact on file'}</span>
                       </div>
-                      {activeInquiry.notes && (
+                      {activeInquiry?.notes && (
                         <div className="text-[10px] text-[#6E5336] italic truncate border-t border-[#EAD9B8]/60 pt-1">
                           {activeInquiry.notes}
                         </div>
@@ -2087,8 +2112,8 @@ export default function SuperAdminDashboard() {
                   )}
 
                   {/* Actions */}
-                  <div className="pt-2 border-t border-[#EAD9B8]/70">
-                    {gz.status === 'AVAILABLE' && (
+                  <div className="pt-2 border-t border-[#EAD9B8]/70 flex flex-col space-y-2">
+                    {gz.status === 'AVAILABLE' ? (
                       <button
                         onClick={() => {
                           setSelectedGazeboForBooking(gz);
@@ -2106,6 +2131,25 @@ export default function SuperAdminDashboard() {
                         <Crown className="w-3.5 h-3.5 text-[#F6C85F]" />
                         <span>Book Gazebo #{gazeboIndex}</span>
                       </button>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <button
+                          onClick={() => setSelectedGazeboForGuests(gz)}
+                          className="w-full py-2 px-3 rounded-xl bg-[#FFF5DC] hover:bg-[#FCECC9] border border-[#E5A93C] text-[#8C6019] text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1.5"
+                        >
+                          <Users className="w-3.5 h-3.5 text-[#D99427]" />
+                          <span>Manage Passes (14 VIP)</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleReleaseGazebo(gz)}
+                          disabled={releaseLoadingId === gz.id}
+                          className="w-full py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                        >
+                          <RotateCcw className={`w-3.5 h-3.5 text-red-600 ${releaseLoadingId === gz.id ? 'animate-spin' : ''}`} />
+                          <span>{releaseLoadingId === gz.id ? 'Undoing Booking...' : 'Undo Booking / Release'}</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -4206,6 +4250,21 @@ export default function SuperAdminDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUPER ADMIN GAZEBO MANAGE GUESTS & PASSES MODAL */}
+      {/* ========================================================================= */}
+      {selectedGazeboForGuests && (
+        <GazeboManageGuestsModal
+          gazebo={selectedGazeboForGuests}
+          onClose={() => setSelectedGazeboForGuests(null)}
+          onSuccess={() => {
+            setSelectedGazeboForGuests(null);
+            setMessage(`✅ 14 VIP Passes minted and allocated to Gazebo ${selectedGazeboForGuests.gazeboNumber}!`);
+            loadTabContent('gazebos');
+          }}
+        />
       )}
 
       {/* ========================================================================= */}
