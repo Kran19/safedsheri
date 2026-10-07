@@ -57,6 +57,8 @@ model PricingPhase {
   countdownTarget   DateTime?
   urgencyTagline    String?
   hiddenPriceLabel  String?        @default("Price Revealed on Approval")
+  isBookingClosed   Boolean        @default(false)
+  bookingCloseTime  DateTime?
   isActive          Boolean        @default(false)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt

@@ -395,61 +395,21 @@ export default function SafedSheriLandingPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedPass, setSelectedPass] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
 
-  // Pass Booking Lock State (Phase 2 Unlocked)
-  const IS_BOOKING_LOCK_ENABLED = false; // Pass bookings for Single, Couple, Kids are OPEN for Phase 2
-  const IS_PENDING_PAYMENT_LOCK_ENABLED = false; // Pending payment window is OPEN for Phase 2
-  
-  // Pending Payment Booking Cutoff (Closes at 6:00 PM IST today: 2026-10-01T18:00:00+05:30)
+  // Public Pass Booking Lock State (Cutoff: 8 Oct 2026 12:00 PM IST or dynamic admin setting)
+  const DEFAULT_BOOKING_CUTOFF_TIMESTAMP = new Date('2026-10-08T12:00:00+05:30').getTime();
+  const IS_PENDING_PAYMENT_LOCK_ENABLED = false;
   const PENDING_PAYMENT_CUTOFF_TIMESTAMP = new Date('2026-10-01T18:00:00+05:30').getTime();
-  
-  // Phase 2 Reopening Timestamp (Opens 2nd October 2026 at 12:00 AM Midnight: 2026-10-02T00:00:00+05:30)
-  const PHASE_2_REOPENING_TIMESTAMP = new Date('2026-10-02T00:00:00+05:30').getTime();
 
   const [isBookingSoonModalOpen, setIsBookingSoonModalOpen] = useState(false);
   const [noticePassType, setNoticePassType] = useState<'SINGLE' | 'COUPLE' | 'KIDS'>('SINGLE');
   const [isPassBookingLocked, setIsPassBookingLocked] = useState(false);
   const [isPendingPaymentClosed, setIsPendingPaymentClosed] = useState(false);
-  const [sep12Countdown, setSep12Countdown] = useState<{
+  const [bookingCutoffCountdown, setBookingCutoffCountdown] = useState<{
     days: number;
     hours: number;
     minutes: number;
     seconds: number;
-  }>({ days: 0, hours: 5, minutes: 15, seconds: 0 });
-  const [phase2Countdown, setPhase2Countdown] = useState<{
-    hours: number;
-    minutes: number;
-    seconds: number;
-  }>({ hours: 9, minutes: 39, seconds: 0 });
-
-  // Synchronize lock state and live countdowns
-  useEffect(() => {
-    const updateLockStatus = () => {
-      const now = Date.now();
-      const isLocked = IS_BOOKING_LOCK_ENABLED && now < PHASE_2_REOPENING_TIMESTAMP;
-      setIsPassBookingLocked(isLocked);
-
-      const pendingClosed = IS_PENDING_PAYMENT_LOCK_ENABLED && (now >= PENDING_PAYMENT_CUTOFF_TIMESTAMP);
-      setIsPendingPaymentClosed(pendingClosed);
-
-      // Countdown to 6:00 PM IST today
-      const diff = Math.max(0, PENDING_PAYMENT_CUTOFF_TIMESTAMP - now);
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setSep12Countdown({ days: 0, hours, minutes, seconds });
-
-      // Countdown to Phase 2 Reopening (2nd Oct 12:00 AM Midnight)
-      const p2Diff = Math.max(0, PHASE_2_REOPENING_TIMESTAMP - now);
-      const p2Hours = Math.floor(p2Diff / (1000 * 60 * 60));
-      const p2Minutes = Math.floor((p2Diff % (1000 * 60 * 60)) / (1000 * 60));
-      const p2Seconds = Math.floor((p2Diff % (1000 * 60)) / 1000);
-      setPhase2Countdown({ hours: p2Hours, minutes: p2Minutes, seconds: p2Seconds });
-    };
-
-    updateLockStatus();
-    const timer = setInterval(updateLockStatus, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const [pricing, setPricing] = useState<any>({
     singlePrice: 4500,
@@ -467,7 +427,34 @@ export default function SafedSheriLandingPage() {
     urgencyTagline: '⚡ Phase 2 Pass Booking Active — Lock in passes now!',
     hiddenPriceLabel: 'Price Revealed on Approval',
     phaseName: 'PHASE 2',
+    isBookingClosed: false,
+    bookingCloseTime: '2026-10-08T06:30:00.000Z',
   });
+
+  // Synchronize lock state and live cutoff countdown
+  useEffect(() => {
+    const updateLockStatus = () => {
+      const now = Date.now();
+      const cutoffTime = pricing?.bookingCloseTime
+        ? new Date(pricing.bookingCloseTime).getTime()
+        : DEFAULT_BOOKING_CUTOFF_TIMESTAMP;
+
+      const isLocked = Boolean(pricing?.isBookingClosed || now >= cutoffTime);
+      setIsPassBookingLocked(isLocked);
+
+      // Countdown to Cutoff
+      const diff = Math.max(0, cutoffTime - now);
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setBookingCutoffCountdown({ days, hours, minutes, seconds });
+    };
+
+    updateLockStatus();
+    const timer = setInterval(updateLockStatus, 1000);
+    return () => clearInterval(timer);
+  }, [pricing?.isBookingClosed, pricing?.bookingCloseTime]);
 
   // Urgency Reverse Stop Watch State
   const [timeLeft, setTimeLeft] = useState<{
@@ -2235,7 +2222,7 @@ export default function SafedSheriLandingPage() {
               </p>
             </div>
 
-            <div className="xl:absolute xl:right-0 xl:top-0 flex flex-col items-center justify-center space-y-2 bg-white/60 border border-[#EAD9B8] rounded-xl p-4 shadow-sm backdrop-blur-sm w-full md:w-auto shrink-0 z-10">
+            <div className="lg:absolute lg:right-0 lg:top-0 flex flex-col items-center justify-center space-y-2 bg-white/80 border border-[#EAD9B8] rounded-2xl p-3.5 shadow-sm backdrop-blur-sm w-full lg:w-auto shrink-0 z-10">
               <div className="flex items-center space-x-6 text-sm text-[#2D1F0E]">
                 <div className="flex flex-col items-center">
                   <span className="font-bold text-[#D99427] text-base">7:00 - 9:00 PM</span>
@@ -2712,8 +2699,8 @@ export default function SafedSheriLandingPage() {
             <div className="overflow-y-auto pr-1 custom-scrollbar space-y-3 pt-1 pb-1">
               {/* Header Emblem & Pill */}
               <div className="flex flex-col items-center text-center">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FFF5DC] via-white to-[#F6C85F]/30 border-2 border-[#D99427] flex items-center justify-center text-[#D99427] shadow-md shadow-[#D99427]/20 mb-2">
-                  <Sparkles className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-100 via-white to-amber-100 border-2 border-rose-400 flex items-center justify-center text-rose-700 shadow-md shadow-rose-500/20 mb-2">
+                  <Lock className="w-6 h-6" />
                 </div>
 
                 <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-[9px] font-bold tracking-[0.2em] text-rose-900 uppercase mb-2 shadow-sm">
@@ -2722,17 +2709,17 @@ export default function SafedSheriLandingPage() {
                 </div>
 
                 <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#2D1F0E] tracking-tight leading-tight">
-                  Pass Bookings Closed <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D99427] via-[#B87515] to-[#8C6019]">
-                    For All 3 Pass Categories
+                  Online Bookings Closed <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-700 via-[#B87515] to-[#8C6019]">
+                    Admin &amp; Box Office Only
                   </span>
                 </h3>
 
                 <p className="text-xs text-[#6E5336] mt-1.5 max-w-sm leading-relaxed">
-                  New pass bookings for <strong className="text-[#2D1F0E]">Single Female, Couple, and Kids passes</strong> are currently <strong className="text-rose-700">CLOSED</strong>.
+                  Public online pass booking for <strong className="text-[#2D1F0E]">Single Female, Couple, and Kids passes</strong> closed permanently on <strong className="text-rose-700">8th October at 12:00 PM</strong>.
                   <br />
                   <span className="text-[#8C6019] font-medium block mt-1">
-                    ⌛ Applicants with existing approved registrations can complete pending payments until <strong>6:00 PM IST today</strong>.
+                    🔒 New passes can now only be authorized and issued directly by <strong>Safed Sheri Event Administration</strong>.
                   </span>
                 </p>
               </div>
@@ -2750,7 +2737,7 @@ export default function SafedSheriLandingPage() {
                     <div className="text-xs font-bold text-[#2D1F0E]">
                       {noticePassType === 'SINGLE' && 'Single Female Pass (Verified Entry)'}
                       {noticePassType === 'COUPLE' && 'Couple Pass (1 Female + 1 Male Entry)'}
-                      {noticePassType === 'KIDS' && 'Kids Pass (Children 10–15 Yrs Entry)'}
+                      {noticePassType === 'KIDS' && 'Kids Pass (Children Entry)'}
                     </div>
                   </div>
                 </div>
@@ -2759,61 +2746,38 @@ export default function SafedSheriLandingPage() {
                 </span>
               </div>
 
-              {/* Phase 2 Reopening Announcement Card with Live Counter */}
+              {/* Box Office Allotment Notice */}
               <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#FFF5DC] via-[#FFF9EE] to-[#FFF5DC] border border-[#EAD9B8] shadow-sm text-center">
                 <div className="text-[10px] font-bold tracking-[0.2em] text-[#8C6019] uppercase mb-1 flex items-center justify-center space-x-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#D99427]" />
-                  <span>Countdown to Phase 2 Reopening</span>
+                  <Shield className="w-3.5 h-3.5 text-[#D99427]" />
+                  <span>Administrative Allocation Desk</span>
                 </div>
                 <div className="text-xs sm:text-sm font-serif font-bold text-[#2D1F0E]">
-                  Pass Bookings Reopen on <span className="text-[#D99427]">2nd October at 12:00 AM Midnight</span>
+                  Require a Pass or VIP Access?
                 </div>
-
-                {/* Live Glowing Countdown Grid */}
-                <div className="grid grid-cols-3 gap-2 mt-2 mb-2">
-                  <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                    <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
-                      {String(phase2Countdown.hours).padStart(2, '0')}
-                    </div>
-                    <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Hours</div>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                    <div className="text-lg sm:text-xl font-serif font-extrabold text-[#2D1F0E]">
-                      {String(phase2Countdown.minutes).padStart(2, '0')}
-                    </div>
-                    <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Mins</div>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-[#EAD9B8] shadow-sm text-center">
-                    <div className="text-lg sm:text-xl font-serif font-extrabold text-[#D99427]">
-                      {String(phase2Countdown.seconds).padStart(2, '0')}
-                    </div>
-                    <div className="text-[8px] font-bold uppercase tracking-wider text-[#8C6019]">Secs</div>
-                  </div>
-                </div>
-
-                <div className="text-[10px] text-[#8C6019] font-medium">
-                  ⚡ Limited verified quota available on a first-come, first-served basis.
-                </div>
+                <p className="text-[11px] text-[#6E5336] mt-1.5 leading-relaxed">
+                  Pass issuance is now strictly managed by event administration. For urgent requests, sponsorship, or VIP table inquiries, please contact our official administration desk.
+                </p>
               </div>
 
-              {/* Key Preparation Instructions */}
+              {/* Instructions for existing pass holders */}
               <div className="p-3 rounded-xl bg-[#FFF9EE] border border-[#EAD9B8] text-[11px] space-y-1.5">
                 <div className="font-bold text-[#8C6019] text-[10px] uppercase tracking-wider flex items-center space-x-1.5">
-                  <Shield className="w-3 h-3 text-[#D99427]" />
-                  <span>Prepare for Instant Phase 2 Verification on 2nd October</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Notice For Confirmed Pass Holders</span>
                 </div>
                 <div className="space-y-1 text-[#6E5336] text-[10px] leading-snug">
                   <div className="flex items-start space-x-1.5">
                     <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
-                    <span><strong>Aadhaar Card:</strong> Have clear front &amp; back original ID copies ready for OCR verification.</span>
+                    <span><strong>Confirmed Passes:</strong> All existing approved &amp; issued passes remain 100% valid for entry.</span>
                   </div>
                   <div className="flex items-start space-x-1.5">
                     <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
-                    <span><strong>75% White Attire:</strong> Pure white traditional Gujarati attire is strictly mandatory.</span>
+                    <span><strong>Retrieve Passes:</strong> Use the "Find My Pass" feature below at any time to download your digital QR pass.</span>
                   </div>
                   <div className="flex items-start space-x-1.5">
                     <CheckCircle2 className="w-3 h-3 text-[#D99427] flex-shrink-0 mt-0.5" />
-                    <span><strong>Limited Allotment:</strong> Phase 2 passes are released on a curated first-come verified quota.</span>
+                    <span><strong>White Attire:</strong> 75% pure white traditional Gujarati dress code is strictly enforced.</span>
                   </div>
                 </div>
               </div>
@@ -2822,24 +2786,26 @@ export default function SafedSheriLandingPage() {
             {/* Action CTA Buttons - Fixed Footer inside Modal */}
             <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-3 border-t border-[#EAD9B8]/60 mt-2 flex-shrink-0">
               <a
-                href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Team%2C%20please%20notify%20me%20immediately%20when%20Phase%202%20pass%20bookings%20open%20on%202nd%20October%202026!"
+                href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%20Admin%20Desk%2C%20I%20am%20inquiring%20about%20pass%20allocation."
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => garbaAudio.playDhol()}
                 className="w-full sm:flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs tracking-widest uppercase text-center hover:opacity-95 transition shadow-md shadow-[#D99427]/30 flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Bell className="w-3.5 h-3.5" />
-                <span>Notify Me on WhatsApp</span>
+                <span>Contact Admin Desk</span>
               </a>
 
               <button
                 onClick={() => {
                   garbaAudio.playDandiya();
                   setIsBookingSoonModalOpen(false);
+                  const el = document.getElementById('find-pass');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="w-full sm:w-auto px-6 py-3 rounded-full bg-white hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] font-bold text-xs tracking-wider uppercase transition shadow-sm cursor-pointer"
               >
-                I'll Be Ready
+                Find My Pass
               </button>
             </div>
           </div>

@@ -158,6 +158,8 @@ export default function SuperAdminDashboard() {
     countdownTarget: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
     urgencyTagline: 'Phase 2 Pass Booking Active!',
     hiddenPriceLabel: 'Price Revealed on Approval',
+    isBookingClosed: false,
+    bookingCloseTime: '2026-10-08T12:00',
   });
   const [pricingSaving, setPricingSaving] = useState(false);
 
@@ -319,6 +321,10 @@ export default function SuperAdminDashboard() {
           countdownTarget: res.data.countdownTarget
             ? new Date(res.data.countdownTarget).toISOString().slice(0, 16)
             : '',
+          bookingCloseTime: res.data.bookingCloseTime
+            ? new Date(new Date(res.data.bookingCloseTime).getTime() - (new Date(res.data.bookingCloseTime).getTimezoneOffset() * 60000)).toISOString().slice(0, 16)
+            : '2026-10-08T12:00',
+          isBookingClosed: res.data.rawIsBookingClosed !== undefined ? Boolean(res.data.rawIsBookingClosed) : Boolean(res.data.isBookingClosed),
         });
       }
     } else if (tab === 'trash') {
@@ -514,17 +520,23 @@ export default function SuperAdminDashboard() {
         couplePrice: Number(pricingSettings.couplePrice),
         nextSinglePrice: pricingSettings.nextSinglePrice ? Number(pricingSettings.nextSinglePrice) : null,
         nextCouplePrice: pricingSettings.nextCouplePrice ? Number(pricingSettings.nextCouplePrice) : null,
+        isBookingClosed: Boolean(pricingSettings.isBookingClosed),
+        bookingCloseTime: pricingSettings.bookingCloseTime ? new Date(pricingSettings.bookingCloseTime).toISOString() : null,
       }),
     });
 
     if (res.success) {
-      setMessage('✅ Pricing & Urgency Control Settings updated successfully! Live website updated.');
+      setMessage('✅ Pricing & Public Booking Gate updated successfully! Live website updated.');
       if (res.data) {
         setPricingSettings({
           ...res.data,
           countdownTarget: res.data.countdownTarget
             ? new Date(res.data.countdownTarget).toISOString().slice(0, 16)
             : '',
+          bookingCloseTime: res.data.bookingCloseTime
+            ? new Date(new Date(res.data.bookingCloseTime).getTime() - (new Date(res.data.bookingCloseTime).getTimezoneOffset() * 60000)).toISOString().slice(0, 16)
+            : '2026-10-08T12:00',
+          isBookingClosed: res.data.rawIsBookingClosed !== undefined ? Boolean(res.data.rawIsBookingClosed) : Boolean(res.data.isBookingClosed),
         });
       }
     } else {
@@ -2514,6 +2526,100 @@ export default function SuperAdminDashboard() {
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* CARD 4: PUBLIC PASS BOOKING GATE & PERMANENT CLOSURE CUTOFF */}
+            <div className="p-6 rounded-3xl bg-white border-2 border-rose-300 shadow-md space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-rose-100 pb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-50 border-2 border-rose-300 flex items-center justify-center text-rose-700 shadow-sm">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-serif font-bold text-[#2D1F0E] flex items-center space-x-2">
+                      <span>Public Pass Booking Closure Gate</span>
+                      <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                        Admin Security Control
+                      </span>
+                    </h3>
+                    <p className="text-xs text-[#6E5336]">
+                      Permanently closes public website bookings on safedsheri.com. When closed, only Admins &amp; Staff can book passes.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Real-time Gate Status Pill */}
+                {(() => {
+                  const cutoffMs = pricingSettings.bookingCloseTime ? new Date(pricingSettings.bookingCloseTime).getTime() : new Date('2026-10-08T12:00:00+05:30').getTime();
+                  const isClosedNow = Boolean(pricingSettings.isBookingClosed || Date.now() >= cutoffMs);
+                  return isClosedNow ? (
+                    <div className="px-4 py-2 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-800 text-xs font-bold uppercase tracking-wider flex items-center space-x-2 shadow-sm">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
+                      <span>🔴 Online Pass Booking PERMANENTLY CLOSED (Admins Only)</span>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-2 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-800 text-xs font-bold uppercase tracking-wider flex items-center space-x-2 shadow-sm">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+                      <span>🟢 Online Pass Booking OPEN (Closes at Cutoff)</span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Manual Closure Override */}
+                <div className="p-4 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="text-xs font-bold text-[#2D1F0E] flex items-center space-x-1.5">
+                      <ShieldAlert className="w-4 h-4 text-rose-600" />
+                      <span>Close Booking Immediately (Permanent Override)</span>
+                    </div>
+                    <p className="text-[11px] text-[#6E5336] mt-1 leading-relaxed">
+                      Toggle ON to instantly close public pass bookings across the website right now, regardless of the cutoff date/time.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-[#EAD9B8]/50">
+                    <span className="text-xs font-bold font-mono text-[#8C6019]">
+                      Current Manual Lock: {pricingSettings.isBookingClosed ? 'LOCKED (CLOSED)' : 'UNLOCKED (OPEN)'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPricingSettings({ ...pricingSettings, isBookingClosed: !pricingSettings.isBookingClosed })}
+                      className={`w-14 h-7 rounded-full transition-colors p-1 flex items-center cursor-pointer ${
+                        pricingSettings.isBookingClosed ? 'bg-rose-600 justify-end' : 'bg-gray-300 justify-start'
+                      }`}
+                    >
+                      <div className="w-5 h-5 rounded-full bg-white shadow-md" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Automated Cutoff Target */}
+                <div className="p-4 rounded-2xl bg-[#FFFDF9] border border-[#EAD9B8] space-y-2">
+                  <div className="text-xs font-bold text-[#2D1F0E] flex items-center space-x-1.5">
+                    <Clock className="w-4 h-4 text-[#D99427]" />
+                    <span>Automated Booking Cutoff Date &amp; Time</span>
+                  </div>
+                  <p className="text-[11px] text-[#6E5336] leading-relaxed">
+                    Set the exact timestamp when public booking locks permanently (Default: <strong>8 October 2026, 12:00 PM IST</strong>).
+                  </p>
+                  <input
+                    type="datetime-local"
+                    value={pricingSettings.bookingCloseTime || ''}
+                    onChange={(e) => setPricingSettings({ ...pricingSettings, bookingCloseTime: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono font-bold focus:border-[#D99427] outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Admin Exemption Banner */}
+              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-300 text-xs text-amber-950 flex items-start space-x-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong>Admin Privilege Guaranteed:</strong> Closing the book only restricts regular public visitors on safedsheri.com. Administrators and Ticketing staff retain 100% authorization to issue Single, Couple, and Kids passes at any time using the <strong>"Book Pass" Desk</strong> (Manual Entry / Cash / Free Pass) or allocate Gazebo VIP tables.
                 </div>
               </div>
             </div>

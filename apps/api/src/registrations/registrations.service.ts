@@ -80,6 +80,13 @@ export class RegistrationsService {
         },
       });
     }
+
+    const now = Date.now();
+    const cutoffMs = phase.bookingCloseTime
+      ? new Date(phase.bookingCloseTime).getTime()
+      : new Date('2026-10-08T12:00:00+05:30').getTime();
+    const isBookingClosed = Boolean(phase.isBookingClosed || now >= cutoffMs);
+
     return {
       success: true,
       data: {
@@ -97,6 +104,11 @@ export class RegistrationsService {
         countdownTarget: phase.countdownTarget,
         urgencyTagline: phase.urgencyTagline || 'Phase 2 Pass Booking Active!',
         hiddenPriceLabel: phase.hiddenPriceLabel || 'Price Revealed on Approval',
+        isBookingClosed,
+        rawIsBookingClosed: Boolean(phase.isBookingClosed),
+        bookingCloseTime: phase.bookingCloseTime
+          ? phase.bookingCloseTime.toISOString()
+          : new Date('2026-10-08T12:00:00+05:30').toISOString(),
       },
     };
   }
@@ -122,6 +134,8 @@ export class RegistrationsService {
       countdownTarget?: string | Date;
       urgencyTagline?: string;
       hiddenPriceLabel?: string;
+      isBookingClosed?: boolean;
+      bookingCloseTime?: string | Date;
     },
     adminId?: string,
   ) {
@@ -157,6 +171,10 @@ export class RegistrationsService {
         }),
         ...(data.urgencyTagline !== undefined && { urgencyTagline: data.urgencyTagline }),
         ...(data.hiddenPriceLabel !== undefined && { hiddenPriceLabel: data.hiddenPriceLabel }),
+        ...(data.isBookingClosed !== undefined && { isBookingClosed: Boolean(data.isBookingClosed) }),
+        ...(data.bookingCloseTime !== undefined && {
+          bookingCloseTime: data.bookingCloseTime ? new Date(data.bookingCloseTime) : null,
+        }),
       },
     });
 
@@ -309,6 +327,21 @@ export class RegistrationsService {
       ocrMismatch?: boolean;
     }>;
   }) {
+    // Check if online public booking is permanently closed (e.g. from 8 Oct 12:00 PM onwards or admin closed)
+    const activePhase = await this.prisma.pricingPhase.findFirst({
+      where: { isActive: true },
+    });
+    const now = Date.now();
+    const cutoffMs = activePhase?.bookingCloseTime
+      ? new Date(activePhase.bookingCloseTime).getTime()
+      : new Date('2026-10-08T12:00:00+05:30').getTime();
+
+    if (activePhase?.isBookingClosed || now >= cutoffMs) {
+      throw new BadRequestException(
+        'Online public bookings are permanently closed for Safed Sheri 2026. Passes can now only be issued directly by Safed Sheri Event Administration.'
+      );
+    }
+
     const primaryPhone = data.attendees[0]?.phone;
     if (!primaryPhone) {
       throw new BadRequestException('Primary attendee phone is required.');
