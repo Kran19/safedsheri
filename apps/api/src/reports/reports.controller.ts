@@ -41,11 +41,49 @@ export class ReportsController {
     return { success: true, data };
   }
 
-  @Get('export-customer-pdf')
-  @ApiOperation({ summary: 'Download Category-wise Customer Contacts PDF (Browser Accessible)' })
+  @Get('export-customer-excel')
+  @ApiOperation({ summary: 'Download Category-wise Customer Contacts Excel Spreadsheet (.xlsx) (Browser Accessible)' })
   @ApiQuery({ name: 'category', required: false })
-  async downloadCustomerPdf(@Query('category') category: string = 'ALL', @Res() res: Response) {
+  async downloadCustomerExcel(@Query('category') category: string = 'ALL', @Res() res: Response) {
     const cleanCategory = (category || 'ALL').toUpperCase();
+    const excelBuffer = await this.reportsService.generateCustomerContactsExcel(cleanCategory);
+    const filename = `Safed_Sheri_${cleanCategory}_Customer_Contacts.xlsx`;
+
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': excelBuffer.length.toString(),
+      'Cache-Control': 'no-cache',
+    });
+
+    res.send(excelBuffer);
+  }
+
+  @Get('export-customer-pdf')
+  @ApiOperation({ summary: 'Download Category-wise Customer Contacts PDF or Excel (Browser Accessible)' })
+  @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'format', required: false })
+  async downloadCustomerPdf(
+    @Query('category') category: string = 'ALL',
+    @Query('format') format: string = 'pdf',
+    @Res() res: Response
+  ) {
+    const cleanCategory = (category || 'ALL').toUpperCase();
+
+    if (format?.toLowerCase() === 'excel' || format?.toLowerCase() === 'xlsx') {
+      const excelBuffer = await this.reportsService.generateCustomerContactsExcel(cleanCategory);
+      const filename = `Safed_Sheri_${cleanCategory}_Customer_Contacts.xlsx`;
+
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': excelBuffer.length.toString(),
+        'Cache-Control': 'no-cache',
+      });
+
+      return res.send(excelBuffer);
+    }
+
     const pdfBuffer = await this.reportsService.generateCustomerContactsPdf(cleanCategory);
     const filename = `Safed_Sheri_${cleanCategory}_Customer_Contacts.pdf`;
 

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegistrationStatus, PassType, PaymentStatus, ScanResult } from '@prisma/client';
 
 const PDFDocument = require('pdfkit');
+const ExcelJS = require('exceljs');
 
 @Injectable()
 export class ReportsService {
@@ -197,10 +198,12 @@ export class ReportsService {
           fullName: att.fullName,
           phone: att.phone,
           email: email,
+          gender: att.gender || 'N/A',
           passType: pt,
           registrationNumber: reg.registrationNumber,
           passCode: reg.credentials?.[0]?.passCode || 'N/A',
           status: reg.status,
+          createdAt: reg.createdAt,
         };
 
         if (categorized[pt]) {
@@ -288,5 +291,125 @@ export class ReportsService {
 
       doc.end();
     });
+  }
+
+  async generateCustomerContactsExcel(category: string = 'ALL'): Promise<Buffer> {
+    const categorizedData = await this.getCustomerContacts(category);
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Safed Sheri 2026';
+    workbook.created = new Date();
+
+    const addSheetWithData = (sheetName: string, title: string, items: any[]) => {
+      const sheet = workbook.addWorksheet(sheetName, {
+        views: [{ showGridLines: true }],
+      });
+
+      // Title row
+      sheet.mergeCells('A1:I1');
+      const titleCell = sheet.getCell('A1');
+      titleCell.value = `SAFED SHERI 2026 - ${title.toUpperCase()}`;
+      titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2D1F0E' } };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      sheet.getRow(1).height = 30;
+
+      // Subtitle / generated timestamp
+      sheet.mergeCells('A2:I2');
+      const subCell = sheet.getCell('A2');
+      subCell.value = `Total Records: ${items.length} | Generated: ${new Date().toLocaleString('en-IN')}`;
+      subCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF8C6019' } };
+      subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF5DC' } };
+      subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      sheet.getRow(2).height = 20;
+
+      // Blank separator row
+      sheet.getRow(3).height = 10;
+
+      // Header row
+      const headers = [
+        { header: '#', key: 'sr', width: 6 },
+        { header: 'Customer Name', key: 'fullName', width: 28 },
+        { header: 'WhatsApp / Mobile', key: 'phone', width: 18 },
+        { header: 'Email Address', key: 'email', width: 32 },
+        { header: 'Gender', key: 'gender', width: 12 },
+        { header: 'Pass Category', key: 'passType', width: 16 },
+        { header: 'Registration ID', key: 'registrationNumber', width: 20 },
+        { header: 'Pass Code', key: 'passCode', width: 22 },
+        { header: 'Status', key: 'status', width: 16 },
+      ];
+
+      const headerRow = sheet.getRow(4);
+      headerRow.values = headers.map((h: any) => h.header);
+      headerRow.height = 25;
+      headerRow.eachCell((cell: any) => {
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8C6019' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFEAD9B8' } },
+          bottom: { style: 'medium', color: { argb: 'FF2D1F0E' } },
+          left: { style: 'thin', color: { argb: 'FFEAD9B8' } },
+          right: { style: 'thin', color: { argb: 'FFEAD9B8' } },
+        };
+      });
+
+      // Data rows
+      items.forEach((item: any, index: number) => {
+        const row = sheet.addRow([
+          index + 1,
+          item.fullName || 'N/A',
+          item.phone || 'N/A',
+          item.email || 'N/A',
+          item.gender || 'N/A',
+          item.passType || 'N/A',
+          item.registrationNumber || 'N/A',
+          item.passCode || 'N/A',
+          item.status || 'N/A',
+        ]);
+        row.height = 20;
+
+        const isEven = index % 2 === 0;
+        const rowBg = isEven ? 'FFFFFFFF' : 'FFFAF6EE';
+
+        row.eachCell((cell: any, colNumber: number) => {
+          cell.font = { name: 'Arial', size: 9 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBg } };
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: colNumber === 1 || colNumber === 5 || colNumber === 6 || colNumber === 9 ? 'center' : 'left',
+          };
+          cell.border = {
+            bottom: { style: 'thin', color: { argb: 'FFEAD9B8' } },
+            left: { style: 'thin', color: { argb: 'FFEAD9B8' } },
+            right: { style: 'thin', color: { argb: 'FFEAD9B8' } },
+          };
+        });
+      });
+
+      // Set explicit column widths
+      headers.forEach((h: any, i: number) => {
+        sheet.getColumn(i + 1).width = h.width;
+      });
+    };
+
+    if (category === 'ALL') {
+      const allItems = [
+        ...categorizedData.SINGLE,
+        ...categorizedData.COUPLE,
+        ...categorizedData.KIDS,
+        ...categorizedData.GAZEBO,
+      ];
+      addSheetWithData('All Contacts', 'All Customer Contacts', allItems);
+      addSheetWithData('Single Pass', 'Female / Single Pass Customers', categorizedData.SINGLE);
+      addSheetWithData('Couple Pass', 'Couple Pass Customers', categorizedData.COUPLE);
+      addSheetWithData('Kids Pass', 'Kids Pass Customers', categorizedData.KIDS);
+      addSheetWithData('Gazebo VIP', 'Gazebo VIP Customers', categorizedData.GAZEBO);
+    } else {
+      const items = categorizedData[category] || [];
+      addSheetWithData(category, `${category} Customer Contacts`, items);
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 }
