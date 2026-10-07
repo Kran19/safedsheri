@@ -37,13 +37,21 @@ function formatPhoneNumber(val: string): string {
   return digits;
 }
 
-// Auto-formats Search Input (Aadhaar or Phone)
+// Auto-formats Search Input (Aadhaar, Phone, or Reg Number)
 function formatSearchInput(val: string): string {
-  const digits = (val || '').replace(/\D/g, '').slice(0, 12);
+  if (!val) return '';
+  const trimmed = val.trim();
+  if (trimmed.toUpperCase().startsWith('SS-') || /[a-zA-Z]/.test(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+  let digits = trimmed.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    digits = digits.slice(2);
+  }
   if (digits.length > 10) {
-    return formatAadhaarNumber(digits);
+    return formatAadhaarNumber(digits.slice(0, 12));
   } else if (digits.length > 5) {
-    return formatPhoneNumber(digits);
+    return formatPhoneNumber(digits.slice(0, 10));
   }
   return digits;
 }
@@ -1213,13 +1221,24 @@ export default function SafedSheriLandingPage() {
 
   const handleWalletSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanDigits = walletPhone.replace(/\D/g, '');
-    if (!cleanDigits) return;
+    const trimmedInput = walletPhone.trim();
+    if (!trimmedInput) return;
+    let queryPayload = trimmedInput;
+    if (trimmedInput.toUpperCase().startsWith('SS-')) {
+      queryPayload = trimmedInput.toUpperCase();
+    } else {
+      let digits = trimmedInput.replace(/\D/g, '');
+      if (digits.length === 12 && digits.startsWith('91')) {
+        digits = digits.slice(2);
+      }
+      queryPayload = digits;
+    }
+    if (!queryPayload) return;
     garbaAudio.playDandiya();
     setWalletLoading(true);
     setWalletSearched(false);
     setWalletPasses([]);
-    setOtpQuery(cleanDigits);
+    setOtpQuery(queryPayload);
     setOtpModalType('wallet');
     setOtpError(null);
     setOtpSent(false);
@@ -1231,7 +1250,7 @@ export default function SafedSheriLandingPage() {
       const res = await fetch(`${API_BASE}/credentials/wallet-otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: cleanDigits }),
+        body: JSON.stringify({ query: queryPayload }),
       });
       const json = await res.json();
       if (json.success && json.data) {
@@ -1239,7 +1258,7 @@ export default function SafedSheriLandingPage() {
           const passRes = await fetch(`${API_BASE}/credentials/my-pass`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: cleanDigits, otpToken: '' }),
+            body: JSON.stringify({ query: queryPayload, otpToken: '' }),
           });
           const passJson = await passRes.json();
           if (passJson.success && passJson.data) {

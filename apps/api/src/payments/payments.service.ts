@@ -132,7 +132,7 @@ export class PaymentsService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 200,
+      take: 5000,
     });
 
     return { success: true, data: payments };

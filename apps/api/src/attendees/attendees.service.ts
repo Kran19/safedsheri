@@ -46,7 +46,7 @@ export class AttendeesService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 150,
+      take: 5000,
     });
 
     return { success: true, data: attendees };

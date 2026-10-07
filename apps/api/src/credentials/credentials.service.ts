@@ -110,30 +110,98 @@ export class CredentialsService {
     return generatedCredentials;
   }
 
-  async findMyPass(query: string, otpToken?: string) {
-    const cleanDigits = query.replace(/\D/g, '');
-    if (cleanDigits.length !== 10 && cleanDigits.length !== 12) {
-      throw new BadRequestException('Invalid query length. Must be 10-digit phone or 12-digit Aadhaar.');
-    }
+  private async resolveQueryToAttendeeAndPhone(query: string): Promise<{
+    attendee: any | null;
+    targetPhone: string;
+    isPhone: boolean;
+    cleanDigits: string;
+  }> {
+    const rawDigits = query.replace(/\D/g, '');
+    let cleanDigits = rawDigits;
 
-    let targetPhone = '';
-
-    if (cleanDigits.length === 10) {
-      targetPhone = cleanDigits;
-    } else if (cleanDigits.length === 12) {
-      const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
-      const attendee = await this.prisma.attendee.findUnique({
-        where: { aadhaarHmac },
+    // 1. If 12 digits starting with '91', check if it's an Indian phone number with country code
+    if (rawDigits.length === 12 && rawDigits.startsWith('91')) {
+      const phoneCandidate = rawDigits.slice(2);
+      const attendeeByPhone = await this.prisma.attendee.findFirst({
+        where: { phone: { contains: phoneCandidate } },
       });
-      if (attendee) {
-        targetPhone = attendee.phone.replace(/\D/g, '').slice(-10);
+      if (attendeeByPhone) {
+        return {
+          attendee: attendeeByPhone,
+          targetPhone: attendeeByPhone.phone,
+          isPhone: true,
+          cleanDigits: phoneCandidate,
+        };
       }
     }
 
+    // 2. 10-digit mobile number
+    if (rawDigits.length === 10) {
+      const attendee = await this.prisma.attendee.findFirst({
+        where: { phone: { contains: rawDigits } },
+      });
+      return {
+        attendee,
+        targetPhone: attendee ? attendee.phone : rawDigits,
+        isPhone: true,
+        cleanDigits: rawDigits,
+      };
+    }
+
+    // 3. 12-digit Aadhaar number
+    if (rawDigits.length === 12) {
+      const aadhaarHmac = this.encryptionService.computeAadhaarHmac(rawDigits);
+      const attendee = await this.prisma.attendee.findUnique({
+        where: { aadhaarHmac },
+      });
+      return {
+        attendee,
+        targetPhone: attendee ? attendee.phone : '',
+        isPhone: false,
+        cleanDigits: rawDigits,
+      };
+    }
+
+    // 4. Registration number (e.g. SS-2026-000266)
+    if (query.toUpperCase().includes('SS-')) {
+      const cleanRegNum = query.trim().toUpperCase();
+      const reg = await this.prisma.registration.findFirst({
+        where: { registrationNumber: cleanRegNum },
+        include: { attendees: { include: { attendee: true } } },
+      });
+      if (reg && reg.attendees.length > 0) {
+        const primaryAtt = reg.attendees.find((ra) => ra.isPrimary)?.attendee || reg.attendees[0].attendee;
+        return {
+          attendee: primaryAtt,
+          targetPhone: primaryAtt.phone,
+          isPhone: true,
+          cleanDigits: primaryAtt.phone.replace(/\D/g, '').slice(-10),
+        };
+      }
+    }
+
+    return {
+      attendee: null,
+      targetPhone: '',
+      isPhone: false,
+      cleanDigits: rawDigits,
+    };
+  }
+
+  async findMyPass(query: string, otpToken?: string) {
+    const resolved = await this.resolveQueryToAttendeeAndPhone(query);
+    const { cleanDigits, isPhone } = resolved;
+    let targetPhone = resolved.targetPhone;
+
+    if (cleanDigits.length !== 10 && cleanDigits.length !== 12) {
+      throw new BadRequestException('Invalid query length. Must be 10-digit phone, 12-digit Aadhaar, or Registration Number.');
+    }
+
     let isBypassed = false;
-    if (targetPhone && targetPhone.length === 10) {
+    const cleanPhoneKey = targetPhone ? targetPhone.replace(/\D/g, '').slice(-10) : '';
+    if (cleanPhoneKey && cleanPhoneKey.length === 10) {
       const checkBypass = await this.prisma.otpBypass.findUnique({
-        where: { phone: targetPhone },
+        where: { phone: cleanPhoneKey },
       });
       isBypassed = !!checkBypass;
     }
@@ -150,7 +218,7 @@ export class CredentialsService {
       const verifiedPhone = verified.phone.replace(/\D/g, '');
 
       // Enforce that verified phone matches the query.
-      if (cleanDigits.length === 10) {
+      if (isPhone || cleanDigits.length === 10) {
         const last10Query = cleanDigits.slice(-10);
         const last10Verified = verifiedPhone.slice(-10);
         if (last10Query !== last10Verified) {
@@ -175,8 +243,8 @@ export class CredentialsService {
 
     const attendeeWhereOr: any[] = [];
 
-    // Search by 12-digit Aadhaar number (HMAC / Masked)
-    if (cleanDigits.length === 12) {
+    // Search by 12-digit Aadhaar number (HMAC / Masked) if not resolved as phone
+    if (!isPhone && cleanDigits.length === 12) {
       const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
       attendeeWhereOr.push({ aadhaarHmac });
       attendeeWhereOr.push({ aadhaarMasked: { contains: cleanDigits.slice(-4) } });
@@ -374,29 +442,17 @@ export class CredentialsService {
       throw new BadRequestException('Valid phone number or Aadhaar number is required');
     }
 
-    const cleanDigits = query.replace(/\D/g, '');
-    let targetPhone = '';
-
-    if (cleanDigits.length === 10) {
-      const attendee = await this.prisma.attendee.findFirst({
-        where: { phone: { contains: cleanDigits.slice(-10) } },
-      });
-      if (!attendee) {
+    const resolved = await this.resolveQueryToAttendeeAndPhone(query);
+    if (!resolved.attendee) {
+      if (resolved.isPhone || resolved.cleanDigits.length === 10) {
         throw new BadRequestException('No active booking found for the provided phone number.');
-      }
-      targetPhone = attendee.phone;
-    } else if (cleanDigits.length === 12) {
-      const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
-      const attendee = await this.prisma.attendee.findUnique({
-        where: { aadhaarHmac },
-      });
-      if (!attendee) {
+      } else if (resolved.cleanDigits.length === 12) {
         throw new BadRequestException('No active booking found for the provided Aadhaar number.');
+      } else {
+        throw new BadRequestException('Please enter a valid 10-digit mobile number, 12-digit Aadhaar number, or Registration Number.');
       }
-      targetPhone = attendee.phone;
-    } else {
-      throw new BadRequestException('Please enter a valid 10-digit mobile number or 12-digit Aadhaar number');
     }
+    const targetPhone = resolved.targetPhone;
 
     const bypassPhoneKey = targetPhone.replace(/\D/g, '').slice(-10);
     const checkBypass = await this.prisma.otpBypass.findUnique({
@@ -428,29 +484,17 @@ export class CredentialsService {
   }
 
   async verifyWalletOtp(query: string, code: string) {
-    const cleanDigits = query.replace(/\D/g, '');
-    let targetPhone = '';
-
-    if (cleanDigits.length === 10) {
-      const attendee = await this.prisma.attendee.findFirst({
-        where: { phone: { contains: cleanDigits.slice(-10) } },
-      });
-      if (!attendee) {
+    const resolved = await this.resolveQueryToAttendeeAndPhone(query);
+    if (!resolved.attendee) {
+      if (resolved.isPhone || resolved.cleanDigits.length === 10) {
         throw new BadRequestException('No active booking found for the provided phone number.');
-      }
-      targetPhone = attendee.phone;
-    } else if (cleanDigits.length === 12) {
-      const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanDigits);
-      const attendee = await this.prisma.attendee.findUnique({
-        where: { aadhaarHmac },
-      });
-      if (!attendee) {
+      } else if (resolved.cleanDigits.length === 12) {
         throw new BadRequestException('No active booking found for the provided Aadhaar number.');
+      } else {
+        throw new BadRequestException('Please enter a valid 10-digit mobile number, 12-digit Aadhaar number, or Registration Number.');
       }
-      targetPhone = attendee.phone;
-    } else {
-      throw new BadRequestException('Please enter a valid 10-digit mobile number or 12-digit Aadhaar number');
     }
+    const targetPhone = resolved.targetPhone;
 
     const cleanTargetPhone = targetPhone.replace(/\D/g, '').slice(-10);
     const checkBypass = await this.prisma.otpBypass.findUnique({

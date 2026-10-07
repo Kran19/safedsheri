@@ -233,7 +233,7 @@ export class RegistrationsService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 500,
+      take: 5000,
     });
 
     const blockedList = await this.prisma.blockedUser.findMany({
