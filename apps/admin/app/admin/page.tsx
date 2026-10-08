@@ -9,7 +9,7 @@ import {
   Store, Building2, CheckSquare, Sparkles, DollarSign, Timer, Flame,
   EyeOff, Clock, Sliders, ArrowRight, MessageCircle, Phone, ExternalLink,
   Tag, MapPin, Settings, Trash2, Lock, Flag, X, ChevronDown,
-  Ban, UserX, ShieldAlert, RotateCcw
+  Ban, UserX, ShieldAlert, RotateCcw, QrCode
 } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 import { AdvancedTabulatorTable, TabulatorColumn } from '../components/AdvancedTabulatorTable';
@@ -17,11 +17,12 @@ import { AadhaarDocumentPreview } from '../components/AadhaarDocumentPreview';
 import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenance';
 import BookingDesk from '../components/BookingDesk';
 import GazeboManageGuestsModal from '../components/GazeboManageGuestsModal';
+import MasterPassesQRView from '../components/MasterPassesQRView';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass' | 'blocked_users'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass' | 'blocked_users' | 'master_qr'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -339,6 +340,11 @@ export default function SuperAdminDashboard() {
         return;
       }
       await loadBypassedPhones();
+    } else if (tab === 'master_qr') {
+      if (currentUser?.username !== 'masteradmin@safedsheri.com') {
+        setActiveTab('applications');
+        return;
+      }
     } else if (tab === 'blocked_users') {
       await loadBlockedUsers();
     }
@@ -1867,8 +1873,9 @@ export default function SuperAdminDashboard() {
           { id: 'blocked_users', label: 'Block List', icon: Ban },
           { id: 'trash', label: 'Trash', icon: Trash2 },
           { id: 'book_pass', label: 'Book Pass', icon: Ticket },
+          { id: 'master_qr', label: '👑 Master QR Directory', icon: QrCode },
         ].filter((tab) => {
-          if (tab.id === 'otp_bypass') {
+          if (tab.id === 'otp_bypass' || tab.id === 'master_qr') {
             return currentUser?.username === 'masteradmin@safedsheri.com';
           }
           return true;
@@ -2931,6 +2938,15 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: MASTER ADMIN EXCLUSIVE PASSES QR DIRECTORY */}
+      {/* ========================================================================= */}
+      {activeTab === 'master_qr' && currentUser?.username === 'masteradmin@safedsheri.com' && (
+        <div className="animate-fade-in">
+          <MasterPassesQRView currentUser={currentUser} />
         </div>
       )}
 

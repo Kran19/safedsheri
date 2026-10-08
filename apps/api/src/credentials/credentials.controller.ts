@@ -4,12 +4,26 @@ import { CredentialsService } from './credentials.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, PassType } from '@prisma/client';
 
 @ApiTags('Credentials')
 @Controller('credentials')
 export class CredentialsController {
   constructor(private readonly credentialsService: CredentialsService) {}
+
+  @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
+  @ApiOperation({ summary: 'Get all credentials with QR tokens and attendee info (Super Admin only)' })
+  @ApiQuery({ name: 'passType', required: false, enum: PassType })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  async findAll(
+    @Query('passType') passType?: PassType,
+    @Query('search') search?: string,
+  ) {
+    return this.credentialsService.findAll(passType, search);
+  }
 
   @Post('wallet-otp/send')
   @ApiOperation({ summary: 'Send OTP to registered WhatsApp phone number associated with Phone or Aadhaar' })

@@ -13,6 +13,68 @@ export class CredentialsService {
     private authService: AuthService,
   ) {}
 
+  async findAll(passType?: PassType, search?: string) {
+    const where: any = {
+      registration: {
+        deletedAt: null,
+      },
+    };
+
+    if (passType) {
+      where.registration.passType = passType;
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { passCode: { contains: q, mode: 'insensitive' } },
+        { credentialNumber: { contains: q, mode: 'insensitive' } },
+        { secureToken: { contains: q } },
+        { attendee: { fullName: { contains: q, mode: 'insensitive' } } },
+        { attendee: { phone: { contains: q } } },
+        { registration: { registrationNumber: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
+
+    const credentials = await this.prisma.credential.findMany({
+      where,
+      include: {
+        attendee: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            gender: true,
+            aadhaarMasked: true,
+            kidsAgeGroup: true,
+          },
+        },
+        registration: {
+          select: {
+            id: true,
+            registrationNumber: true,
+            passType: true,
+            status: true,
+            amountDue: true,
+            createdAt: true,
+          },
+        },
+        entries: {
+          select: {
+            id: true,
+            createdAt: true,
+            entryType: true,
+            gateId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10000,
+    });
+
+    return { success: true, data: credentials };
+  }
+
   async findOne(id: string) {
     const credential = await this.prisma.credential.findFirst({
       where: {

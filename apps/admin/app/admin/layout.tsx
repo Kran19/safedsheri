@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStoredUser, clearAuthToken } from '../../lib/api';
-import { Shield, LogOut } from 'lucide-react';
+import { Shield, LogOut, QrCode } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +44,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p className="text-amber-800 uppercase font-mono tracking-wider font-bold">{user.role}</p>
           </div>
           
+          {user.username === 'masteradmin@safedsheri.com' && (
+            <button
+              onClick={() => router.push('/admin/master-qr')}
+              className="p-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-lg transition-colors shadow-xs flex items-center gap-1.5 text-xs font-bold"
+              title="Master Passes QR Directory"
+            >
+              <QrCode className="w-3.5 h-3.5 text-amber-700" />
+              <span>👑 Master Pass QRs</span>
+            </button>
+          )}
+
           <button
             onClick={() => router.push('/admin/finance-fundamental')}
             className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-900 rounded-lg transition-colors shadow-xs flex items-center gap-1 text-xs font-bold"
