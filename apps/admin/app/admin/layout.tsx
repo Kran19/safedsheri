@@ -55,6 +55,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           )}
 
+          {user.username === 'masteradmin@safedsheri.com' && (
+            <button
+              onClick={() => router.push('/admin/scans')}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl transition shadow-xs flex items-center gap-1.5 text-xs font-bold whitespace-nowrap"
+              title="Scanned Passes & Revert Manager"
+            >
+              <Shield className="w-3.5 h-3.5 text-emerald-700" />
+              <span>📋 Scanned Passes</span>
+            </button>
+          )}
+
           <button
             onClick={() => router.push('/admin/finance-fundamental')}
             className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-900 rounded-lg transition-colors shadow-xs flex items-center gap-1 text-xs font-bold"

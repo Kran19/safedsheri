@@ -478,4 +478,143 @@ export class EntriesService {
       message: `Direct Walk-in Entry Granted for ${data.fullName}`,
     };
   }
+
+  // Get all currently scanned passes (USED status)
+  async getScannedPasses() {
+    const credentials = await this.prisma.credential.findMany({
+      where: { status: CredentialStatus.USED },
+      include: {
+        attendee: {
+          select: { id: true, fullName: true, phone: true, gender: true, aadhaarMasked: true },
+        },
+        registration: {
+          select: { id: true, registrationNumber: true, passType: true },
+        },
+        entries: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            verifiedBy: { select: { id: true, fullName: true, username: true } },
+          },
+        },
+      },
+      orderBy: { usedAt: 'desc' },
+    });
+
+    const data = credentials.map((c) => {
+      const latestEntry = c.entries?.[0];
+      return {
+        credentialId: c.id,
+        passCode: c.passCode,
+        credentialNumber: c.credentialNumber,
+        status: c.status,
+        usedAt: c.usedAt,
+        attendeeName: c.attendee?.fullName || '—',
+        phone: c.attendee?.phone || '—',
+        gender: c.attendee?.gender || '—',
+        registrationNumber: c.registration?.registrationNumber || '—',
+        passType: c.registration?.passType || '—',
+        gateId: latestEntry?.gateId || 'GATE_1',
+        scannedBy: latestEntry?.verifiedBy?.fullName || latestEntry?.verifiedBy?.username || 'Scanner Operator',
+        entryCreatedAt: latestEntry?.createdAt || c.usedAt,
+      };
+    });
+
+    return { success: true, data };
+  }
+
+  // Revert a single pass scan back to ACTIVE
+  async revertScan(credentialId: string, actorId: string) {
+    const cred = await this.prisma.credential.findUnique({
+      where: { id: credentialId },
+      include: { attendee: true, registration: true },
+    });
+
+    if (!cred) {
+      throw new BadRequestException('Pass credential not found');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.credential.update({
+        where: { id: credentialId },
+        data: {
+          status: CredentialStatus.ACTIVE,
+          usedAt: null,
+        },
+      });
+
+      // Delete entry records for this credential so gate counters decrease
+      await tx.entry.deleteMany({
+        where: { credentialId },
+      });
+
+      // Delete successful scan attempts for this credential
+      await tx.scanAttempt.deleteMany({
+        where: { credentialId, result: ScanResult.VALID },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: 'PASS_SCAN_REVERTED',
+          targetEntity: 'Credential',
+          targetId: credentialId,
+          payload: {
+            passCode: cred.passCode,
+            attendeeName: cred.attendee?.fullName,
+            registrationNumber: cred.registration?.registrationNumber,
+          },
+        },
+      });
+    });
+
+    return {
+      success: true,
+      message: `Pass ${cred.passCode} (${cred.attendee?.fullName || 'attendee'}) reverted to ACTIVE. They can now enter tomorrow!`,
+    };
+  }
+
+  // Revert all scanned passes back to ACTIVE
+  async revertAllScans(actorId: string) {
+    const usedCount = await this.prisma.credential.count({
+      where: { status: CredentialStatus.USED },
+    });
+
+    if (usedCount === 0) {
+      return { success: true, message: 'No scanned passes to revert.', count: 0 };
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.credential.updateMany({
+        where: { status: CredentialStatus.USED },
+        data: {
+          status: CredentialStatus.ACTIVE,
+          usedAt: null,
+        },
+      });
+
+      await tx.entry.deleteMany({});
+      await tx.scanAttempt.deleteMany({
+        where: { result: ScanResult.VALID },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          action: 'ALL_PASS_SCANS_REVERTED',
+          targetEntity: 'Credential',
+          targetId: actorId,
+          payload: {
+            count: usedCount,
+          },
+        },
+      });
+    });
+
+    return {
+      success: true,
+      message: `Successfully reverted all ${usedCount} scanned passes back to ACTIVE!`,
+      count: usedCount,
+    };
+  }
 }

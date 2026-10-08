@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { EntriesService } from './entries.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -26,6 +26,36 @@ export class EntriesController {
   @ApiOperation({ summary: 'Live Gate Counter Stats and Attendance Breakdown' })
   async getLiveGateStats(@Request() req, @Query('gateId') gateId?: string) {
     return this.entriesService.getLiveGateStats(req.user.id, gateId);
+  }
+
+  @Get('scanned-passes')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all currently scanned passes (USED status) - Master Admin Only' })
+  async getScannedPasses(@Request() req) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Access restricted to Master Admin only.');
+    }
+    return this.entriesService.getScannedPasses();
+  }
+
+  @Post('revert-scan/:credentialId')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Revert a single scanned pass back to ACTIVE - Master Admin Only' })
+  async revertScan(@Request() req, @Param('credentialId') credentialId: string) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Access restricted to Master Admin only.');
+    }
+    return this.entriesService.revertScan(credentialId, req.user.id);
+  }
+
+  @Post('revert-all-scans')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Revert all scanned passes back to ACTIVE - Master Admin Only' })
+  async revertAllScans(@Request() req) {
+    if (req.user.username !== 'masteradmin@safedsheri.com') {
+      throw new ForbiddenException('Access restricted to Master Admin only.');
+    }
+    return this.entriesService.revertAllScans(req.user.id);
   }
 
   @Post('scan')
