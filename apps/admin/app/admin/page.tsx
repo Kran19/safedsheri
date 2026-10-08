@@ -96,7 +96,8 @@ export default function SuperAdminDashboard() {
   const [gazeboInquiries, setGazeboInquiries] = useState<any[]>([]);
   const [sponsorInquiries, setSponsorInquiries] = useState<any[]>([]);
   const [scans, setScans] = useState<any[]>([]);
-  const [revertingScanId, setRevertingScanId] = useState<string | null>(null);
+  const [scanToRevert, setScanToRevert] = useState<any | null>(null);
+  const [revertingScanLoading, setRevertingScanLoading] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(false);
 
@@ -1024,18 +1025,16 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  async function handleRevertScanRow(r: any) {
-    const credId = r.credentialId || r.credential?.id;
+  async function handleConfirmRevertScan() {
+    if (!scanToRevert) return;
+    const credId = scanToRevert.credentialId || scanToRevert.credential?.id;
     if (!credId) {
-      alert('Credential ID not found for this scan record.');
+      setError('Credential ID not found for this scan record.');
+      setScanToRevert(null);
       return;
     }
-    const name = r.credential?.attendee?.fullName || 'this attendee';
-    const passCode = r.credential?.passCode || r.credential?.credentialNumber || '';
-    if (!window.confirm(`Are you sure you want to REVERT scan for ${name} (${passCode})?\n\nThis will reset their pass status back to ACTIVE and remove the venue entry log so they can scan again tomorrow.`)) {
-      return;
-    }
-    setRevertingScanId(credId);
+    const name = scanToRevert.credential?.attendee?.fullName || 'this attendee';
+    setRevertingScanLoading(true);
     setError('');
     setMessage('');
     try {
@@ -1044,6 +1043,7 @@ export default function SuperAdminDashboard() {
       });
       if (res.success) {
         setMessage(res.message || `✅ Scan reverted for ${name}. Pass is now ACTIVE!`);
+        setScanToRevert(null);
         await loadTabContent('scans', true);
       } else {
         setError(res.error?.message || 'Failed to revert scan');
@@ -1051,7 +1051,7 @@ export default function SuperAdminDashboard() {
     } catch (e: any) {
       setError(e?.message || 'Error occurred while reverting scan');
     } finally {
-      setRevertingScanId(null);
+      setRevertingScanLoading(false);
     }
   }
 
@@ -3136,16 +3136,14 @@ export default function SuperAdminDashboard() {
                   if (!credId) {
                     return <span className="text-[10px] text-stone-400 font-mono">—</span>;
                   }
-                  const isReverting = revertingScanId === credId;
                   return (
                     <button
-                      onClick={() => handleRevertScanRow(r)}
-                      disabled={isReverting}
-                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 hover:border-amber-400 whitespace-nowrap cursor-pointer"
-                      title="Revert scan back to ACTIVE so attendee can scan tomorrow"
+                      onClick={() => setScanToRevert(r)}
+                      className="px-3 py-1.5 bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-300 text-amber-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs hover:border-amber-400 whitespace-nowrap cursor-pointer hover:scale-[1.02] transform"
+                      title="Open Revert Scan clearance dialog"
                     >
-                      <RotateCcw className={`w-3 h-3 text-amber-700 ${isReverting ? 'animate-spin' : ''}`} />
-                      <span>{isReverting ? 'Reverting...' : 'Revert Scan'}</span>
+                      <RotateCcw className="w-3.5 h-3.5 text-amber-800" />
+                      <span>Revert Scan</span>
                     </button>
                   );
                 },
@@ -4985,6 +4983,119 @@ export default function SuperAdminDashboard() {
                 className="w-full py-3 rounded-xl bg-transparent border border-[#EAD9B8] text-[#6E5336] font-bold text-sm hover:bg-[#FAF6EE] transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PREMIUM MASTER ADMIN MODAL: REVERT PASS SCAN */}
+      {/* ========================================================================= */}
+      {scanToRevert && (
+        <div className="fixed inset-0 bg-black/65 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-gradient-to-br from-[#FCFBF7] via-[#FAF6EE] to-[#F5EEDC] border-2 border-[#D99427] rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative overflow-hidden space-y-6">
+            {/* Ambient Gold Glow */}
+            <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-[#F6C85F]/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+            {/* Modal Header */}
+            <div className="flex items-start justify-between relative z-10">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#FFF5DC] to-[#FCEBB8] border-2 border-[#E5A93C] flex items-center justify-center text-[#8C6019] shadow-inner">
+                  <RotateCcw className="w-6 h-6 text-[#8C6019]" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#2D1F0E] leading-tight">
+                    Revert Pass Scan
+                  </h3>
+                  <p className="text-[10px] font-mono font-bold text-[#8C6019] uppercase tracking-widest mt-0.5">
+                    Master Admin Clearance Terminal
+                  </p>
+                </div>
+              </div>
+              <button
+                disabled={revertingScanLoading}
+                onClick={() => setScanToRevert(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#6E5336] hover:bg-[#EAD9B8]/40 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Attendee Info Card */}
+            <div className="bg-white rounded-2xl p-4.5 sm:p-5 border border-[#EAD9B8] shadow-sm relative z-10 space-y-3.5">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-base font-bold text-[#2D1F0E]">
+                    {scanToRevert.credential?.attendee?.fullName || 'Guest / Token Scan'}
+                  </div>
+                  <div className="text-xs font-mono text-[#6E5336] mt-0.5">
+                    {scanToRevert.credential?.attendee?.phone || scanToRevert.rawTokenScanned || '—'}
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
+                  {scanToRevert.credential?.registration?.passType || 'PASS'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#F2E7D5] text-xs">
+                <div>
+                  <span className="text-[#8C6019] font-bold block text-[10px] uppercase font-mono tracking-wider">Pass Code</span>
+                  <span className="font-mono font-bold text-[#2D1F0E] bg-stone-50 px-2.5 py-1 rounded-lg border border-stone-200 block mt-1 text-center truncate">
+                    {scanToRevert.credential?.passCode || scanToRevert.credential?.credentialNumber || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#8C6019] font-bold block text-[10px] uppercase font-mono tracking-wider">Scanned Gate</span>
+                  <span className="font-mono font-bold text-[#8C6019] bg-[#FFF5DC] px-2.5 py-1 rounded-lg border border-[#E5A93C] block mt-1 text-center">
+                    {scanToRevert.gateId || 'GATE_1'}
+                  </span>
+                </div>
+              </div>
+
+              {(scanToRevert.scannedAt || scanToRevert.createdAt) && (
+                <div className="text-[11px] text-[#6E5336] font-mono pt-1 flex items-center justify-between">
+                  <span>Timestamp:</span>
+                  <span className="font-semibold">{new Date(scanToRevert.scannedAt || scanToRevert.createdAt).toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Clear Impact Notice */}
+            <div className="bg-[#FFF9EC] rounded-2xl p-4 border border-[#F0D59A] text-xs text-[#6E5336] relative z-10 flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-[#8C6019] shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                This will reset this pass back to <strong className="text-emerald-800 font-bold">ACTIVE</strong> status and clear entry logs so the attendee can scan into the venue again tomorrow.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 relative z-10 pt-1">
+              <button
+                type="button"
+                disabled={revertingScanLoading}
+                onClick={() => setScanToRevert(null)}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-white border border-[#EAD9B8] text-[#6E5336] font-bold text-xs uppercase tracking-wider hover:bg-[#FAF6EE] transition shadow-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={revertingScanLoading}
+                onClick={handleConfirmRevertScan}
+                className="flex-1 py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-bold text-xs uppercase tracking-wider transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:shadow-lg hover:scale-[1.01] transform"
+              >
+                {revertingScanLoading ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Reverting...</span>
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Confirm Revert Scan</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
