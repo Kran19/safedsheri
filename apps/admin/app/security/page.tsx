@@ -155,45 +155,64 @@ export default function SecurityScannerPage() {
     if (isCameraStarting) return;
     setIsCameraStarting(true);
     setCameraError(null);
+    setIsCameraActive(true);
+
     try {
+      // Allow DOM to render #qr-reader in active state
+      await new Promise((r) => setTimeout(r, 80));
+
       const { Html5Qrcode } = await import('html5-qrcode');
-      if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode('qr-reader');
-        setHtml5Scanner(scannerRef.current);
+
+      // Cleanly clear any stale scanner instance
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
+          }
+        } catch (e) {}
+        try {
+          scannerRef.current.clear();
+        } catch (e) {}
+        scannerRef.current = null;
       }
-      const scanner = scannerRef.current;
-      if (scanner.isScanning) {
-        await scanner.stop();
-      }
-      const config = { fps: 12, qrbox: { width: 250, height: 250 } };
+
+      const scanner = new Html5Qrcode('qr-reader');
+      scannerRef.current = scanner;
+      setHtml5Scanner(scanner);
+
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+      const onScanSuccess = (decodedText: string) => {
+        if (!scanningRef.current) {
+          processScan(decodedText);
+        }
+      };
+
       try {
-        await scanner.start(
-          { facingMode: 'environment' },
-          config,
-          (decodedText: string) => {
-            if (!scanningRef.current) {
-              processScan(decodedText);
-            }
-          },
-          () => {}
-        );
+        await scanner.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
       } catch (envErr) {
         console.warn('Environment camera failed, falling back to user camera', envErr);
-        await scanner.start(
-          { facingMode: 'user' },
-          config,
-          (decodedText: string) => {
-            if (!scanningRef.current) {
-              processScan(decodedText);
-            }
-          },
-          () => {}
-        );
+        try {
+          await scanner.start({ facingMode: 'user' }, config, onScanSuccess, () => {});
+        } catch (userErr) {
+          console.warn('User camera failed, enumerating system cameras', userErr);
+          const cameras = await Html5Qrcode.getCameras();
+          if (cameras && cameras.length > 0) {
+            const backCam = cameras.find((c: any) =>
+              c.label?.toLowerCase().includes('back') ||
+              c.label?.toLowerCase().includes('rear') ||
+              c.label?.toLowerCase().includes('environment')
+            ) || cameras[cameras.length - 1];
+
+            await scanner.start(backCam.id, config, onScanSuccess, () => {});
+          } else {
+            throw userErr;
+          }
+        }
       }
-      setIsCameraActive(true);
     } catch (err: any) {
       console.error('Camera activation failed:', err);
-      setCameraError(err?.message || 'Camera permission denied or camera not found.');
+      setCameraError(err?.message || 'Could not access camera. Please check browser camera permissions.');
       setIsCameraActive(false);
     } finally {
       setIsCameraStarting(false);
@@ -210,6 +229,10 @@ export default function SecurityScannerPage() {
       } catch (e) {
         console.warn('Error while stopping scanner:', e);
       }
+      try {
+        scannerRef.current.clear();
+      } catch (e) {}
+      scannerRef.current = null;
     }
     setIsCameraActive(false);
   };
@@ -607,14 +630,13 @@ export default function SecurityScannerPage() {
           </button>
         </div>
 
-        {/* SCANNER VIEWPORT WITH FIXED HEIGHT TO PREVENT ANY JUMP */}
-        <div className="relative w-full min-h-[320px] max-h-[460px] aspect-square max-w-[420px] mx-auto overflow-hidden rounded-2xl border-2 border-[#EAD9B8] bg-black flex items-center justify-center shadow-inner">
-          {/* HTML5 QR READER TARGET */}
+        {/* SCANNER VIEWPORT WITH STABLE CONTAINER TO PREVENT ANY JUMP */}
+        <div className="relative w-full min-h-[300px] sm:min-h-[360px] overflow-hidden rounded-2xl border-2 border-[#EAD9B8] bg-[#FFFDF9] flex flex-col justify-center items-center shadow-inner">
+          {/* HTML5 QR READER TARGET - Kept in DOM with proper dimensions */}
           <div
             id="qr-reader"
-            className={`w-full h-full flex items-center justify-center ${
-              !isCameraActive ? 'hidden' : 'block'
-            }`}
+            className="w-full"
+            style={{ width: '100%', minHeight: '280px' }}
           />
 
           {/* STANDBY STATE WHEN CAMERA IS OFF */}
@@ -625,10 +647,10 @@ export default function SecurityScannerPage() {
               </div>
               <div className="space-y-1">
                 <div className="text-base font-bold font-serif text-[#2D1F0E]">
-                  Scanner is OFF
+                  Scanner is Paused
                 </div>
                 <p className="text-xs text-[#6E5336] max-w-xs leading-relaxed">
-                  Turn on the scanner to begin verifying attendee QR passes for {selectedGate.replace('_', ' ')}.
+                  Tap below to turn on the camera and scan attendee QR passes for {selectedGate.replace('_', ' ')}.
                 </p>
               </div>
               <button
@@ -644,10 +666,10 @@ export default function SecurityScannerPage() {
 
           {/* CONNECTING / STARTING SPINNER */}
           {isCameraStarting && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-black/80 text-white z-10 space-y-3">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-black/75 backdrop-blur-xs text-white z-20 space-y-3">
               <div className="w-10 h-10 border-4 border-[#F6C85F] border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-mono uppercase tracking-widest text-[#F6C85F]">
-                Starting Camera...
+                Accessing Camera...
               </span>
             </div>
           )}
@@ -754,6 +776,28 @@ export default function SecurityScannerPage() {
             </button>
           </div>
         </form>
+
+        <style jsx global>{`
+          #qr-reader {
+            border: none !important;
+            width: 100% !important;
+          }
+          #qr-reader video {
+            width: 100% !important;
+            max-height: 420px !important;
+            object-fit: cover !important;
+            border-radius: 1rem !important;
+          }
+          #qr-reader__scan_region {
+            border-radius: 1rem !important;
+          }
+          #qr-reader__scan_region img {
+            display: none !important;
+          }
+          #qr-reader__dashboard {
+            display: none !important;
+          }
+        `}</style>
       </div>
 
       {/* RECENT SCANS LOG */}
