@@ -2067,23 +2067,30 @@ export default function SuperAdminDashboard() {
             })()}
           </div>
 
-          {gateStats?.gateBreakdown && (
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-200 text-[10px] font-mono text-purple-900">
-              <span className="font-bold uppercase tracking-wider text-purple-700">By Gate:</span>
-              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
-                Gate 1 (Couple): <strong>{gateStats.gateBreakdown.GATE_1 || 0}</strong>
-              </span>
-              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
-                Gate 2 (Single): <strong>{gateStats.gateBreakdown.GATE_2 || 0}</strong>
-              </span>
-              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
-                Gate 3 (Kids): <strong>{gateStats.gateBreakdown.GATE_3 || 0}</strong>
-              </span>
-              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
-                Gate 4 (Gazebo): <strong>{gateStats.gateBreakdown.GATE_4 || 0}</strong>
-              </span>
-            </div>
-          )}
+          {(() => {
+            const cScanned = gateStats?.metrics?.COUPLE?.scanned ?? overview?.entries?.metrics?.COUPLE?.scanned ?? overview?.entries?.breakdown?.couple ?? 0;
+            const sScanned = gateStats?.metrics?.SINGLE?.scanned ?? overview?.entries?.metrics?.SINGLE?.scanned ?? overview?.entries?.breakdown?.single ?? 0;
+            const kScanned = gateStats?.metrics?.KIDS?.scanned ?? overview?.entries?.metrics?.KIDS?.scanned ?? overview?.entries?.breakdown?.kids ?? 0;
+            const gScanned = gateStats?.metrics?.GAZEBO?.scanned ?? overview?.entries?.metrics?.GAZEBO?.scanned ?? overview?.entries?.breakdown?.gazebo ?? 0;
+
+            return (
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-200 text-[10px] font-mono text-purple-900">
+                <span className="font-bold uppercase tracking-wider text-purple-700">By Gate:</span>
+                <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                  Gate 1 (Couple): <strong>{cScanned}</strong>
+                </span>
+                <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                  Gate 2 (Single): <strong>{sScanned}</strong>
+                </span>
+                <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                  Gate 3 (Kids): <strong>{kScanned}</strong>
+                </span>
+                <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                  Gate 4 (Gazebo): <strong>{gScanned}</strong>
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

@@ -152,27 +152,14 @@ export class EntriesService {
       else if (pt === PassType.GAZEBO) gazeboCount++;
     }
 
-    // Gate-by-gate breakdown
+    // Gate-by-gate breakdown matching actual attendees admitted today
     const gateCounts: Record<string, number> = {
-      GATE_1: 0,
-      GATE_2: 0,
-      GATE_3: 0,
-      GATE_4: 0,
+      GATE_1: coupleCount,
+      GATE_2: singleCount,
+      GATE_3: kidsCount,
+      GATE_4: gazeboCount,
       MASTER_ADMIN: 0,
     };
-
-    const gateScanAttempts = await this.prisma.scanAttempt.findMany({
-      where: {
-        result: ScanResult.VALID,
-        ...(eventId ? { eventId } : {}),
-      },
-      select: { gateId: true },
-    });
-
-    for (const scan of gateScanAttempts) {
-      const g = scan.gateId || 'GATE_1';
-      gateCounts[g] = (gateCounts[g] || 0) + 1;
-    }
 
     return {
       success: true,
