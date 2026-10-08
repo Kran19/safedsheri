@@ -36,6 +36,9 @@ export enum PaymentMethod {
   ONLINE_GATEWAY = 'ONLINE_GATEWAY',
   UPI_QR = 'UPI_QR',
   CUSTOM_DIRECT = 'CUSTOM_DIRECT',
+  CASH = 'CASH',
+  CARD = 'CARD',
+  FAMILY_AND_FRIENDS = 'FAMILY_AND_FRIENDS',
 }
 
 export enum PaymentStatus {

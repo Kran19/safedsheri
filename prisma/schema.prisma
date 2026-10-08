@@ -432,6 +432,7 @@ enum PaymentMethod {
   CUSTOM_DIRECT
   CASH
   CARD
+  FAMILY_AND_FRIENDS
 }
 
 enum PaymentStatus {

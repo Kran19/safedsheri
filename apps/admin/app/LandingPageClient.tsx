@@ -2242,6 +2242,25 @@ export default function SafedSheriLandingPage() {
             </div>
           </div>
 
+          {/* OFFLINE PASSES AVAILABLE BANNER */}
+          <div className="max-w-5xl mx-auto mb-14 animate-fade-in">
+            <a
+              href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%2C%20I%20am%20inquiring%20about%20Offline%20Passes."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-3xl overflow-hidden shadow-2xl border-2 border-[#D99427]/60 hover:border-[#D99427] transform hover:-translate-y-1.5 transition-all duration-300 bg-[#FAF6EE] group cursor-pointer"
+            >
+              <Image
+                src="/images/offline-pass.png"
+                alt="Offline Passes Available Till 8 PM - Contact Now: +91 70169 77518"
+                width={1920}
+                height={600}
+                className="w-full h-auto object-contain hover:opacity-95 transition"
+                priority
+              />
+            </a>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-8">
             {/* SINGLE PASS (FEMALE ONLY) */}
             <div
@@ -2731,6 +2750,24 @@ export default function SafedSheriLandingPage() {
                 <div className="mt-2 text-[11px] text-[#8C6019] font-medium italic">
                   ✨ We cannot wait to dance under the white moonlight with our confirmed guests — and we warmly look forward to seeing you for <strong className="text-[#2D1F0E] not-italic font-bold">Safed Sheri 2027</strong>!
                 </div>
+              </div>
+
+              {/* Offline Passes Available Banner */}
+              <div className="rounded-2xl overflow-hidden border-2 border-[#D99427]/60 shadow-lg">
+                <a
+                  href="https://wa.me/917016977518?text=Hello%20Safed%20Sheri%2C%20I%20am%20inquiring%20about%20Offline%20Passes."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group cursor-pointer"
+                >
+                  <Image
+                    src="/images/offline-pass.png"
+                    alt="Offline Passes Available Till 8 PM"
+                    width={1920}
+                    height={600}
+                    className="w-full h-auto object-contain hover:opacity-95 transition"
+                  />
+                </a>
               </div>
 
               {/* Selected Pass Notice Card */}

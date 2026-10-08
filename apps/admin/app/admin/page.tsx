@@ -1282,6 +1282,7 @@ export default function SuperAdminDashboard() {
             <option value="UPI_QR">UPI QR</option>
             <option value="ONLINE_GATEWAY">Online (Razorpay)</option>
             <option value="CUSTOM_DIRECT">Custom Direct</option>
+            <option value="FAMILY_AND_FRIENDS">Family & Friends (₹0)</option>
           </select>
         );
       }
@@ -1671,11 +1672,18 @@ export default function SuperAdminDashboard() {
       key: 'method',
       title: 'Payment Method',
       sortable: true,
+      getValue: (r) => r.method === 'FAMILY_AND_FRIENDS' ? 'Family & Friends' : r.method === 'CUSTOM_DIRECT' ? 'Cash' : r.method,
       render: (r) => (
         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-          r.method === 'UPI_QR' ? 'bg-amber-100 text-amber-800' : r.method === 'ONLINE_GATEWAY' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+          r.method === 'FAMILY_AND_FRIENDS'
+            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+            : r.method === 'UPI_QR'
+            ? 'bg-amber-100 text-amber-800'
+            : r.method === 'ONLINE_GATEWAY'
+            ? 'bg-blue-100 text-blue-800'
+            : 'bg-emerald-100 text-emerald-800'
         }`}>
-          {r.method}
+          {r.method === 'FAMILY_AND_FRIENDS' ? '👥 FAMILY & FRIENDS' : r.method === 'CUSTOM_DIRECT' ? '💵 CASH' : r.method}
         </span>
       ),
     },
@@ -4505,7 +4513,11 @@ export default function SuperAdminDashboard() {
             
             <div className="relative z-10 mb-8 p-4 bg-white rounded-2xl border border-[#EAD9B8] shadow-inner text-center">
               <p className="text-sm text-[#6E5336] leading-relaxed">
-                Has the payment via <strong className="px-2 py-0.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded text-[#D99427] mx-1 uppercase">{paymentAction.method.replace('_', ' ')}</strong> been successfully completed by the user?
+                {paymentAction.method === 'FAMILY_AND_FRIENDS' ? (
+                  <>Issue complimentary <strong>₹0 pass</strong> for <strong className="px-2 py-0.5 bg-purple-50 border border-purple-200 rounded text-purple-800 mx-1 uppercase font-bold">Family & Friends</strong> without charge?</>
+                ) : (
+                  <>Has the payment via <strong className="px-2 py-0.5 bg-[#FAF6EE] border border-[#EAD9B8] rounded text-[#D99427] mx-1 uppercase">{paymentAction.method.replace('_', ' ')}</strong> been successfully completed by the user?</>
+                )}
               </p>
             </div>
 
@@ -4536,7 +4548,7 @@ export default function SuperAdminDashboard() {
                 {paymentActionLoading ? <span className="animate-pulse">Processing...</span> : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Yes, payment is done</span>
+                    <span>{paymentAction.method === 'FAMILY_AND_FRIENDS' ? 'Yes, Issue Complimentary Pass (₹0)' : 'Yes, payment is done'}</span>
                   </>
                 )}
               </button>

@@ -62,6 +62,7 @@ export class PaymentsService {
     let totalCash = 0;
     let totalRazorpayActual = 0;
     let totalAdminManualQr = 0;
+    let totalFamilyAndFriendsCount = 0;
 
     for (const p of payments) {
       const amt = Number(p.amount) || 0;
@@ -75,6 +76,8 @@ export class PaymentsService {
         }
       } else if (p.method === 'UPI_QR' || p.method === 'CARD' || p.method === 'CUSTOM_DIRECT') {
         totalAdminManualQr += amt;
+      } else if (p.method === 'FAMILY_AND_FRIENDS') {
+        totalFamilyAndFriendsCount++;
       }
     }
 
@@ -101,6 +104,7 @@ export class PaymentsService {
         totalCash,
         totalRazorpayActual,
         totalAdminManualQr,
+        totalFamilyAndFriendsCount,
         recentTransactions,
       },
     };
@@ -160,11 +164,14 @@ export class PaymentsService {
     let upiQrCount = 0;
     let onlineGatewayVolume = 0;
     let onlineGatewayCount = 0;
+    let familyAndFriendsVolume = 0;
+    let familyAndFriendsCount = 0;
 
     const methodBreakdown: Record<string, number> = {
       ONLINE_GATEWAY: 0,
       UPI_QR: 0,
       CUSTOM_DIRECT: 0,
+      FAMILY_AND_FRIENDS: 0,
     };
     const passBreakdown: Record<string, number> = {
       SINGLE: 0,
@@ -181,12 +188,15 @@ export class PaymentsService {
       }
       methodBreakdown[p.method] = (methodBreakdown[p.method] || 0) + amt;
 
-      if (p.method === 'CUSTOM_DIRECT') {
+      if (p.method === 'CUSTOM_DIRECT' || p.method === 'CASH') {
         customDirectVolume += amt;
         customDirectCount++;
       } else if (p.method === 'UPI_QR') {
         upiQrVolume += amt;
         upiQrCount++;
+      } else if (p.method === 'FAMILY_AND_FRIENDS') {
+        familyAndFriendsVolume += amt;
+        familyAndFriendsCount++;
       } else {
         onlineGatewayVolume += amt;
         onlineGatewayCount++;
@@ -210,6 +220,8 @@ export class PaymentsService {
           upiQrCount,
           onlineGatewayVolume,
           onlineGatewayCount,
+          familyAndFriendsVolume,
+          familyAndFriendsCount,
         },
         methodBreakdown,
         passBreakdown,
@@ -471,7 +483,7 @@ export class PaymentsService {
           createdById: dto.staffUserId,
           reviewedById: dto.staffUserId,
           reviewedAt: new Date(),
-          reviewNotes: dto.notes || `Manual Desk Entry by Cashier (${dto.paymentMethod})`,
+          reviewNotes: dto.notes || (dto.paymentMethod === PaymentMethod.FAMILY_AND_FRIENDS ? 'Family & Friends Complimentary Pass' : `Manual Desk Entry by Cashier (${dto.paymentMethod})`),
         },
       });
 
@@ -599,22 +611,25 @@ export class PaymentsService {
       const receiptNumber = `RCP-2026-${receiptSeqNum}`;
       
       const isUpi = dto.paymentMethod === PaymentMethod.UPI_QR;
+      const isFnf = dto.paymentMethod === PaymentMethod.FAMILY_AND_FRIENDS;
       const providerRef = isUpi 
         ? `DESK-UPI-PENDING-${Date.now().toString().slice(-6)}`
+        : isFnf
+        ? `FNF-COMPLIMENTARY-${Date.now().toString().slice(-6)}`
         : `DESK-CASH-${Date.now().toString().slice(-6)}`;
 
       const payment = await tx.payment.create({
         data: {
           registrationId: registration.id,
-          amount: dto.customAmount,
+          amount: isFnf ? 0 : dto.customAmount,
           method: dto.paymentMethod,
           status: isSuperAdmin ? PaymentStatus.CONFIRMED : PaymentStatus.PENDING,
           receiptNumber,
-          provider: isUpi ? 'RAZORPAY_UPI' : 'CASH_BOX_OFFICE',
+          provider: isUpi ? 'RAZORPAY_UPI' : isFnf ? 'FAMILY_AND_FRIENDS' : 'CASH_BOX_OFFICE',
           providerReference: providerRef,
           paymentLinkId,
           collectedById: dto.staffUserId,
-          notes: dto.notes || (isUpi ? 'UPI QR payment requested' : 'Cash payment collected at box office counter'),
+          notes: dto.notes || (isUpi ? 'UPI QR payment requested' : isFnf ? 'Family & Friends complimentary pass (₹0)' : 'Cash payment collected at box office counter'),
         },
       });
 
@@ -641,7 +656,7 @@ export class PaymentsService {
           targetId: registration.id,
           payload: {
             receiptNumber,
-            amount: dto.customAmount,
+            amount: isFnf ? 0 : dto.customAmount,
             method: dto.paymentMethod,
             credentialsCount: fullCredentials.length,
             requiresAdminApproval: !isSuperAdmin,
@@ -657,7 +672,9 @@ export class PaymentsService {
           credentials: fullCredentials,
         },
         message: isSuperAdmin 
-          ? `Manual entry created! Receipt #${receiptNumber} generated with ${fullCredentials.length} active pass(es).`
+          ? (isFnf
+              ? `Family & Friends pass issued! Receipt #${receiptNumber} generated with ${fullCredentials.length} active pass(es).`
+              : `Manual entry created! Receipt #${receiptNumber} generated with ${fullCredentials.length} active pass(es).`)
           : `Booking request submitted! Waiting for admin approval before pass is issued.`,
       };
     });
@@ -784,14 +801,23 @@ export class PaymentsService {
       });
 
       let payment;
+      const isFnf = data.method === PaymentMethod.FAMILY_AND_FRIENDS;
+      if (isFnf) {
+        await tx.registration.update({
+          where: { id: lockedReg.id },
+          data: { amountDue: 0 },
+        });
+      }
+
       if (existingPendingPayment) {
         payment = await tx.payment.update({
           where: { id: existingPendingPayment.id },
           data: {
             status: PaymentStatus.CONFIRMED,
-            provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
+            amount: isFnf ? 0 : existingPendingPayment.amount,
+            provider: isFnf ? 'FAMILY_AND_FRIENDS' : 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
             providerReference: providerRef,
-            notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
+            notes: data.notes || (isFnf ? 'Family & Friends complimentary pass (₹0)' : 'Online UPI QR Payment Authoritatively Verified'),
             ...(data.method ? { method: data.method } : {}),
           },
         });
@@ -799,14 +825,14 @@ export class PaymentsService {
         payment = await tx.payment.create({
           data: {
             registrationId: lockedReg.id,
-            amount: lockedReg.amountDue,
+            amount: isFnf ? 0 : lockedReg.amountDue,
             method: data.method || PaymentMethod.UPI_QR,
             status: PaymentStatus.CONFIRMED,
             receiptNumber,
-            provider: 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
+            provider: isFnf ? 'FAMILY_AND_FRIENDS' : 'SAFED_SHERI_ONLINE_UPI_GATEWAY',
             providerReference: providerRef,
             paymentLinkId: data.paymentLinkId,
-            notes: data.notes || 'Online UPI QR Payment Authoritatively Verified',
+            notes: data.notes || (isFnf ? 'Family & Friends complimentary pass (₹0)' : 'Online UPI QR Payment Authoritatively Verified'),
           },
         });
       }

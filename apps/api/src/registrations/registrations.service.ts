@@ -1123,9 +1123,17 @@ export class RegistrationsService {
         where: { id: confirmedPayment.id },
         data: {
           method,
+          ...(method === PaymentMethod.FAMILY_AND_FRIENDS ? { amount: 0, provider: 'FAMILY_AND_FRIENDS' } : {}),
           collectedById: adminId, // Track which admin changed the payment method
         },
       });
+
+      if (method === PaymentMethod.FAMILY_AND_FRIENDS) {
+        await this.prisma.registration.update({
+          where: { id: reg.id },
+          data: { amountDue: 0 },
+        });
+      }
 
       if (reg.status !== RegistrationStatus.PASS_ISSUED) {
         await this.prisma.registration.update({
@@ -1171,8 +1179,12 @@ export class RegistrationsService {
         // Call paymentsService.confirmGatewayPayment
         const res = await this.paymentsService.confirmGatewayPayment({
           paymentLinkId,
-          providerReference: `ADMIN-MANUAL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
-          notes: `Confirmed by Admin (ID: ${adminId})`,
+          providerReference: method === PaymentMethod.FAMILY_AND_FRIENDS 
+            ? `FNF-COMPLIMENTARY-${crypto.randomBytes(3).toString('hex').toUpperCase()}`
+            : `ADMIN-MANUAL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+          notes: method === PaymentMethod.FAMILY_AND_FRIENDS 
+            ? `Family & Friends complimentary pass (₹0) granted by Admin (ID: ${adminId})`
+            : `Confirmed by Admin (ID: ${adminId})`,
           method,
         });
 

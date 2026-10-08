@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Script from 'next/script';
 import { QRCodeSVG } from 'qrcode.react';
 import { apiRequest, getAuthToken, getStoredUser } from '../../lib/api';
@@ -54,7 +55,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
   const [manualForm, setManualForm] = useState({
     passType: 'SINGLE' as 'SINGLE' | 'COUPLE' | 'KIDS' | 'GAZEBO',
     customAmount: 4500,
-    paymentMethod: 'CUSTOM_DIRECT' as 'CUSTOM_DIRECT' | 'UPI_QR',
+    paymentMethod: 'CUSTOM_DIRECT' as 'CUSTOM_DIRECT' | 'UPI_QR' | 'FAMILY_AND_FRIENDS',
     notes: 'On-spot walk-in booking by Desk Executive',
   });
 
@@ -147,7 +148,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
     setManualForm({
       ...manualForm,
       passType: newType,
-      customAmount: defaultAmount,
+      customAmount: manualForm.paymentMethod === 'FAMILY_AND_FRIENDS' ? 0 : defaultAmount,
     });
     setCashierAttendees(newAttendees);
   }
@@ -518,15 +519,18 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
       key: 'method',
       title: 'Payment Method',
       sortable: true,
+      getValue: (r) => r.method === 'FAMILY_AND_FRIENDS' ? 'Family & Friends' : r.method === 'CUSTOM_DIRECT' ? 'Cash' : r.method === 'UPI_QR' ? 'UPI QR' : r.method,
       render: (r) => (
         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-          r.method === 'UPI_QR'
+          r.method === 'FAMILY_AND_FRIENDS'
+            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+            : r.method === 'UPI_QR'
             ? 'bg-amber-100 text-amber-800'
             : r.method === 'ONLINE_GATEWAY'
             ? 'bg-blue-100 text-blue-800'
             : 'bg-emerald-100 text-emerald-800'
         }`}>
-          {r.method === 'CUSTOM_DIRECT' ? '💵 CASH' : r.method === 'UPI_QR' ? '📱 UPI QR' : r.method}
+          {r.method === 'FAMILY_AND_FRIENDS' ? '👥 FAMILY & FRIENDS' : r.method === 'CUSTOM_DIRECT' ? '💵 CASH' : r.method === 'UPI_QR' ? '📱 UPI QR' : r.method}
         </span>
       ),
     },
@@ -655,7 +659,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
 
       {/* STATS OVERVIEW */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
             <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">TOTAL COLLECTION</div>
             <div className="text-2xl font-serif font-bold text-emerald-800 mt-1">
@@ -668,7 +672,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
             <div className="text-2xl font-serif font-bold text-[#2D1F0E] mt-1">
               ₹{Number(stats.breakdown?.customDirectVolume ?? stats.methodBreakdown?.CUSTOM_DIRECT ?? 0).toLocaleString()}
             </div>
-            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.customDirectCount ?? transactions.filter(t => t.method === 'CUSTOM_DIRECT').length ?? 0} Cash Settlements</div>
+            <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.customDirectCount ?? transactions.filter(t => t.method === 'CUSTOM_DIRECT' || t.method === 'CASH').length ?? 0} Cash Settlements</div>
           </div>
           <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm">
             <div className="text-[10px] font-mono font-bold text-[#8C6019] uppercase">UPI / DYNAMIC QR</div>
@@ -683,6 +687,15 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
               ₹{Number(stats.breakdown?.onlineGatewayVolume ?? stats.methodBreakdown?.ONLINE_GATEWAY ?? 0).toLocaleString()}
             </div>
             <div className="text-[10px] text-[#6E5336] mt-0.5">{stats.breakdown?.onlineGatewayCount ?? transactions.filter(t => t.method === 'ONLINE_GATEWAY').length ?? 0} Web Orders</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-white border border-purple-200 shadow-sm col-span-2 lg:col-span-1">
+            <div className="text-[10px] font-mono font-bold text-purple-800 uppercase">FAMILY & FRIENDS</div>
+            <div className="text-2xl font-serif font-bold text-purple-900 mt-1">
+              ₹0
+            </div>
+            <div className="text-[10px] text-purple-700 mt-0.5 font-medium">
+              {stats.breakdown?.familyAndFriendsCount ?? transactions.filter(t => t.method === 'FAMILY_AND_FRIENDS').length ?? 0} Free Passes
+            </div>
           </div>
         </div>
       )}
@@ -761,6 +774,17 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
             <p className="text-xs text-[#6E5336] mt-1">
               Upload Aadhaar to auto-fill details automatically. Settle via Cash or dynamic Razorpay UPI QR and mint instant digital passes.
             </p>
+          </div>
+
+          {/* OFFLINE PASSES OFFICIAL DESK BANNER */}
+          <div className="rounded-2xl overflow-hidden border border-[#D99427]/40 shadow-md">
+            <Image
+              src="/images/offline-pass.png"
+              alt="Offline Passes Available Till 8 PM"
+              width={1920}
+              height={600}
+              className="w-full h-auto object-contain"
+            />
           </div>
 
           {!manualSuccessResult ? (
@@ -1000,17 +1024,24 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                 </div>
               )}
 
-              {/* PAYMENT CONFIGURATION: CASH VS UPI QR */}
+              {/* PAYMENT CONFIGURATION: CASH VS UPI QR VS FAMILY & FRIENDS */}
               <div className="p-5 rounded-2xl bg-[#FAF6EE] border-2 border-[#EAD9B8] space-y-4">
                 <div className="text-xs font-bold text-[#2D1F0E] uppercase tracking-wider">
                   Payment Mode & Settlement Amount
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Option 1: CASH */}
                   <button
                     type="button"
-                    onClick={() => setManualForm({ ...manualForm, paymentMethod: 'CUSTOM_DIRECT' })}
+                    onClick={() => {
+                      const def = manualForm.passType === 'SINGLE' ? 4500 : manualForm.passType === 'COUPLE' ? 8500 : manualForm.passType === 'KIDS' ? 1800 : 85000;
+                      setManualForm({
+                        ...manualForm,
+                        paymentMethod: 'CUSTOM_DIRECT',
+                        customAmount: manualForm.customAmount === 0 ? def : manualForm.customAmount,
+                      });
+                    }}
                     className={`p-4 rounded-2xl border-2 text-left flex items-start space-x-3 transition ${
                       manualForm.paymentMethod === 'CUSTOM_DIRECT'
                         ? 'bg-white border-[#2D1F0E] shadow-md ring-2 ring-[#D99427]/40'
@@ -1031,7 +1062,14 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                   {/* Option 2: RAZORPAY / UPI DYNAMIC QR */}
                   <button
                     type="button"
-                    onClick={() => setManualForm({ ...manualForm, paymentMethod: 'UPI_QR' })}
+                    onClick={() => {
+                      const def = manualForm.passType === 'SINGLE' ? 4500 : manualForm.passType === 'COUPLE' ? 8500 : manualForm.passType === 'KIDS' ? 1800 : 85000;
+                      setManualForm({
+                        ...manualForm,
+                        paymentMethod: 'UPI_QR',
+                        customAmount: manualForm.customAmount === 0 ? def : manualForm.customAmount,
+                      });
+                    }}
                     className={`p-4 rounded-2xl border-2 text-left flex items-start space-x-3 transition ${
                       manualForm.paymentMethod === 'UPI_QR'
                         ? 'bg-white border-[#2D1F0E] shadow-md ring-2 ring-[#D99427]/40'
@@ -1048,17 +1086,46 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                       </div>
                     </div>
                   </button>
+
+                  {/* Option 3: FAMILY & FRIENDS */}
+                  <button
+                    type="button"
+                    onClick={() => setManualForm({ ...manualForm, paymentMethod: 'FAMILY_AND_FRIENDS', customAmount: 0 })}
+                    className={`p-4 rounded-2xl border-2 text-left flex items-start space-x-3 transition ${
+                      manualForm.paymentMethod === 'FAMILY_AND_FRIENDS'
+                        ? 'bg-white border-purple-800 shadow-md ring-2 ring-purple-600/40'
+                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-purple-400'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                      👥
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-[#2D1F0E]">Family & Friends</div>
+                      <div className="text-[11px] text-[#6E5336] mt-0.5">
+                        Zero-amount (₹0) complimentary pass issuance for family, friends & VIP guests.
+                      </div>
+                    </div>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div>
-                    <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Settlement Amount (₹) *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-[#6E5336]">Settlement Amount (₹) *</label>
+                      {manualForm.paymentMethod === 'FAMILY_AND_FRIENDS' && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                          ₹0 Free Pass
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="number"
                       required
+                      disabled={manualForm.paymentMethod === 'FAMILY_AND_FRIENDS'}
                       value={manualForm.customAmount}
                       onChange={(e) => setManualForm({ ...manualForm, customAmount: Number(e.target.value) })}
-                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-sm font-serif font-bold text-emerald-800 focus:border-[#D99427] outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-sm font-serif font-bold text-emerald-800 focus:border-[#D99427] outline-none disabled:bg-[#F3ECE0] disabled:text-purple-900"
                     />
                   </div>
 
@@ -1066,6 +1133,7 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                     <label className="block text-[11px] font-bold text-[#6E5336] mb-1">Desk Reason / Notes</label>
                     <input
                       type="text"
+                      placeholder={manualForm.paymentMethod === 'FAMILY_AND_FRIENDS' ? 'e.g. Trustee Family / Guest of Chairman' : 'Reason / Notes'}
                       value={manualForm.notes}
                       onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#EAD9B8] text-xs focus:border-[#D99427] outline-none"
@@ -1084,6 +1152,8 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
                   <span>
                     {submittingManual
                       ? 'Processing Settlement...'
+                      : manualForm.paymentMethod === 'FAMILY_AND_FRIENDS'
+                      ? 'Confirm Family & Friends Passes (₹0 Complimentary)'
                       : manualForm.paymentMethod === 'CUSTOM_DIRECT'
                       ? `Confirm Cash & Mint Passes (₹${Number(manualForm.customAmount).toLocaleString()})`
                       : `Generate Dynamic UPI QR & Collect (₹${Number(manualForm.customAmount).toLocaleString()})`}
@@ -1115,11 +1185,17 @@ export default function CashierDeskTerminal({ hideHeader = false }: { hideHeader
               <div className="p-5 rounded-2xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-left max-w-lg mx-auto space-y-2.5">
                 <div className="flex justify-between">
                   <span className="text-[#6E5336]">Amount Settled:</span>
-                  <span className="font-bold text-emerald-800 font-serif text-sm">₹{Number(manualSuccessResult.payment?.amount || manualForm.customAmount).toLocaleString()}</span>
+                  <span className="font-bold text-emerald-800 font-serif text-sm">₹{Number(manualSuccessResult.payment?.amount ?? manualForm.customAmount).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6E5336]">Payment Method:</span>
-                  <span className="font-bold">{manualSuccessResult.payment?.method === 'CUSTOM_DIRECT' || manualForm.paymentMethod === 'CUSTOM_DIRECT' ? '💵 CASH AT DESK' : '📱 DYNAMIC UPI QR'}</span>
+                  <span className="font-bold">
+                    {manualSuccessResult.payment?.method === 'FAMILY_AND_FRIENDS' || manualForm.paymentMethod === 'FAMILY_AND_FRIENDS'
+                      ? '👥 FAMILY & FRIENDS (₹0 COMPLIMENTARY)'
+                      : manualSuccessResult.payment?.method === 'CUSTOM_DIRECT' || manualForm.paymentMethod === 'CUSTOM_DIRECT'
+                      ? '💵 CASH AT DESK'
+                      : '📱 DYNAMIC UPI QR'}
+                  </span>
                 </div>
                 <div className="flex justify-between border-t border-[#EAD9B8] pt-2">
                   <span className="text-[#6E5336]">{manualSuccessResult.registration?.status === 'CASHIER_PENDING' ? 'Status:' : 'Issued Passes:'}</span>
