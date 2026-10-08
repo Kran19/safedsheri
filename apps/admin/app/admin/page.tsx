@@ -244,13 +244,24 @@ export default function SuperAdminDashboard() {
     if (!token || !user) {
       setIsAuthenticated(false);
       setLoading(false);
+      router.replace('/login');
+      return;
+    }
+    if (user.role !== 'SUPER_ADMIN') {
+      if (user.role === 'TICKETING_FINANCE' || user.role === 'CASHIER') {
+        router.replace('/cashier');
+      } else if (user.role === 'ENTRY_VERIFICATION' || user.role === 'SECURITY') {
+        router.replace('/security');
+      } else {
+        router.replace('/login');
+      }
       return;
     }
     setCurrentUser(user);
     setIsAuthenticated(true);
     loadOverviewData();
     getMaintenanceMode().then(setIsMaintenanceMode);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -269,9 +280,11 @@ export default function SuperAdminDashboard() {
     const resOverview = await apiRequest('/reports/overview');
     if (resOverview.success) {
       setOverview(resOverview.data);
-    } else if (resOverview.error?.code === 'UNAUTHORIZED') {
+    } else if (resOverview.error?.code === 'UNAUTHORIZED' || resOverview.error?.statusCode === 401) {
+      clearAuthToken();
       setIsAuthenticated(false);
       setLoading(false);
+      router.replace('/login');
       return;
     }
 
@@ -1777,6 +1790,44 @@ export default function SuperAdminDashboard() {
     }
   ];
 
+  if (loading || isAuthenticated === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-10 h-10 border-4 border-[#D99427] border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-mono uppercase tracking-widest text-[#8C6019]">
+          Verifying Admin Credentials...
+        </span>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <div className="max-w-md mx-auto my-16 p-8 bg-white border-2 border-[#EAD9B8] rounded-3xl shadow-xl text-center space-y-6">
+        <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-300 flex items-center justify-center text-[#D99427] mx-auto shadow-inner">
+          <Lock className="w-8 h-8" />
+        </div>
+        <div>
+          <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-[#8C6019]">
+            Access Restricted
+          </span>
+          <h2 className="text-2xl font-serif font-bold text-[#2D1F0E] mt-1">Super Admin Login Required</h2>
+          <p className="text-xs text-[#6E5336] mt-2">
+            Please sign in with authorized executive credentials to access the terminal.
+          </p>
+        </div>
+        <div>
+          <button
+            onClick={() => router.replace('/login')}
+            className="px-6 py-3 rounded-full bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider shadow-md hover:opacity-95 transition"
+          >
+            Go to Staff Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-fade-in text-[#2D1F0E]">
       {/* HEADER & BRAND */}
@@ -1797,12 +1848,29 @@ export default function SuperAdminDashboard() {
         </div>
 
         <div className="flex items-center space-x-3">
+          {currentUser && (
+            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-mono text-[#6E5336]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>{currentUser.fullName || currentUser.username}</span>
+            </div>
+          )}
           <button
             onClick={() => { loadOverviewData(); loadTabContent(activeTab); }}
             className="px-4 py-2 rounded-xl bg-white hover:bg-[#F8F5EE] border border-[#EAD9B8] text-xs font-bold text-[#2D1F0E] flex items-center space-x-2 transition shadow-sm"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#D99427] ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => {
+              clearAuthToken();
+              router.replace('/login');
+            }}
+            title="Log Out of Admin Terminal"
+            className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-bold text-rose-700 flex items-center space-x-1.5 transition shadow-sm"
+          >
+            <Lock className="w-3.5 h-3.5 text-rose-600" />
+            <span>Logout</span>
           </button>
         </div>
       </div>

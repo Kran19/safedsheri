@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAuthToken } from '../../../lib/api';
 import { Banknote, CreditCard, QrCode, Search, RefreshCw, Eye } from 'lucide-react';
 
 export default function FinanceFundamentalPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [error, setError] = useState('');
@@ -14,7 +16,10 @@ export default function FinanceFundamentalPage() {
     setError('');
     try {
       const token = getAuthToken();
-      if (!token) throw new Error('No auth token');
+      if (!token) {
+        router.replace('/login');
+        return;
+      }
       
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/payments/finance-fundamental`, {
