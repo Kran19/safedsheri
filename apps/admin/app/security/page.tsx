@@ -237,7 +237,36 @@ export default function SecurityScannerPage() {
     setIsCameraActive(false);
   };
 
-  const dismissResult = () => {
+  const pauseScanner = () => {
+    if (scannerRef.current) {
+      try {
+        if (typeof scannerRef.current.pause === 'function') {
+          scannerRef.current.pause(true);
+        }
+      } catch (e) {
+        console.warn('Scanner pause failed:', e);
+      }
+    }
+  };
+
+  const resumeScanner = async () => {
+    let resumed = false;
+    if (scannerRef.current) {
+      try {
+        if (typeof scannerRef.current.resume === 'function') {
+          scannerRef.current.resume();
+          resumed = true;
+        }
+      } catch (e) {
+        console.warn('Scanner resume failed:', e);
+      }
+    }
+    if (!resumed && (!isCameraActive || !scannerRef.current)) {
+      await startCamera();
+    }
+  };
+
+  const handleNextScan = async () => {
     if (dismissTimerRef.current) {
       clearTimeout(dismissTimerRef.current);
       dismissTimerRef.current = null;
@@ -245,6 +274,11 @@ export default function SecurityScannerPage() {
     setScanResult({ status: null });
     scanningRef.current = false;
     setScanning(false);
+    await resumeScanner();
+  };
+
+  const dismissResult = () => {
+    handleNextScan();
   };
 
   useEffect(() => {
@@ -271,6 +305,7 @@ export default function SecurityScannerPage() {
 
     if (dismissTimerRef.current) {
       clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
     }
 
     const res = await apiRequest('/entries/scan', {
@@ -280,6 +315,7 @@ export default function SecurityScannerPage() {
 
     if (res.success && res.data) {
       setScanResult(res.data);
+      pauseScanner();
       playFeedbackSound(res.data.status === 'VALID' ? 'VALID' : 'NOT_VALID');
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         if (res.data.status === 'VALID') {
@@ -305,10 +341,7 @@ export default function SecurityScannerPage() {
       ]);
 
       fetchLiveStats();
-
-      dismissTimerRef.current = setTimeout(() => {
-        dismissResult();
-      }, 3500);
+      // Result remains until the user clicks 'Next'
     } else {
       if (res.error?.code === 'UNAUTHORIZED' || res.error?.statusCode === 401) {
         setIsAuthenticated(false);
@@ -318,14 +351,12 @@ export default function SecurityScannerPage() {
         status: 'NOT_VALID',
         reason: res.error?.message || 'INVALID_TOKEN',
       });
+      pauseScanner();
       playFeedbackSound('NOT_VALID');
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate([300, 100, 300]); } catch (e) {}
       }
-
-      dismissTimerRef.current = setTimeout(() => {
-        dismissResult();
-      }, 3500);
+      // Result remains until the user clicks 'Next'
     }
   }
 
@@ -700,7 +731,7 @@ export default function SecurityScannerPage() {
           {/* SCANNER OVERLAY: ENTRY GRANTED / DENIED DIRECTLY ON TOP OF SCANNER */}
           {scanResult.status && (
             <div
-              onClick={dismissResult}
+              onClick={handleNextScan}
               className={`absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 animate-scale-up backdrop-blur-md ${
                 scanResult.status === 'VALID'
                   ? 'bg-emerald-950/95 text-white border-4 border-emerald-400'
@@ -720,14 +751,14 @@ export default function SecurityScannerPage() {
               </div>
 
               <div className="space-y-1">
-                <div className="text-2xl font-serif font-black tracking-wide uppercase drop-shadow">
+                <div className="text-2xl sm:text-3xl font-serif font-black tracking-wide uppercase drop-shadow">
                   {scanResult.status === 'VALID'
                     ? 'ENTRY GRANTED'
                     : scanResult.reason === 'WRONG_GATE'
                     ? 'WRONG GATE PASS'
                     : 'ENTRY DENIED'}
                 </div>
-                <div className="text-xs font-mono font-bold tracking-wide opacity-90 max-w-xs">
+                <div className="text-xs sm:text-sm font-mono font-bold tracking-wide opacity-90 max-w-xs">
                   {scanResult.status === 'VALID'
                     ? `Welcome to Safed Sheri 2026 (${selectedGate.replace('_', ' ')})`
                     : scanResult.message || `Reason: ${scanResult.reason || 'INVALID_TOKEN'}`}
@@ -735,20 +766,28 @@ export default function SecurityScannerPage() {
               </div>
 
               {scanResult.attendeeName && (
-                <div className="mt-3 pt-3 border-t border-white/20 text-xs space-y-0.5 w-full max-w-xs">
-                  <div className="font-bold text-sm text-white drop-shadow">
+                <div className="mt-3 pt-3 border-t border-white/20 text-xs space-y-1 w-full max-w-xs bg-black/20 p-3 rounded-2xl">
+                  <div className="font-bold text-base sm:text-lg text-white drop-shadow">
                     {scanResult.attendeeName}
                   </div>
-                  <div className="font-mono text-[11px] text-amber-300 font-bold">
+                  <div className="font-mono text-xs text-amber-300 font-bold">
                     {scanResult.passType} PASS • {scanResult.passCode}
                   </div>
                 </div>
               )}
 
-              <div className="mt-4 flex items-center space-x-2 text-[10px] font-mono uppercase tracking-widest bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full border border-white/20 transition">
-                <span>Tap to Scan Next</span>
-                <span className="text-[9px] opacity-70">(Auto-clears)</span>
-              </div>
+              {/* DEDICATED NEXT BUTTON */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextScan();
+                }}
+                className="mt-5 w-full max-w-xs py-3.5 px-6 rounded-2xl bg-white text-[#2D1F0E] font-black text-sm uppercase tracking-wider shadow-2xl flex items-center justify-center space-x-2 hover:bg-amber-50 active:scale-95 transition-all border-2 border-white/80 cursor-pointer"
+              >
+                <span>Click Next To Scan Another Pass</span>
+                <span className="text-base font-bold">➔</span>
+              </button>
             </div>
           )}
         </div>
