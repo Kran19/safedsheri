@@ -548,9 +548,9 @@ export class EntriesService {
         where: { credentialId },
       });
 
-      // Delete successful scan attempts for this credential
+      // Delete all scan attempts for this credential so the log row is removed
       await tx.scanAttempt.deleteMany({
-        where: { credentialId, result: ScanResult.VALID },
+        where: { credentialId },
       });
 
       await tx.auditLog.create({
@@ -576,12 +576,13 @@ export class EntriesService {
 
   // Revert all scanned passes back to ACTIVE
   async revertAllScans(actorId: string) {
-    const usedCount = await this.prisma.credential.count({
-      where: { status: CredentialStatus.USED },
-    });
+    const [usedCount, attemptCount] = await Promise.all([
+      this.prisma.credential.count({ where: { status: CredentialStatus.USED } }),
+      this.prisma.scanAttempt.count(),
+    ]);
 
-    if (usedCount === 0) {
-      return { success: true, message: 'No scanned passes to revert.', count: 0 };
+    if (usedCount === 0 && attemptCount === 0) {
+      return { success: true, message: 'No scanned passes or scan logs to revert.', count: 0 };
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -594,9 +595,7 @@ export class EntriesService {
       });
 
       await tx.entry.deleteMany({});
-      await tx.scanAttempt.deleteMany({
-        where: { result: ScanResult.VALID },
-      });
+      await tx.scanAttempt.deleteMany({});
 
       await tx.auditLog.create({
         data: {
