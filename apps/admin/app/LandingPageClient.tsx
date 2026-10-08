@@ -431,6 +431,33 @@ export default function SafedSheriLandingPage() {
     bookingCloseTime: '2026-10-08T06:30:00.000Z',
   });
 
+  const [vipAccessKey, setVipAccessKey] = useState<string | null>(null);
+
+  // Check URL query parameters and sessionStorage for VIP link
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramKey =
+        urlParams.get('invite') ||
+        urlParams.get('vip') ||
+        urlParams.get('access') ||
+        urlParams.get('code') ||
+        (urlParams.get('open') === 'true' ? 'SHERI_VIP_2026' : null);
+
+      if (paramKey) {
+        const cleanKey = paramKey.trim().toUpperCase();
+        sessionStorage.setItem('safedsheri_vip_key', cleanKey);
+        setVipAccessKey(cleanKey);
+      } else {
+        const storedKey = sessionStorage.getItem('safedsheri_vip_key');
+        if (storedKey) setVipAccessKey(storedKey);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   // Synchronize lock state and live cutoff countdown
   useEffect(() => {
     const updateLockStatus = () => {
@@ -440,7 +467,8 @@ export default function SafedSheriLandingPage() {
         : DEFAULT_BOOKING_CUTOFF_TIMESTAMP;
 
       const isLocked = Boolean(pricing?.isBookingClosed || now >= cutoffTime);
-      setIsPassBookingLocked(isLocked);
+      const isBypassed = Boolean(vipAccessKey || (typeof window !== 'undefined' && sessionStorage.getItem('safedsheri_vip_key')));
+      setIsPassBookingLocked(isBypassed ? false : isLocked);
 
       // Countdown to Cutoff
       const diff = Math.max(0, cutoffTime - now);
@@ -454,7 +482,7 @@ export default function SafedSheriLandingPage() {
     updateLockStatus();
     const timer = setInterval(updateLockStatus, 1000);
     return () => clearInterval(timer);
-  }, [pricing?.isBookingClosed, pricing?.bookingCloseTime]);
+  }, [pricing?.isBookingClosed, pricing?.bookingCloseTime, vipAccessKey]);
 
   // Urgency Reverse Stop Watch State
   const [timeLeft, setTimeLeft] = useState<{
@@ -1047,12 +1075,21 @@ export default function SafedSheriLandingPage() {
     setBookingLoading(true);
     setBookingError(null);
     try {
+      const activeVipKey =
+        vipAccessKey ||
+        (typeof window !== 'undefined' ? sessionStorage.getItem('safedsheri_vip_key') : null) ||
+        undefined;
+
       const res = await fetch(`${API_BASE}/registrations/public`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(activeVipKey ? { 'x-vip-access': activeVipKey } : {}),
+        },
         body: JSON.stringify({
           passType: selectedPass,
           otpToken: verifiedToken,
+          vipAccessKey: activeVipKey,
           attendees: attendees.map((a) => {
             const { hasMismatch, discrepancies } = computeOcrDiscrepancies(a);
             return {
@@ -1498,7 +1535,13 @@ export default function SafedSheriLandingPage() {
       {/* Visual Sunlit Canvas */}
       <IllusionEngine />
 
-
+      {/* Floating VIP Direct Access Badge */}
+      {vipAccessKey && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1A1208]/90 backdrop-blur-md text-amber-300 font-bold text-xs py-2 px-5 rounded-full shadow-2xl border border-amber-400/50 flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <span>👑 Organizer VIP Access Active • Pass Booking Unlocked</span>
+        </div>
+      )}
 
       {/* HEADER / NAVIGATION */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#EAD9B8] px-3 sm:px-6 py-2.5 sm:py-3.5 shadow-sm transition-all">

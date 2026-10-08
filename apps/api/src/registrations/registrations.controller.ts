@@ -42,9 +42,16 @@ export class RegistrationsController {
     body: {
       passType: PassType;
       attendees: any[];
+      otpToken?: string;
+      vipAccessKey?: string;
     },
+    @Request() req: any,
   ) {
-    return this.registrationsService.createPublicRegistration(body);
+    const vipKey = body.vipAccessKey || req?.headers?.['x-vip-access'];
+    return this.registrationsService.createPublicRegistration({
+      ...body,
+      vipAccessKey: typeof vipKey === 'string' ? vipKey : undefined,
+    });
   }
 
   @Post('family-friends')
