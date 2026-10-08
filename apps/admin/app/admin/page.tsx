@@ -96,6 +96,7 @@ export default function SuperAdminDashboard() {
   const [gazeboInquiries, setGazeboInquiries] = useState<any[]>([]);
   const [sponsorInquiries, setSponsorInquiries] = useState<any[]>([]);
   const [scans, setScans] = useState<any[]>([]);
+  const [revertingScanId, setRevertingScanId] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(false);
 
@@ -1020,6 +1021,37 @@ export default function SuperAdminDashboard() {
       loadTabContent('gazebos');
     } else {
       setError(res.error?.message || 'Failed to release gazebo');
+    }
+  }
+
+  async function handleRevertScanRow(r: any) {
+    const credId = r.credentialId || r.credential?.id;
+    if (!credId) {
+      alert('Credential ID not found for this scan record.');
+      return;
+    }
+    const name = r.credential?.attendee?.fullName || 'this attendee';
+    const passCode = r.credential?.passCode || r.credential?.credentialNumber || '';
+    if (!window.confirm(`Are you sure you want to REVERT scan for ${name} (${passCode})?\n\nThis will reset their pass status back to ACTIVE and remove the venue entry log so they can scan again tomorrow.`)) {
+      return;
+    }
+    setRevertingScanId(credId);
+    setError('');
+    setMessage('');
+    try {
+      const res = await apiRequest(`/entries/revert-scan/${credId}`, {
+        method: 'POST',
+      });
+      if (res.success) {
+        setMessage(res.message || `✅ Scan reverted for ${name}. Pass is now ACTIVE!`);
+        await loadTabContent('scans', true);
+      } else {
+        setError(res.error?.message || 'Failed to revert scan');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Error occurred while reverting scan');
+    } finally {
+      setRevertingScanId(null);
     }
   }
 
@@ -3045,12 +3077,23 @@ export default function SuperAdminDashboard() {
               <h3 className="text-lg font-serif font-bold text-[#2D1F0E]">Master Security Gate Scanner Audit</h3>
               <p className="text-xs text-[#6E5336]">Real-time gate pass validation logs, attendee details, anti-passback attempts & gate restrictions.</p>
             </div>
-            <button
-              onClick={() => loadTabContent('scans')}
-              className="px-4 py-2 bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C] font-bold text-xs rounded-xl hover:bg-[#FCEBB8] transition flex items-center gap-1.5"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh Scans Log
-            </button>
+            <div className="flex items-center gap-2">
+              {currentUser?.username === 'masteradmin@safedsheri.com' && (
+                <button
+                  onClick={() => router.push('/admin/scans')}
+                  className="px-3.5 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 font-bold text-xs rounded-xl hover:bg-emerald-100 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Open Dedicated Scans & Bulk Revert Manager"
+                >
+                  <Shield className="w-3.5 h-3.5 text-emerald-700" /> Dedicated Scans Manager
+                </button>
+              )}
+              <button
+                onClick={() => loadTabContent('scans')}
+                className="px-4 py-2 bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C] font-bold text-xs rounded-xl hover:bg-[#FCEBB8] transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh Scans Log
+              </button>
+            </div>
           </div>
 
           <AdvancedTabulatorTable
@@ -3084,6 +3127,29 @@ export default function SuperAdminDashboard() {
               { key: 'scannedAt', title: 'Timestamp', sortable: true, getValue: (r) => new Date(r.scannedAt || r.createdAt).toISOString(), render: (r) => (
                 <span className="font-mono text-[11px] text-[#6E5336]">{new Date(r.scannedAt || r.createdAt).toLocaleString()}</span>
               )},
+              ...(currentUser?.username === 'masteradmin@safedsheri.com' ? [{
+                key: 'action',
+                title: 'Action',
+                sortable: false,
+                render: (r: any) => {
+                  const credId = r.credentialId || r.credential?.id;
+                  if (!credId) {
+                    return <span className="text-[10px] text-stone-400 font-mono">—</span>;
+                  }
+                  const isReverting = revertingScanId === credId;
+                  return (
+                    <button
+                      onClick={() => handleRevertScanRow(r)}
+                      disabled={isReverting}
+                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 hover:border-amber-400 whitespace-nowrap cursor-pointer"
+                      title="Revert scan back to ACTIVE so attendee can scan tomorrow"
+                    >
+                      <RotateCcw className={`w-3 h-3 text-amber-700 ${isReverting ? 'animate-spin' : ''}`} />
+                      <span>{isReverting ? 'Reverting...' : 'Revert Scan'}</span>
+                    </button>
+                  );
+                },
+              }] : []),
             ]}
             keyField="id"
             title="Gate Pass Access Verification Log"

@@ -22,6 +22,7 @@ export class ScanAttemptsService {
             credentialNumber: true,
             passCode: true,
             secureToken: true,
+            status: true,
             attendee: {
               select: { id: true, fullName: true, phone: true },
             },
