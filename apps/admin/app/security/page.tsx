@@ -274,7 +274,7 @@ export default function SecurityScannerPage() {
     setScanResult({ status: null });
     scanningRef.current = false;
     setScanning(false);
-    await resumeScanner();
+    await startCamera();
   };
 
   const dismissResult = () => {
@@ -308,6 +308,9 @@ export default function SecurityScannerPage() {
       dismissTimerRef.current = null;
     }
 
+    // Stop camera immediately so scanner closes and will NOT scan anything else
+    await stopCamera();
+
     const res = await apiRequest('/entries/scan', {
       method: 'POST',
       body: JSON.stringify({ token: token.trim(), gateId: selectedGate }),
@@ -315,7 +318,6 @@ export default function SecurityScannerPage() {
 
     if (res.success && res.data) {
       setScanResult(res.data);
-      pauseScanner();
       playFeedbackSound(res.data.status === 'VALID' ? 'VALID' : 'NOT_VALID');
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         if (res.data.status === 'VALID') {
@@ -341,7 +343,7 @@ export default function SecurityScannerPage() {
       ]);
 
       fetchLiveStats();
-      // Result remains until the user clicks 'Next'
+      // NO auto-dismiss timer! User must click 'Next' to open scanner again
     } else {
       if (res.error?.code === 'UNAUTHORIZED' || res.error?.statusCode === 401) {
         setIsAuthenticated(false);
@@ -351,12 +353,11 @@ export default function SecurityScannerPage() {
         status: 'NOT_VALID',
         reason: res.error?.message || 'INVALID_TOKEN',
       });
-      pauseScanner();
       playFeedbackSound('NOT_VALID');
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate([300, 100, 300]); } catch (e) {}
       }
-      // Result remains until the user clicks 'Next'
+      // NO auto-dismiss timer! User must click 'Next' to open scanner again
     }
   }
 
