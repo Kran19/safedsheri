@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {user.username === 'masteradmin@safedsheri.com' && (
             <button
               onClick={() => router.push('/admin/master-qr')}
-              className="p-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 rounded-lg transition-colors shadow-xs flex items-center gap-1.5 text-xs font-bold"
+              className="px-3 py-1.5 bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-300 text-amber-950 rounded-xl transition shadow-xs flex items-center gap-1.5 text-xs font-bold whitespace-nowrap"
               title="Master Passes QR Directory"
             >
               <QrCode className="w-3.5 h-3.5 text-amber-700" />

@@ -7,7 +7,7 @@ import LogoSlot from './LogoSlot';
 import { 
   QrCode, Search, Printer, Download, Copy, Check, CheckCircle2, 
   Users, Crown, Sparkles, RefreshCw, Lock, ShieldCheck, Ticket, 
-  Grid, List, AlertCircle, Eye, X, Phone, Calendar
+  Grid, List, AlertCircle, Eye, X, Phone, Calendar, Filter, RotateCcw
 } from 'lucide-react';
 
 interface MasterPassesQRViewProps {
@@ -348,87 +348,287 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
 
       {/* METRIC CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Card: ALL */}
         <div 
           onClick={() => setCategoryFilter('ALL')}
-          className={`p-4 rounded-2xl border transition cursor-pointer ${
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
             categoryFilter === 'ALL'
-              ? 'bg-[#2D1F0E] text-white border-[#2D1F0E] shadow-md ring-2 ring-[#D99427]/40'
-              : 'bg-white text-[#2D1F0E] border-[#EAD9B8] hover:border-[#D99427]'
+              ? 'bg-gradient-to-br from-[#2D1F0E] to-[#1F1710] text-white border-2 border-[#D99427] shadow-lg ring-2 ring-[#D99427]/40 scale-[1.02]'
+              : 'bg-white hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] hover:border-[#D99427] shadow-xs'
           }`}
         >
-          <div className="text-[10px] font-mono font-bold uppercase opacity-80">ALL PASSES</div>
-          <div className="text-2xl font-serif font-bold mt-1">{counts.total}</div>
-          <div className="text-[10px] opacity-70 mt-0.5">Total Issued</div>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+              categoryFilter === 'ALL' ? 'text-[#F6C85F]' : 'text-[#8C6019]'
+            }`}>
+              ALL PASSES
+            </span>
+            {categoryFilter === 'ALL' && (
+              <span className="w-2 h-2 rounded-full bg-[#D99427] animate-pulse" />
+            )}
+          </div>
+          <div className={`text-2xl font-serif font-bold my-1 ${
+            categoryFilter === 'ALL' ? 'text-white' : 'text-[#2D1F0E]'
+          }`}>
+            {counts.total}
+          </div>
+          <div className={`text-[10px] ${
+            categoryFilter === 'ALL' ? 'text-[#FAF6EE]/80' : 'text-[#6E5336]'
+          }`}>
+            Total Passes Issued
+          </div>
         </div>
 
+        {/* Card: SINGLE FEMALE */}
         <div 
           onClick={() => setCategoryFilter('SINGLE')}
-          className={`p-4 rounded-2xl border transition cursor-pointer ${
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
             categoryFilter === 'SINGLE'
-              ? 'bg-purple-900 text-white border-purple-900 shadow-md ring-2 ring-purple-400'
-              : 'bg-purple-50/70 text-purple-950 border-purple-200 hover:border-purple-400'
+              ? 'bg-gradient-to-br from-purple-800 to-indigo-900 text-white border-2 border-purple-400 shadow-lg ring-2 ring-purple-400/50 scale-[1.02]'
+              : 'bg-purple-50/50 hover:bg-purple-100/60 text-purple-950 border border-purple-200 hover:border-purple-300 shadow-xs'
           }`}
         >
-          <div className="text-[10px] font-mono font-bold uppercase text-purple-700">SINGLE FEMALE</div>
-          <div className="text-2xl font-serif font-bold mt-1 text-purple-900">{counts.single}</div>
-          <div className="text-[10px] text-purple-700 mt-0.5">1 Attendee per Pass</div>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+              categoryFilter === 'SINGLE' ? 'text-purple-200' : 'text-purple-800'
+            }`}>
+              🌸 SINGLE FEMALE
+            </span>
+            {categoryFilter === 'SINGLE' && (
+              <span className="w-2 h-2 rounded-full bg-purple-300 animate-pulse" />
+            )}
+          </div>
+          <div className={`text-2xl font-serif font-bold my-1 ${
+            categoryFilter === 'SINGLE' ? 'text-white' : 'text-purple-950'
+          }`}>
+            {counts.single}
+          </div>
+          <div className={`text-[10px] ${
+            categoryFilter === 'SINGLE' ? 'text-purple-200/90' : 'text-purple-700'
+          }`}>
+            1 Attendee per Pass
+          </div>
         </div>
 
+        {/* Card: COUPLE PASSES */}
         <div 
           onClick={() => setCategoryFilter('COUPLE')}
-          className={`p-4 rounded-2xl border transition cursor-pointer ${
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
             categoryFilter === 'COUPLE'
-              ? 'bg-[#8C6019] text-white border-[#8C6019] shadow-md ring-2 ring-[#E5A93C]'
-              : 'bg-amber-50/70 text-amber-950 border-amber-200 hover:border-amber-400'
+              ? 'bg-gradient-to-br from-[#8C6019] to-[#5C3C0C] text-white border-2 border-[#F6C85F] shadow-lg ring-2 ring-[#E5A93C]/50 scale-[1.02]'
+              : 'bg-amber-50/50 hover:bg-amber-100/60 text-amber-950 border border-amber-200 hover:border-amber-300 shadow-xs'
           }`}
         >
-          <div className="text-[10px] font-mono font-bold uppercase text-amber-800">COUPLE PASSES</div>
-          <div className="text-2xl font-serif font-bold mt-1 text-amber-900">{counts.couple}</div>
-          <div className="text-[10px] text-amber-800 mt-0.5">2 Attendees (F+M)</div>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+              categoryFilter === 'COUPLE' ? 'text-[#F6C85F]' : 'text-amber-800'
+            }`}>
+              💑 COUPLE PASSES
+            </span>
+            {categoryFilter === 'COUPLE' && (
+              <span className="w-2 h-2 rounded-full bg-[#F6C85F] animate-pulse" />
+            )}
+          </div>
+          <div className={`text-2xl font-serif font-bold my-1 ${
+            categoryFilter === 'COUPLE' ? 'text-white' : 'text-amber-950'
+          }`}>
+            {counts.couple}
+          </div>
+          <div className={`text-[10px] ${
+            categoryFilter === 'COUPLE' ? 'text-amber-100/90' : 'text-amber-700'
+          }`}>
+            2 Attendees (F+M)
+          </div>
         </div>
 
+        {/* Card: KIDS PASSES */}
         <div 
           onClick={() => setCategoryFilter('KIDS')}
-          className={`p-4 rounded-2xl border transition cursor-pointer ${
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
             categoryFilter === 'KIDS'
-              ? 'bg-emerald-900 text-white border-emerald-900 shadow-md ring-2 ring-emerald-400'
-              : 'bg-emerald-50/70 text-emerald-950 border-emerald-200 hover:border-emerald-400'
+              ? 'bg-gradient-to-br from-emerald-800 to-teal-900 text-white border-2 border-emerald-400 shadow-lg ring-2 ring-emerald-400/50 scale-[1.02]'
+              : 'bg-emerald-50/50 hover:bg-emerald-100/60 text-emerald-950 border border-emerald-200 hover:border-emerald-300 shadow-xs'
           }`}
         >
-          <div className="text-[10px] font-mono font-bold uppercase text-emerald-800">KIDS PASSES</div>
-          <div className="text-2xl font-serif font-bold mt-1 text-emerald-900">{counts.kids}</div>
-          <div className="text-[10px] text-emerald-800 mt-0.5">Children Entry</div>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+              categoryFilter === 'KIDS' ? 'text-emerald-200' : 'text-emerald-800'
+            }`}>
+              🧒 KIDS PASSES
+            </span>
+            {categoryFilter === 'KIDS' && (
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+            )}
+          </div>
+          <div className={`text-2xl font-serif font-bold my-1 ${
+            categoryFilter === 'KIDS' ? 'text-white' : 'text-emerald-950'
+          }`}>
+            {counts.kids}
+          </div>
+          <div className={`text-[10px] ${
+            categoryFilter === 'KIDS' ? 'text-emerald-100/90' : 'text-emerald-700'
+          }`}>
+            Children Entry
+          </div>
         </div>
 
+        {/* Card: GAZEBO VIP */}
         <div 
           onClick={() => setCategoryFilter('GAZEBO')}
-          className={`p-4 rounded-2xl border transition cursor-pointer ${
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
             categoryFilter === 'GAZEBO'
-              ? 'bg-[#1F1710] text-[#F6C85F] border-[#D99427] shadow-md ring-2 ring-[#D99427]'
-              : 'bg-[#FFFDF9] text-[#2D1F0E] border-[#EAD9B8] hover:border-[#D99427]'
+              ? 'bg-gradient-to-br from-[#2D1F0E] via-[#3d2a13] to-[#1F1710] text-[#F6C85F] border-2 border-[#D99427] shadow-lg ring-2 ring-[#D99427]/60 scale-[1.02]'
+              : 'bg-[#FFFDF9] hover:bg-[#FAF6EE] text-[#2D1F0E] border border-[#EAD9B8] hover:border-[#D99427] shadow-xs'
           }`}
         >
-          <div className="text-[10px] font-mono font-bold uppercase text-[#D99427]">GAZEBO VIP</div>
-          <div className="text-2xl font-serif font-bold mt-1 text-[#2D1F0E]">{counts.gazebo}</div>
-          <div className="text-[10px] text-[#8C6019] mt-0.5">VIP Cabana Passes</div>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+              categoryFilter === 'GAZEBO' ? 'text-[#F6C85F]' : 'text-[#8C6019]'
+            }`}>
+              👑 GAZEBO VIP
+            </span>
+            {categoryFilter === 'GAZEBO' && (
+              <span className="w-2 h-2 rounded-full bg-[#D99427] animate-pulse" />
+            )}
+          </div>
+          <div className={`text-2xl font-serif font-bold my-1 ${
+            categoryFilter === 'GAZEBO' ? 'text-[#F6C85F]' : 'text-[#2D1F0E]'
+          }`}>
+            {counts.gazebo}
+          </div>
+          <div className={`text-[10px] ${
+            categoryFilter === 'GAZEBO' ? 'text-[#FAF6EE]/80' : 'text-[#6E5336]'
+          }`}>
+            VIP Cabana Passes
+          </div>
         </div>
 
+        {/* Card: GATE SCANNED */}
         <div 
           onClick={() => setStatusFilter(statusFilter === 'USED' ? 'ALL' : 'USED')}
-          className={`p-4 rounded-2xl border transition cursor-pointer ${
+          className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
             statusFilter === 'USED'
-              ? 'bg-blue-900 text-white border-blue-900 shadow-md ring-2 ring-blue-400'
-              : 'bg-blue-50/70 text-blue-950 border-blue-200 hover:border-blue-400'
+              ? 'bg-gradient-to-br from-blue-700 to-indigo-900 text-white border-2 border-blue-400 shadow-lg ring-2 ring-blue-400/50 scale-[1.02]'
+              : 'bg-blue-50/50 hover:bg-blue-100/60 text-blue-950 border border-blue-200 hover:border-blue-300 shadow-xs'
           }`}
         >
-          <div className="text-[10px] font-mono font-bold uppercase text-blue-800">GATE SCANNED</div>
-          <div className="text-2xl font-serif font-bold mt-1 text-blue-900">{counts.used}</div>
-          <div className="text-[10px] text-blue-700 mt-0.5">Entries Checked-In</div>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+              statusFilter === 'USED' ? 'text-blue-200' : 'text-blue-800'
+            }`}>
+              🛡️ GATE SCANNED
+            </span>
+            {statusFilter === 'USED' && (
+              <span className="w-2 h-2 rounded-full bg-blue-300 animate-pulse" />
+            )}
+          </div>
+          <div className={`text-2xl font-serif font-bold my-1 ${
+            statusFilter === 'USED' ? 'text-white' : 'text-blue-950'
+          }`}>
+            {counts.used}
+          </div>
+          <div className={`text-[10px] ${
+            statusFilter === 'USED' ? 'text-blue-100/90' : 'text-blue-700'
+          }`}>
+            Entries Checked-In
+          </div>
         </div>
       </div>
 
+      {/* CATEGORY QUICK FILTER PILLS */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#8C6019] mr-1 flex items-center gap-1">
+          <Filter className="w-3.5 h-3.5" />
+          <span>Category Filter:</span>
+        </span>
+        
+        <button
+          onClick={() => setCategoryFilter('ALL')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center space-x-1.5 ${
+            categoryFilter === 'ALL'
+              ? 'bg-[#2D1F0E] text-white shadow-sm ring-1 ring-[#D99427]'
+              : 'bg-white hover:bg-[#FAF6EE] text-[#6E5336] border border-[#EAD9B8]'
+          }`}
+        >
+          <span>All Categories</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${categoryFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-[#FAF6EE] text-[#8C6019]'}`}>
+            {counts.total}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setCategoryFilter('SINGLE')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center space-x-1.5 ${
+            categoryFilter === 'SINGLE'
+              ? 'bg-purple-900 text-white shadow-sm ring-1 ring-purple-400'
+              : 'bg-white hover:bg-purple-50 text-purple-900 border border-purple-200'
+          }`}
+        >
+          <span>🌸 Single Female</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${categoryFilter === 'SINGLE' ? 'bg-purple-700 text-white' : 'bg-purple-100 text-purple-800'}`}>
+            {counts.single}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setCategoryFilter('COUPLE')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center space-x-1.5 ${
+            categoryFilter === 'COUPLE'
+              ? 'bg-[#8C6019] text-white shadow-sm ring-1 ring-[#F6C85F]'
+              : 'bg-white hover:bg-amber-50 text-amber-900 border border-amber-200'
+          }`}
+        >
+          <span>💑 Couple</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${categoryFilter === 'COUPLE' ? 'bg-[#5C3C0C] text-white' : 'bg-amber-100 text-amber-800'}`}>
+            {counts.couple}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setCategoryFilter('KIDS')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center space-x-1.5 ${
+            categoryFilter === 'KIDS'
+              ? 'bg-emerald-900 text-white shadow-sm ring-1 ring-emerald-400'
+              : 'bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200'
+          }`}
+        >
+          <span>🧒 Kids</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${categoryFilter === 'KIDS' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800'}`}>
+            {counts.kids}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setCategoryFilter('GAZEBO')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center space-x-1.5 ${
+            categoryFilter === 'GAZEBO'
+              ? 'bg-[#2D1F0E] text-[#F6C85F] shadow-sm ring-1 ring-[#D99427]'
+              : 'bg-white hover:bg-amber-50 text-[#8C6019] border border-[#EAD9B8]'
+          }`}
+        >
+          <span>👑 Gazebo VIP</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${categoryFilter === 'GAZEBO' ? 'bg-[#D99427] text-[#2D1F0E]' : 'bg-[#FFF5DC] text-[#8C6019]'}`}>
+            {counts.gazebo}
+          </span>
+        </button>
+
+        {(categoryFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
+          <button
+            onClick={() => {
+              setCategoryFilter('ALL');
+              setStatusFilter('ALL');
+              setSearchQuery('');
+            }}
+            className="px-3 py-1.5 rounded-full text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition flex items-center space-x-1 ml-auto"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset Filters</span>
+          </button>
+        )}
+      </div>
+
       {/* FILTER & SEARCH CONTROL BAR */}
-      <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-white border border-[#EAD9B8] shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C6019]" />
@@ -437,30 +637,51 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
             placeholder="Search by Guest Name, WhatsApp Phone, Pass Code (SS26-...), App #, or Aadhaar..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs focus:border-[#D99427] focus:bg-white outline-none transition"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs font-medium text-[#2D1F0E] placeholder:text-gray-400 focus:border-[#D99427] focus:bg-white outline-none transition"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* View Mode Toggle & Status Filter */}
-        <div className="flex items-center space-x-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl text-xs font-semibold text-[#2D1F0E] outline-none cursor-pointer"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active Passes Only</option>
-            <option value="USED">Scanned / Used Only</option>
-          </select>
+        {/* Dropdown Filters and View Mode Controls */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Category Dropdown Filter */}
+          <div className="flex items-center space-x-1.5">
+            <span className="text-[11px] font-mono font-bold uppercase text-[#8C6019] hidden sm:inline">Category:</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value as any)}
+              className="px-3.5 py-2.5 bg-[#FAF6EE] hover:bg-white focus:bg-white border border-[#EAD9B8] focus:border-[#D99427] rounded-xl text-xs font-bold text-[#2D1F0E] outline-none cursor-pointer transition shadow-xs"
+            >
+              <option value="ALL">All Categories ({counts.total})</option>
+              <option value="SINGLE">🌸 Single Female ({counts.single})</option>
+              <option value="COUPLE">💑 Couple ({counts.couple})</option>
+              <option value="KIDS">🧒 Kids ({counts.kids})</option>
+              <option value="GAZEBO">👑 Gazebo VIP ({counts.gazebo})</option>
+            </select>
+          </div>
 
+          {/* Status Dropdown Filter */}
+          <div className="flex items-center space-x-1.5">
+            <span className="text-[11px] font-mono font-bold uppercase text-[#8C6019] hidden sm:inline">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="px-3.5 py-2.5 bg-[#FAF6EE] hover:bg-white focus:bg-white border border-[#EAD9B8] focus:border-[#D99427] rounded-xl text-xs font-bold text-[#2D1F0E] outline-none cursor-pointer transition shadow-xs"
+            >
+              <option value="ALL">All Statuses ({counts.total})</option>
+              <option value="ACTIVE">Active Passes Only</option>
+              <option value="USED">Scanned / Used Only ({counts.used})</option>
+            </select>
+          </div>
+
+          {/* View Mode Toggle */}
           <div className="flex items-center bg-[#FAF6EE] border border-[#EAD9B8] rounded-xl p-1">
             <button
               onClick={() => setViewMode('grid')}
@@ -481,6 +702,23 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
               <List className="w-4 h-4" />
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* FILTER RESULT STATUS BADGE */}
+      <div className="flex items-center justify-between text-xs text-[#6E5336] px-1">
+        <div className="flex items-center space-x-2">
+          <span>Showing <strong className="text-[#2D1F0E]">{filteredCredentials.length}</strong> of <strong className="text-[#2D1F0E]">{counts.total}</strong> total passes</span>
+          {categoryFilter !== 'ALL' && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FAF6EE] border border-[#EAD9B8] text-[#8C6019]">
+              Filter: {categoryFilter === 'SINGLE' ? 'Single Female' : categoryFilter === 'COUPLE' ? 'Couple' : categoryFilter === 'KIDS' ? 'Kids' : 'Gazebo VIP'}
+            </span>
+          )}
+          {statusFilter !== 'ALL' && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-800">
+              Status: {statusFilter}
+            </span>
+          )}
         </div>
       </div>
 
