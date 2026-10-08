@@ -724,6 +724,205 @@ export class RegistrationsService {
     }
   }
 
+  async createFamilyAndFriendsRegistration(data: {
+    passType: PassType;
+    notes?: string;
+    attendees: Array<{
+      fullName: string;
+      phone: string;
+      email?: string;
+      gender: Gender;
+      aadhaarNumber: string;
+      documentKey?: string;
+      documentBackKey?: string;
+      originalFilename?: string;
+      documentBackName?: string;
+      kidsAgeGroup?: string;
+      dob?: string;
+    }>;
+  }) {
+    if (!data.attendees || data.attendees.length === 0) {
+      throw new BadRequestException('At least one attendee record is required');
+    }
+
+    if (data.passType === PassType.SINGLE && data.attendees.length !== 1) {
+      throw new BadRequestException('Single Female Pass allows only 1 pass per request.');
+    }
+    if (data.passType === PassType.COUPLE && data.attendees.length !== 2) {
+      throw new BadRequestException('Couple Pass requires exactly 2 attendees.');
+    }
+    if (data.passType === PassType.KIDS && data.attendees.length !== 1) {
+      throw new BadRequestException('Kids Pass allows only 1 pass per request.');
+    }
+
+    const primaryPhone = data.attendees[0]?.phone;
+    if (!primaryPhone) {
+      throw new BadRequestException('Primary contact phone number is required.');
+    }
+
+    let activeEvent = await this.prisma.event.findFirst({
+      where: { status: 'ACTIVE' },
+    });
+    if (!activeEvent) {
+      activeEvent = await this.prisma.event.create({
+        data: {
+          name: 'Safed Sheri 2026',
+          eventDate: new Date('2026-10-09T00:00:00.000Z'),
+          status: 'ACTIVE',
+        },
+      });
+    }
+
+    let activePhase = await this.prisma.pricingPhase.findFirst({
+      where: { isActive: true },
+    });
+    if (!activePhase) {
+      const created = await this.getActivePhase();
+      activePhase = await this.prisma.pricingPhase.findUnique({
+        where: { id: created.data.id },
+      });
+    }
+
+    let adminUser = await this.prisma.user.findFirst({
+      where: { role: Role.SUPER_ADMIN },
+    });
+    if (!adminUser) {
+      adminUser = await this.prisma.user.findFirst();
+    }
+
+    const noteText = data.notes
+      ? `Family & Friends Guest Request • ${data.notes.trim()}`
+      : 'Family & Friends Guest Request';
+
+    const reg = await this.prisma.$transaction(async (tx) => {
+      const registrationNumber = await this.generateUniqueRegistrationNumber(tx);
+
+      const createdReg = await tx.registration.create({
+        data: {
+          registrationNumber,
+          eventId: activeEvent.id,
+          pricingPhaseId: activePhase.id,
+          passType: data.passType,
+          amountDue: 0,
+          status: RegistrationStatus.UNDER_REVIEW,
+          reviewNotes: noteText,
+          createdById: adminUser.id,
+        },
+      });
+
+      // Create a pending ₹0 payment record marked as FAMILY_AND_FRIENDS
+      const pendingReceipt = `RCP-FNF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+      await tx.payment.create({
+        data: {
+          registrationId: createdReg.id,
+          amount: 0,
+          method: PaymentMethod.FAMILY_AND_FRIENDS,
+          status: PaymentStatus.PENDING,
+          receiptNumber: pendingReceipt,
+          provider: 'FAMILY_AND_FRIENDS',
+          providerReference: `FNF-REQ-${registrationNumber}`,
+          notes: noteText,
+        },
+      });
+
+      for (let i = 0; i < data.attendees.length; i++) {
+        const attData = data.attendees[i];
+        const cleanAadhaar = (attData.aadhaarNumber || '').replace(/\D/g, '');
+        const aadhaarMasked = this.encryptionService.maskAadhaar(cleanAadhaar || '000000000000');
+        const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar || '000000000000');
+        const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar || '000000000000');
+
+        const attendee = await tx.attendee.upsert({
+          where: { aadhaarHmac },
+          update: {
+            fullName: attData.fullName,
+            phone: attData.phone,
+            email: attData.email || null,
+            gender: attData.gender,
+            aadhaarMasked,
+            aadhaarEncrypted,
+            kidsAgeGroup: attData.kidsAgeGroup || null,
+            dob: attData.dob ? new Date(attData.dob) : null,
+          },
+          create: {
+            fullName: attData.fullName,
+            phone: attData.phone,
+            email: attData.email || null,
+            gender: attData.gender,
+            aadhaarHmac,
+            aadhaarMasked,
+            aadhaarEncrypted,
+            kidsAgeGroup: attData.kidsAgeGroup || null,
+            dob: attData.dob ? new Date(attData.dob) : null,
+          },
+        });
+
+        if (attData.documentKey) {
+          await tx.aadhaarDocument.upsert({
+            where: { attendeeId: attendee.id },
+            update: {
+              storageKey: attData.documentKey,
+              originalFilename: attData.originalFilename || 'aadhaar_doc.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 1024,
+              checksum: 'fnf_doc',
+              storageKeyBack: attData.documentBackKey || null,
+              originalFilenameBack: attData.documentBackName || null,
+            },
+            create: {
+              attendeeId: attendee.id,
+              storageKey: attData.documentKey,
+              originalFilename: attData.originalFilename || 'aadhaar_doc.jpg',
+              mimeType: 'image/jpeg',
+              sizeBytes: 1024,
+              checksum: 'fnf_doc',
+              storageKeyBack: attData.documentBackKey || null,
+              originalFilenameBack: attData.documentBackName || null,
+            },
+          });
+        }
+
+        await tx.registrationAttendee.create({
+          data: {
+            registrationId: createdReg.id,
+            attendeeId: attendee.id,
+            isPrimary: i === 0,
+            status: RegistrationStatus.UNDER_REVIEW,
+          },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          actorId: adminUser.id,
+          action: 'FAMILY_FRIENDS_REQUEST_SUBMITTED',
+          targetEntity: 'Registration',
+          targetId: createdReg.id,
+          payload: {
+            registrationNumber,
+            passType: data.passType,
+            attendeesCount: data.attendees.length,
+            notes: data.notes,
+          },
+        },
+      });
+
+      return createdReg;
+    });
+
+    return {
+      success: true,
+      data: {
+        id: reg.id,
+        registrationNumber: reg.registrationNumber,
+        passType: reg.passType,
+        status: reg.status,
+        amountDue: 0,
+        message: 'Your Family & Friends pass request has been submitted successfully and is awaiting review. Your pass and QR code will be generated once approved by the event organizers.',
+      },
+    };
+  }
+
   async reviewRegistration(
     id: string,
     adminId: string,
@@ -820,8 +1019,14 @@ export class RegistrationsService {
       }
 
       // 4. Case B: At least 1 attendee approved (Partial or Full Approval)
+      const isFamilyAndFriends =
+        Boolean(reg.reviewNotes?.includes('Family & Friends')) ||
+        Boolean(reg.payments?.some((p) => p.method === PaymentMethod.FAMILY_AND_FRIENDS));
+
       let recalculatedAmount = 0;
-      if (reg.passType === PassType.COUPLE) {
+      if (isFamilyAndFriends) {
+        recalculatedAmount = 0;
+      } else if (reg.passType === PassType.COUPLE) {
         recalculatedAmount = Number(reg.pricingPhase.couplePrice);
       } else if (reg.passType === PassType.KIDS) {
         recalculatedAmount = approvedAttendees.reduce((sum, ra) => {
@@ -843,21 +1048,27 @@ export class RegistrationsService {
         approvedAttendees[0]?.attendee ||
         reg.attendees[0]?.attendee;
 
-      // Create / update payment order for the recalculated amount
-      const paymentOrder = await this.paymentGatewayService.createPaymentOrder({
-        registrationId: reg.id,
-        registrationNumber: reg.registrationNumber,
-        amount: recalculatedAmount,
-        customerName: primaryAttendee?.fullName || 'Guest',
-        customerPhone: primaryAttendee?.phone || '',
-      });
+      // Create / update payment order for the recalculated amount (only if not complimentary)
+      let paymentOrder: any = null;
+      if (!isFamilyAndFriends && recalculatedAmount > 0) {
+        paymentOrder = await this.paymentGatewayService.createPaymentOrder({
+          registrationId: reg.id,
+          registrationNumber: reg.registrationNumber,
+          amount: recalculatedAmount,
+          customerName: primaryAttendee?.fullName || 'Guest',
+          customerPhone: primaryAttendee?.phone || '',
+        });
+      }
 
       const summaryNote =
         rejectedAttendees.length > 0
           ? `${approvedCount} approved, ${rejectedAttendees.length} rejected. (Amount: ₹${recalculatedAmount})`
+          : isFamilyAndFriends
+          ? 'Complimentary Family & Friends Pass Approved by Admin (₹0).'
           : 'All attendees approved by Admin.';
 
-      const hasConfirmedPayment = reg.payments?.some((p) => p.status === PaymentStatus.CONFIRMED);
+      const hasConfirmedPayment =
+        reg.payments?.some((p) => p.status === PaymentStatus.CONFIRMED) || isFamilyAndFriends;
       const targetStatus = hasConfirmedPayment
         ? RegistrationStatus.PASS_ISSUED
         : RegistrationStatus.PAYMENT_PENDING;
@@ -867,12 +1078,43 @@ export class RegistrationsService {
         data: {
           status: targetStatus,
           amountDue: recalculatedAmount,
-          paymentLinkId: paymentOrder.paymentLinkId,
+          paymentLinkId: paymentOrder ? paymentOrder.paymentLinkId : null,
           reviewNotes: data.globalNotes ? `${data.globalNotes} • ${summaryNote}` : summaryNote,
           reviewedById: adminId,
           reviewedAt: new Date(),
         },
       });
+
+      if (isFamilyAndFriends) {
+        const existingFnfPayment = reg.payments?.find(
+          (p) => p.method === PaymentMethod.FAMILY_AND_FRIENDS,
+        );
+        if (existingFnfPayment) {
+          await tx.payment.update({
+            where: { id: existingFnfPayment.id },
+            data: {
+              status: PaymentStatus.CONFIRMED,
+              amount: 0,
+              collectedById: adminId,
+            },
+          });
+        } else {
+          const fnfReceipt = `RCP-FNF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+          await tx.payment.create({
+            data: {
+              registrationId: reg.id,
+              amount: 0,
+              method: PaymentMethod.FAMILY_AND_FRIENDS,
+              status: PaymentStatus.CONFIRMED,
+              receiptNumber: fnfReceipt,
+              provider: 'FAMILY_AND_FRIENDS',
+              providerReference: `FNF-${reg.registrationNumber}`,
+              notes: 'Family & Friends Approved Pass (₹0)',
+              collectedById: adminId,
+            },
+          });
+        }
+      }
 
       if (hasConfirmedPayment) {
         await this.paymentsService.generateCredentialsForRegistration(reg.id, tx);

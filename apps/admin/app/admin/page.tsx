@@ -1003,7 +1003,13 @@ export default function SuperAdminDashboard() {
     }
     
     if (appGazeboFilter !== 'ALL' && app.gazebo?.gazeboNumber !== appGazeboFilter) return false;
-    if (appPassTypeFilter !== 'ALL' && app.passType !== appPassTypeFilter) return false;
+    if (appPassTypeFilter === 'FAMILY_AND_FRIENDS') {
+      const isFnf = app.reviewNotes?.includes('Family & Friends') ||
+                    app.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS');
+      if (!isFnf) return false;
+    } else if (appPassTypeFilter !== 'ALL' && app.passType !== appPassTypeFilter) {
+      return false;
+    }
     return true;
   });
 
@@ -1148,17 +1154,28 @@ export default function SuperAdminDashboard() {
       key: 'passType',
       title: 'Pass Category',
       sortable: true,
-      render: (row) => (
-        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-          row.passType === 'SINGLE'
-            ? 'bg-purple-100 text-purple-800'
-            : row.passType === 'COUPLE'
-            ? 'bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]'
-            : 'bg-amber-100 text-amber-800'
-        }`}>
-          {row.passType}
-        </span>
-      ),
+      render: (row) => {
+        const isFnf = row.reviewNotes?.includes('Family & Friends') || 
+                      row.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS');
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+              row.passType === 'SINGLE'
+                ? 'bg-purple-100 text-purple-800'
+                : row.passType === 'COUPLE'
+                ? 'bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]'
+                : 'bg-amber-100 text-amber-800'
+            }`}>
+              {row.passType}
+            </span>
+            {isFnf && (
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-50 text-purple-800 border border-purple-200 whitespace-nowrap shadow-xs">
+                🌸 F&amp;F (₹0)
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'primaryAttendee',
@@ -2023,18 +2040,20 @@ export default function SuperAdminDashboard() {
                     <span>
                       {appPassTypeFilter === 'ALL' ? 'All Categories' : 
                        appPassTypeFilter === 'SINGLE' ? 'Single Pass' :
-                       appPassTypeFilter === 'COUPLE' ? 'Couple Pass' : 'Kids Pass'}
+                       appPassTypeFilter === 'COUPLE' ? 'Couple Pass' : 
+                       appPassTypeFilter === 'KIDS' ? 'Kids Pass' : '🌸 Family & Friends'}
                     </span>
                     <ChevronDown className={`w-3.5 h-3.5 text-[#8C6019] transition-transform duration-300 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isCategoryDropdownOpen && (
-                    <div className="absolute top-[calc(100%+4px)] right-0 w-40 bg-white border border-[#EAD9B8] rounded-xl shadow-xl overflow-hidden z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute top-[calc(100%+4px)] right-0 w-44 bg-white border border-[#EAD9B8] rounded-xl shadow-xl overflow-hidden z-50 py-1 animate-in fade-in zoom-in-95 duration-200">
                       {[
                         { val: 'ALL', label: 'All Categories' },
                         { val: 'SINGLE', label: 'Single Pass' },
                         { val: 'COUPLE', label: 'Couple Pass' },
-                        { val: 'KIDS', label: 'Kids Pass' }
+                        { val: 'KIDS', label: 'Kids Pass' },
+                        { val: 'FAMILY_AND_FRIENDS', label: '🌸 Family & Friends' }
                       ].map(opt => (
                         <button
                           key={opt.val}

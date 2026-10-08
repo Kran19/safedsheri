@@ -47,6 +47,18 @@ export class RegistrationsController {
     return this.registrationsService.createPublicRegistration(body);
   }
 
+  @Post('family-friends')
+  createFamilyAndFriendsRegistration(
+    @Body()
+    body: {
+      passType: PassType;
+      notes?: string;
+      attendees: any[];
+    },
+  ) {
+    return this.registrationsService.createFamilyAndFriendsRegistration(body);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.TICKETING_FINANCE)
