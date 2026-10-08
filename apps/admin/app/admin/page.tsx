@@ -3275,6 +3275,13 @@ export default function SuperAdminDashboard() {
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#FAF6EE] text-[#8C6019] border border-[#EAD9B8]">
                   {selectedApp.attendees?.length} {selectedApp.attendees?.length === 1 ? 'Guest' : 'Guests'} Total
                 </span>
+                {(selectedApp.reviewNotes?.toLowerCase().includes('family') ||
+                  selectedApp.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS' || p.provider === 'FAMILY_AND_FRIENDS') ||
+                  Number(selectedApp.amountDue) === 0) && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-[#8C6019] border border-amber-300">
+                    Family &amp; Friends Pass (₹0)
+                  </span>
+                )}
               </div>
               <h3 className="text-2xl font-serif font-bold text-[#2D1F0E]">
                 Application #{selectedApp.registrationNumber}
@@ -3579,14 +3586,22 @@ export default function SuperAdminDashboard() {
               const totalGuests = selectedApp.attendees?.length || 0;
               const approvedCount = Object.values(attendeeDecisions).filter((d) => d.status === 'APPROVED').length;
               const rejectedCount = totalGuests - approvedCount;
+              const isFamilyAndFriends =
+                Boolean(selectedApp.reviewNotes?.toLowerCase().includes('family')) ||
+                Boolean(selectedApp.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS' || p.provider === 'FAMILY_AND_FRIENDS')) ||
+                Number(selectedApp.amountDue) === 0;
+
               const singlePrice = Number(selectedApp.pricingPhase?.singlePrice || 4500);
               const recalculatedAmount =
-                selectedApp.passType === 'COUPLE'
+                isFamilyAndFriends
+                  ? 0
+                  : selectedApp.passType === 'COUPLE'
                   ? Number(selectedApp.amountDue)
                   : selectedApp.passType === 'KIDS'
                   ? (selectedApp.attendees as any[]).reduce((sum: number, attWrapper: any) => {
-                      if (attendeeDecisions[attWrapper.attendee.id]?.status === 'APPROVED') {
-                        if (attWrapper.attendee.dob) {
+                      const attId = attWrapper.attendee?.id || attWrapper.attendeeId;
+                      if (attendeeDecisions[attId]?.status === 'APPROVED') {
+                        if (attWrapper.attendee?.dob) {
                           const diffMs = Date.now() - new Date(attWrapper.attendee.dob).getTime();
                           const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
                           if (age > 10 && age <= 15) return sum + 1800;
@@ -3610,6 +3625,8 @@ export default function SuperAdminDashboard() {
                       <div className="text-[11px] text-[#6E5336]">
                         {approvedCount === 0
                           ? 'All guest profiles rejected. Application will be marked as REJECTED.'
+                          : isFamilyAndFriends
+                          ? 'Complimentary Family & Friends Pass (₹0). Free pass & QR code will be generated immediately upon approval.'
                           : rejectedCount > 0
                           ? `Partial Approval: Payment link activated for ${approvedCount} approved pass(es). Rejected guests can re-apply independently.`
                           : 'Full Approval: All attendees verified. Payment link activated for total batch.'}
@@ -3617,8 +3634,12 @@ export default function SuperAdminDashboard() {
                     </div>
                     {approvedCount > 0 && (
                       <div className="text-right font-serif">
-                        <div className="text-[10px] text-[#8C6019] uppercase font-bold">Payable Amount</div>
-                        <div className="text-xl font-bold text-emerald-800">₹{recalculatedAmount.toLocaleString()}</div>
+                        <div className="text-[10px] text-[#8C6019] uppercase font-bold">
+                          {isFamilyAndFriends ? 'Pass Fee' : 'Payable Amount'}
+                        </div>
+                        <div className="text-xl font-bold text-emerald-800">
+                          {isFamilyAndFriends ? '₹0 (Complimentary)' : `₹${recalculatedAmount.toLocaleString()}`}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3655,6 +3676,8 @@ export default function SuperAdminDashboard() {
                           ? 'Submitting Verdict...'
                           : approvedCount === 0
                           ? 'Submit Rejection'
+                          : isFamilyAndFriends
+                          ? 'Approve & Issue Complimentary Pass'
                           : `Submit Review (${approvedCount} Approved, ${rejectedCount} Rejected)`}
                       </span>
                     </button>
