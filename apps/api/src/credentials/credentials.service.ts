@@ -13,7 +13,168 @@ export class CredentialsService {
     private authService: AuthService,
   ) {}
 
+  async ensureApprovedGazebosMinted() {
+    try {
+      const activeInquiries = await this.prisma.gazeboInquiry.findMany({
+        where: {
+          status: { in: [GazeboInquiryStatus.APPROVED, GazeboInquiryStatus.CONFIRMED] },
+        },
+        include: { gazebo: true },
+      });
+
+      for (const inq of activeInquiries) {
+        let targetGazeboId = inq.gazeboId;
+        if (!targetGazeboId) {
+          const availableGzb = await this.prisma.gazebo.findFirst({
+            where: { level: inq.level, status: 'AVAILABLE' },
+          });
+          if (availableGzb) {
+            targetGazeboId = availableGzb.id;
+            await this.prisma.gazeboInquiry.update({
+              where: { id: inq.id },
+              data: { gazeboId: targetGazeboId },
+            });
+            await this.prisma.gazebo.update({
+              where: { id: targetGazeboId },
+              data: { status: 'CONFIRMED' },
+            });
+          }
+        }
+
+        if (!targetGazeboId) continue;
+
+        const existingReg = await this.prisma.registration.findFirst({
+          where: {
+            deletedAt: null,
+            gazeboId: targetGazeboId,
+            credentials: { some: {} },
+          },
+        });
+
+        if (existingReg) continue;
+
+        const event = await this.prisma.event.findFirst({
+          where: { status: 'ACTIVE' },
+          orderBy: { eventDate: 'desc' },
+        });
+        const pricingPhase = await this.prisma.pricingPhase.findFirst({
+          where: { isActive: true },
+        });
+        const adminUser = await this.prisma.user.findFirst({
+          where: { role: 'SUPER_ADMIN' },
+        });
+
+        if (!event || !pricingPhase || !adminUser) continue;
+
+        const rawNotes = inq.notes || '';
+        const lines = rawNotes.split('\n');
+        const parsedGuests: Array<{ fullName: string; phone: string; email?: string; aadhaarNumber: string }> = [];
+
+        for (const line of lines) {
+          if (!line.includes('Guest ') || !line.includes('|')) continue;
+          const nameMatch = line.match(/Guest \d+:\s*([^|]+)/);
+          const phoneMatch = line.match(/Ph:\s*([^|]+)/);
+          const emailMatch = line.match(/Email:\s*([^|]+)/);
+          const aadhMatch = line.match(/Aadh:\s*(\d{12})/);
+
+          if (nameMatch) {
+            const cleanPhone = phoneMatch ? phoneMatch[1].trim() : inq.phone;
+            const cleanAadh = aadhMatch ? aadhMatch[1].trim() : ('99' + cleanPhone.replace(/\D/g, '').padStart(10, '0')).slice(-12);
+            parsedGuests.push({
+              fullName: nameMatch[1].trim(),
+              phone: cleanPhone,
+              email: emailMatch ? emailMatch[1].trim() : undefined,
+              aadhaarNumber: cleanAadh,
+            });
+          }
+        }
+
+        if (parsedGuests.length === 0) {
+          const aadhInNotes = rawNotes.match(/\b\d{12}\b/);
+          const cleanPhone = inq.phone || '9999999999';
+          const cleanAadh = aadhInNotes ? aadhInNotes[0] : ('99' + cleanPhone.replace(/\D/g, '').padStart(10, '0')).slice(-12);
+          parsedGuests.push({
+            fullName: inq.fullName || 'VIP Host',
+            phone: cleanPhone,
+            aadhaarNumber: cleanAadh,
+          });
+        }
+
+        const count = await this.prisma.registration.count();
+        const seq = (count + 1).toString().padStart(6, '0');
+        const registrationNumber = `REG-26-${seq}`;
+
+        const reg = await this.prisma.registration.create({
+          data: {
+            registrationNumber,
+            eventId: event.id,
+            pricingPhaseId: pricingPhase.id,
+            passType: PassType.GAZEBO,
+            status: RegistrationStatus.PASS_ISSUED,
+            amountDue: 0,
+            createdById: adminUser.id,
+            reviewedById: adminUser.id,
+            reviewedAt: new Date(),
+            gazeboId: targetGazeboId,
+            reviewNotes: `Auto-issued Gazebo VIP Pass for inquiry ${inq.inquiryNumber}`,
+          },
+        });
+
+        for (let i = 0; i < parsedGuests.length; i++) {
+          const g = parsedGuests[i];
+          const cleanAadhaar = g.aadhaarNumber.replace(/\D/g, '').slice(-12);
+          const aadhaarMasked = this.encryptionService.maskAadhaar(cleanAadhaar);
+          const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
+          const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
+
+          const att = await this.prisma.attendee.upsert({
+            where: { aadhaarHmac },
+            update: {
+              fullName: g.fullName,
+              phone: g.phone,
+              email: g.email || null,
+              gender: 'MALE',
+              aadhaarMasked,
+              aadhaarEncrypted,
+            },
+            create: {
+              fullName: g.fullName,
+              phone: g.phone,
+              email: g.email || null,
+              gender: 'MALE',
+              aadhaarHmac,
+              aadhaarMasked,
+              aadhaarEncrypted,
+            },
+          });
+
+          await this.prisma.registrationAttendee.create({
+            data: {
+              registrationId: reg.id,
+              attendeeId: att.id,
+              isPrimary: i === 0,
+              status: RegistrationStatus.PASS_ISSUED,
+              reviewedAt: new Date(),
+            },
+          });
+        }
+
+        await this.generateCredentialsForRegistration(reg.id);
+
+        await this.prisma.gazebo.update({
+          where: { id: targetGazeboId },
+          data: { status: 'CONFIRMED' },
+        });
+      }
+    } catch (err) {
+      console.error('Error auto-syncing approved gazebo passes:', err);
+    }
+  }
+
   async findAll(passType?: PassType, search?: string) {
+    // Ensure all approved or confirmed Gazebos have their VIP passes minted
+    await this.ensureApprovedGazebosMinted();
+
     const where: any = {
       registration: {
         deletedAt: null,
@@ -21,7 +182,17 @@ export class CredentialsService {
     };
 
     if (passType) {
-      where.registration.passType = passType;
+      if (passType === 'GAZEBO') {
+        where.registration = {
+          ...where.registration,
+          OR: [
+            { passType: 'GAZEBO' },
+            { gazeboId: { not: null } },
+          ],
+        };
+      } else {
+        where.registration.passType = passType;
+      }
     }
 
     if (search && search.trim()) {
@@ -33,6 +204,7 @@ export class CredentialsService {
         { attendee: { fullName: { contains: q, mode: 'insensitive' } } },
         { attendee: { phone: { contains: q } } },
         { registration: { registrationNumber: { contains: q, mode: 'insensitive' } } },
+        { registration: { gazebo: { gazeboNumber: { contains: q, mode: 'insensitive' } } } },
       ];
     }
 
@@ -57,6 +229,14 @@ export class CredentialsService {
             status: true,
             amountDue: true,
             createdAt: true,
+            gazeboId: true,
+            gazebo: {
+              select: {
+                id: true,
+                gazeboNumber: true,
+                level: true,
+              },
+            },
           },
         },
         entries: {

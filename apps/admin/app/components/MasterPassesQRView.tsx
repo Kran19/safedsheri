@@ -91,12 +91,14 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const passType = cred.registration?.passType || 'SINGLE';
+    const isGzb = isGazeboPass(cred);
+    const passType = isGzb ? 'GAZEBO VIP' : (cred.registration?.passType || 'SINGLE');
     const attendeeName = cred.attendee?.fullName || 'Guest';
     const attendeePhone = cred.attendee?.phone || '';
     const aadhaarMasked = cred.attendee?.aadhaarMasked || 'XXXX-XXXX-XXXX';
     const passCode = cred.passCode || cred.credentialNumber;
     const regNum = cred.registration?.registrationNumber || '';
+    const gazeboDetails = cred.registration?.gazebo?.gazeboNumber ? ` • ${cred.registration.gazebo.gazeboNumber}` : '';
 
     const svgElement = document.getElementById(`qr-svg-${cred.id}`);
     const svgHtml = svgElement ? svgElement.outerHTML : '';
@@ -201,7 +203,7 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
           <div class="pass-card">
             <div class="brand">SAFED SHERI</div>
             <div class="sub-brand">RAJIKOT • 2026 FESTIVAL</div>
-            <div class="badge">${passType} PASS</div>
+            <div class="badge">${isGzb ? `👑 GAZEBO VIP${gazeboDetails}` : `${passType} PASS`}</div>
             <div class="guest-name">${attendeeName}</div>
             <div class="guest-details">${attendeePhone} • ${aadhaarMasked}</div>
             <div class="qr-wrapper">${svgHtml}</div>
@@ -230,13 +232,25 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
     window.print();
   };
 
+  // Helper to reliably detect Gazebo pass across all schemas & relations
+  const isGazeboPass = (cred: any) =>
+    cred?.registration?.passType === 'GAZEBO' ||
+    Boolean(cred?.registration?.gazeboId) ||
+    Boolean(cred?.registration?.gazebo) ||
+    Boolean(cred?.passCode && cred.passCode.startsWith('SS26-GAZEBO'));
+
   // Filtered dataset
   const filteredCredentials = useMemo(() => {
     return credentials.filter((cred) => {
       // Category filter
       if (categoryFilter !== 'ALL') {
-        const pt = cred.registration?.passType;
-        if (pt !== categoryFilter) return false;
+        if (categoryFilter === 'GAZEBO') {
+          if (!isGazeboPass(cred)) return false;
+        } else {
+          if (isGazeboPass(cred)) return false;
+          const pt = cred.registration?.passType;
+          if (pt !== categoryFilter) return false;
+        }
       }
 
       // Status filter
@@ -252,6 +266,7 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
         const credNum = (cred.credentialNumber || '').toLowerCase();
         const regNum = (cred.registration?.registrationNumber || '').toLowerCase();
         const aadhaar = (cred.attendee?.aadhaarMasked || '').toLowerCase();
+        const gazeboNum = (cred.registration?.gazebo?.gazeboNumber || '').toLowerCase();
 
         return (
           name.includes(q) ||
@@ -259,7 +274,8 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
           code.includes(q) ||
           credNum.includes(q) ||
           regNum.includes(q) ||
-          aadhaar.includes(q)
+          aadhaar.includes(q) ||
+          gazeboNum.includes(q)
         );
       }
 
@@ -269,10 +285,10 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
 
   // Metric counts
   const counts = useMemo(() => {
-    const single = credentials.filter((c) => c.registration?.passType === 'SINGLE').length;
-    const couple = credentials.filter((c) => c.registration?.passType === 'COUPLE').length;
-    const kids = credentials.filter((c) => c.registration?.passType === 'KIDS').length;
-    const gazebo = credentials.filter((c) => c.registration?.passType === 'GAZEBO').length;
+    const gazebo = credentials.filter(isGazeboPass).length;
+    const single = credentials.filter((c) => !isGazeboPass(c) && (c.registration?.passType === 'SINGLE' || !c.registration?.passType)).length;
+    const couple = credentials.filter((c) => !isGazeboPass(c) && c.registration?.passType === 'COUPLE').length;
+    const kids = credentials.filter((c) => !isGazeboPass(c) && c.registration?.passType === 'KIDS').length;
     const used = credentials.filter((c) => c.status === 'USED' || (c.entries && c.entries.length > 0)).length;
 
     return {
@@ -757,18 +773,25 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
         /* ========================================================================= */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredCredentials.map((cred) => {
-            const passType = cred.registration?.passType || 'SINGLE';
+            const isGzb = isGazeboPass(cred);
+            const passType = isGzb ? 'GAZEBO' : (cred.registration?.passType || 'SINGLE');
             const attendeeName = cred.attendee?.fullName || 'Guest Attendee';
             const attendeePhone = cred.attendee?.phone || '';
             const aadhaarMasked = cred.attendee?.aadhaarMasked || 'XXXX XXXX XXXX';
             const passCode = cred.passCode || cred.credentialNumber;
             const isUsed = cred.status === 'USED' || (cred.entries && cred.entries.length > 0);
             const tokenValue = cred.secureToken || cred.passCode;
+            const gazeboUnit = cred.registration?.gazebo?.gazeboNumber;
+            const gazeboLevel = cred.registration?.gazebo?.level;
 
             return (
               <div
                 key={cred.id}
-                className="rounded-3xl bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE] border-2 border-[#D99427] p-5 text-center flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 relative group overflow-hidden"
+                className={`rounded-3xl p-5 text-center flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 relative group overflow-hidden border-2 ${
+                  isGzb
+                    ? 'bg-gradient-to-b from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border-[#D99427] ring-1 ring-[#D99427]/40'
+                    : 'bg-gradient-to-b from-[#FFFDF9] via-white to-[#FAF6EE] border-[#D99427]'
+                }`}
               >
                 {/* Decorative Top Arch Border */}
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#F6C85F] via-[#E5A93C] to-[#D99427]" />
@@ -778,16 +801,16 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
                   <div className="flex items-center justify-between mb-3 pt-1">
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ${
-                        passType === 'SINGLE'
+                        isGzb
+                          ? 'bg-[#2D1F0E] text-[#F6C85F] border-[#D99427] shadow-xs'
+                          : passType === 'SINGLE'
                           ? 'bg-purple-100 text-purple-900 border-purple-200'
                           : passType === 'COUPLE'
                           ? 'bg-[#FFF5DC] text-[#8C6019] border-[#E5A93C]'
-                          : passType === 'KIDS'
-                          ? 'bg-amber-100 text-amber-900 border-amber-200'
-                          : 'bg-[#2D1F0E] text-[#F6C85F] border-[#D99427]'
+                          : 'bg-amber-100 text-amber-900 border-amber-200'
                       }`}
                     >
-                      {passType} PASS
+                      {isGzb ? `👑 GAZEBO VIP ${gazeboUnit ? `• ${gazeboUnit}` : ''}` : `${passType} PASS`}
                     </span>
 
                     <span
@@ -813,6 +836,11 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
                   <div className="text-[10px] text-gray-500 font-mono">
                     {aadhaarMasked} {cred.attendee?.gender && `• ${cred.attendee.gender}`}
                   </div>
+                  {isGzb && (
+                    <div className="mt-1.5 inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-[#FFF5DC] border border-[#E5A93C] text-[10px] font-mono font-bold text-[#8C6019]">
+                      <span>{gazeboLevel ? `Level ${gazeboLevel} Spatial Cabana` : 'VIP Cabana Pass'}</span>
+                    </div>
+                  )}
 
                   {/* SCANNABLE QR CODE CONTAINER */}
                   <div className="my-4 p-3 bg-white border border-[#EAD9B8] rounded-2xl shadow-inner inline-block mx-auto relative group-hover:border-[#D99427] transition">
@@ -901,7 +929,8 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
               </thead>
               <tbody className="divide-y divide-[#EAD9B8]">
                 {filteredCredentials.map((cred) => {
-                  const passType = cred.registration?.passType || 'SINGLE';
+                  const isGzb = isGazeboPass(cred);
+                  const passType = isGzb ? 'GAZEBO' : (cred.registration?.passType || 'SINGLE');
                   const isUsed = cred.status === 'USED' || (cred.entries && cred.entries.length > 0);
 
                   return (
@@ -925,16 +954,16 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
                       <td className="py-2.5 px-4">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                            passType === 'SINGLE'
+                            isGzb
+                              ? 'bg-[#2D1F0E] text-[#F6C85F] border border-[#D99427]'
+                              : passType === 'SINGLE'
                               ? 'bg-purple-100 text-purple-900'
                               : passType === 'COUPLE'
                               ? 'bg-amber-100 text-amber-900'
-                              : passType === 'KIDS'
-                              ? 'bg-emerald-100 text-emerald-900'
-                              : 'bg-[#2D1F0E] text-[#F6C85F]'
+                              : 'bg-emerald-100 text-emerald-900'
                           }`}
                         >
-                          {passType}
+                          {isGzb ? `👑 VIP ${cred.registration?.gazebo?.gazeboNumber || 'GAZEBO'}` : passType}
                         </span>
                       </td>
                       <td className="py-2.5 px-4 font-semibold text-[#2D1F0E]">
@@ -1006,7 +1035,9 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
 
             <div>
               <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#FFF5DC] text-[#8C6019] border border-[#E5A93C]">
-                {selectedPassForModal.registration?.passType} PASS
+                {isGazeboPass(selectedPassForModal)
+                  ? `👑 GAZEBO VIP ${selectedPassForModal.registration?.gazebo?.gazeboNumber ? `• ${selectedPassForModal.registration.gazebo.gazeboNumber}` : ''}`
+                  : `${selectedPassForModal.registration?.passType || 'SINGLE'} PASS`}
               </span>
               <h3 className="text-xl font-serif font-bold text-[#2D1F0E] mt-2">
                 {selectedPassForModal.attendee?.fullName}
@@ -1014,6 +1045,11 @@ export default function MasterPassesQRView({ currentUser: initialUser }: MasterP
               <p className="text-xs text-[#6E5336] font-mono">
                 {selectedPassForModal.attendee?.phone} • {selectedPassForModal.attendee?.aadhaarMasked}
               </p>
+              {isGazeboPass(selectedPassForModal) && selectedPassForModal.registration?.gazebo?.level && (
+                <div className="mt-1 text-[11px] font-mono font-bold text-[#8C6019]">
+                  Level {selectedPassForModal.registration.gazebo.level} Spatial Cabana • 14 VIP Capacity
+                </div>
+              )}
             </div>
 
             <div className="p-4 bg-white border-2 border-dashed border-[#D99427] rounded-3xl inline-block mx-auto shadow-inner">

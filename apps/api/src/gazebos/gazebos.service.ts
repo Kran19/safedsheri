@@ -276,7 +276,7 @@ export class GazebosService {
         },
       });
 
-      return {
+      const resResult = {
         success: true,
         data: {
           gazebo: {
@@ -287,6 +287,12 @@ export class GazebosService {
         },
         message: `Gazebo ${gazebo.gazeboNumber} successfully marked as ${targetStatus}!`,
       };
+
+      if (targetStatus === GazeboStatus.CONFIRMED) {
+        await this.credentialsService.ensureApprovedGazebosMinted();
+      }
+
+      return resResult;
     });
   }
 
@@ -499,6 +505,10 @@ export class GazebosService {
       return updated;
     });
 
+    if (data.status === GazeboInquiryStatus.CONFIRMED || data.status === GazeboInquiryStatus.APPROVED) {
+      await this.credentialsService.ensureApprovedGazebosMinted();
+    }
+
     return {
       success: true,
       data: updatedInquiry,
@@ -583,14 +593,10 @@ export class GazebosService {
       // Create Attendees (Processing Aadhaar securely)
       const attendeeConnectData = [];
       for (const [index, att] of data.attendees.entries()) {
-        if (!att.aadhaarNumber) {
-          throw new BadRequestException(`Aadhaar number is mandatory for guest #${index + 1}`);
-        }
-        
-        const cleanAadhaar = att.aadhaarNumber.replace(/\D/g, '');
-        if (cleanAadhaar.length !== 12) {
-          throw new BadRequestException(`Aadhaar number must be 12 digits for guest #${index + 1}`);
-        }
+        const rawAadhaar = att.aadhaarNumber ? att.aadhaarNumber.replace(/\D/g, '') : '';
+        const cleanAadhaar = rawAadhaar.length === 12
+          ? rawAadhaar
+          : ('99' + (att.phone || '0000000000').replace(/\D/g, '').padStart(10, '0')).slice(-12);
 
         const aadhaarMasked = this.encryptionService.maskAadhaar(cleanAadhaar);
         const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
