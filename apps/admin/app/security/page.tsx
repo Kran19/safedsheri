@@ -12,7 +12,11 @@ export default function SecurityScannerPage() {
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [html5Scanner, setHtml5Scanner] = useState<any>(null);
+  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [isCameraStarting, setIsCameraStarting] = useState<boolean>(false);
   const scanningRef = useRef(false);
+  const scannerRef = useRef<any>(null);
+  const dismissTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     scanningRef.current = scanning;
@@ -115,69 +119,136 @@ export default function SecurityScannerPage() {
     localStorage.setItem('safedsheri_selected_gate', gateId);
   }
 
-  useEffect(() => {
-    if (isAuthenticated !== true) return;
-    let isMounted = true;
-    let scanner: any;
+  // Audio tone feedback for gate security
+  const playFeedbackSound = (type: 'VALID' | 'NOT_VALID') => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    const initScanner = async () => {
+      if (type === 'VALID') {
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(140, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      }
+    } catch (e) {
+      // Audio autoplay policy fallback
+    }
+  };
+
+  const startCamera = async () => {
+    if (isCameraStarting) return;
+    setIsCameraStarting(true);
+    setCameraError(null);
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode('qr-reader');
+        setHtml5Scanner(scannerRef.current);
+      }
+      const scanner = scannerRef.current;
+      if (scanner.isScanning) {
+        await scanner.stop();
+      }
+      const config = { fps: 12, qrbox: { width: 250, height: 250 } };
       try {
-        const { Html5Qrcode } = await import('html5-qrcode');
-        if (!isMounted) return;
-
-        scanner = new Html5Qrcode('qr-reader');
-        if (isMounted) setHtml5Scanner(scanner);
-
-        const onScanSuccess = (decodedText: string) => {
-          if (!scanningRef.current) {
-            processScan(decodedText);
-          }
-        };
-
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-        try {
-          if (isMounted) {
-            await scanner.start({ facingMode: 'environment' }, config, onScanSuccess, () => {});
-          }
-        } catch (err) {
-          console.warn('Environment camera failed, falling back to user camera', err);
-          if (isMounted) {
-            try {
-              await scanner.start({ facingMode: 'user' }, config, onScanSuccess, () => {});
-            } catch (fallbackErr) {
-              console.error('All camera attempts failed:', fallbackErr);
+        await scanner.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText: string) => {
+            if (!scanningRef.current) {
+              processScan(decodedText);
             }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to initialize scanner library:', err);
+          },
+          () => {}
+        );
+      } catch (envErr) {
+        console.warn('Environment camera failed, falling back to user camera', envErr);
+        await scanner.start(
+          { facingMode: 'user' },
+          config,
+          (decodedText: string) => {
+            if (!scanningRef.current) {
+              processScan(decodedText);
+            }
+          },
+          () => {}
+        );
       }
-    };
+      setIsCameraActive(true);
+    } catch (err: any) {
+      console.error('Camera activation failed:', err);
+      setCameraError(err?.message || 'Camera permission denied or camera not found.');
+      setIsCameraActive(false);
+    } finally {
+      setIsCameraStarting(false);
+    }
+  };
 
-    const timer = setTimeout(() => {
-      initScanner();
-    }, 100);
+  const stopCamera = async () => {
+    setIsCameraStarting(false);
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+      } catch (e) {
+        console.warn('Error while stopping scanner:', e);
+      }
+    }
+    setIsCameraActive(false);
+  };
 
+  const dismissResult = () => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+    setScanResult({ status: null });
+    scanningRef.current = false;
+    setScanning(false);
+  };
+
+  useEffect(() => {
     return () => {
-      isMounted = false;
-      clearTimeout(timer);
-      if (scanner) {
-        if (scanner.isScanning) {
-          scanner.stop().then(() => {
-            try { scanner.clear(); } catch (e) {}
-          }).catch(console.error);
+      if (dismissTimerRef.current) {
+        clearTimeout(dismissTimerRef.current);
+      }
+      if (scannerRef.current) {
+        if (scannerRef.current.isScanning) {
+          scannerRef.current.stop().catch(() => {}).finally(() => {
+            try { scannerRef.current.clear(); } catch (e) {}
+          });
         } else {
-          try { scanner.clear(); } catch (e) {}
+          try { scannerRef.current.clear(); } catch (e) {}
         }
       }
     };
-  }, [isAuthenticated]);
+  }, []);
 
   async function processScan(token: string) {
     if (!token || scanningRef.current) return;
     scanningRef.current = true;
     setScanning(true);
+
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+    }
 
     const res = await apiRequest('/entries/scan', {
       method: 'POST',
@@ -186,6 +257,14 @@ export default function SecurityScannerPage() {
 
     if (res.success && res.data) {
       setScanResult(res.data);
+      playFeedbackSound(res.data.status === 'VALID' ? 'VALID' : 'NOT_VALID');
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        if (res.data.status === 'VALID') {
+          try { navigator.vibrate([150, 70, 150]); } catch (e) {}
+        } else {
+          try { navigator.vibrate([300, 100, 300]); } catch (e) {}
+        }
+      }
 
       setRecentScans((prev) => [
         {
@@ -204,13 +283,11 @@ export default function SecurityScannerPage() {
 
       fetchLiveStats();
 
-      setTimeout(() => {
-        setScanResult({ status: null });
-        scanningRef.current = false;
-        setScanning(false);
+      dismissTimerRef.current = setTimeout(() => {
+        dismissResult();
       }, 3500);
     } else {
-      if (res.error?.code === 'UNAUTHORIZED') {
+      if (res.error?.code === 'UNAUTHORIZED' || res.error?.statusCode === 401) {
         setIsAuthenticated(false);
         return;
       }
@@ -218,18 +295,26 @@ export default function SecurityScannerPage() {
         status: 'NOT_VALID',
         reason: res.error?.message || 'INVALID_TOKEN',
       });
-      setTimeout(() => {
-        setScanResult({ status: null });
-        scanningRef.current = false;
-        setScanning(false);
+      playFeedbackSound('NOT_VALID');
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate([300, 100, 300]); } catch (e) {}
+      }
+
+      dismissTimerRef.current = setTimeout(() => {
+        dismissResult();
       }, 3500);
     }
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0 && html5Scanner) {
+    if (e.target.files && e.target.files.length > 0) {
       try {
-        const decodedText = await html5Scanner.scanFile(e.target.files[0], true);
+        const { Html5Qrcode } = await import('html5-qrcode');
+        if (!scannerRef.current) {
+          scannerRef.current = new Html5Qrcode('qr-reader');
+          setHtml5Scanner(scannerRef.current);
+        }
+        const decodedText = await scannerRef.current.scanFile(e.target.files[0], true);
         processScan(decodedText);
       } catch (err) {
         console.error("Failed to decode QR from image", err);
@@ -487,73 +572,166 @@ export default function SecurityScannerPage() {
         </div>
       )}
 
-      {/* SCAN RESULT OVERLAY BANNER */}
-      {scanResult.status && (
-        <div
-          className={`p-6 rounded-3xl border-2 text-center space-y-3 shadow-xl transition animate-scale-up ${
-            scanResult.status === 'VALID'
-              ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
-              : scanResult.reason === 'WRONG_GATE'
-              ? 'bg-amber-50 border-amber-400 text-amber-950'
-              : 'bg-red-50 border-red-400 text-red-950'
-          }`}
-        >
-          <div className="flex justify-center">
-            {scanResult.status === 'VALID' ? (
-              <CheckCircle2 className="w-16 h-16 text-emerald-600 animate-pulse" />
-            ) : scanResult.reason === 'WRONG_GATE' ? (
-              <AlertTriangle className="w-16 h-16 text-amber-600 animate-bounce" />
-            ) : (
-              <XCircle className="w-16 h-16 text-red-600 animate-pulse" />
-            )}
+      {/* SCANNER CAMERA BOX & INPUT */}
+      <div className="p-4 sm:p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Camera className="w-5 h-5 text-[#8C6019]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2D1F0E]">
+              Pass Scanner Camera
+            </span>
           </div>
+          {/* CAMERA ON / OFF BUTTON */}
+          <button
+            type="button"
+            onClick={isCameraActive ? stopCamera : startCamera}
+            disabled={isCameraStarting}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center space-x-2 transition shadow-sm ${
+              isCameraActive
+                ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isCameraActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
+              }`}
+            />
+            <span>
+              {isCameraStarting
+                ? 'Connecting...'
+                : isCameraActive
+                ? 'Turn Scanner OFF'
+                : 'Turn Scanner ON'}
+            </span>
+          </button>
+        </div>
 
-          <div>
-            <div className="text-2xl font-serif font-extrabold tracking-wide">
-              {scanResult.status === 'VALID'
-                ? 'ENTRY GRANTED'
-                : scanResult.reason === 'WRONG_GATE'
-                ? 'WRONG GATE PASS'
-                : 'ENTRY DENIED'}
-            </div>
-            <div className="text-xs font-mono mt-1 font-bold">
-              {scanResult.status === 'VALID'
-                ? `Welcome to Safed Sheri 2026 (${selectedGate.replace('_', ' ')})`
-                : scanResult.message || `Reason: ${scanResult.reason || 'INVALID_TOKEN'}`}
-            </div>
-          </div>
+        {/* SCANNER VIEWPORT WITH FIXED HEIGHT TO PREVENT ANY JUMP */}
+        <div className="relative w-full min-h-[320px] max-h-[460px] aspect-square max-w-[420px] mx-auto overflow-hidden rounded-2xl border-2 border-[#EAD9B8] bg-black flex items-center justify-center shadow-inner">
+          {/* HTML5 QR READER TARGET */}
+          <div
+            id="qr-reader"
+            className={`w-full h-full flex items-center justify-center ${
+              !isCameraActive ? 'hidden' : 'block'
+            }`}
+          />
 
-          {scanResult.attendeeName && (
-            <div className="pt-2 border-t border-black/10 text-xs space-y-1">
-              <div className="font-bold text-sm text-[#2D1F0E]">{scanResult.attendeeName}</div>
-              <div className="font-mono text-[11px] text-[#8C6019] font-bold">
-                {scanResult.passType} PASS • {scanResult.passCode}
+          {/* STANDBY STATE WHEN CAMERA IS OFF */}
+          {!isCameraActive && !isCameraStarting && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FAF6EE] z-10 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#FFF5DC] border-2 border-[#E5A93C] flex items-center justify-center text-[#8C6019] shadow-sm">
+                <Camera className="w-8 h-8" />
               </div>
+              <div className="space-y-1">
+                <div className="text-base font-bold font-serif text-[#2D1F0E]">
+                  Scanner is OFF
+                </div>
+                <p className="text-xs text-[#6E5336] max-w-xs leading-relaxed">
+                  Turn on the scanner to begin verifying attendee QR passes for {selectedGate.replace('_', ' ')}.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={startCamera}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#2D1F0E] to-[#4A351D] text-[#F6C85F] font-bold text-xs uppercase tracking-wider shadow-md border border-[#D99427] hover:opacity-95 transition flex items-center space-x-2"
+              >
+                <Camera className="w-4 h-4 text-[#F6C85F]" />
+                <span>Turn Scanner ON</span>
+              </button>
             </div>
           )}
-        </div>
-      )}
 
-      {/* SCANNER CAMERA SIMULATOR / INPUT */}
-      <div className="p-6 rounded-3xl bg-white border border-[#EAD9B8] shadow-lg space-y-5">
-        <div className="relative w-full min-h-[250px] overflow-hidden rounded-2xl border-2 border-dashed border-[#EAD9B8] bg-[#FFFDF9] flex items-center justify-center">
-          <div id="qr-reader" className="w-full"></div>
-          
+          {/* CONNECTING / STARTING SPINNER */}
+          {isCameraStarting && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-black/80 text-white z-10 space-y-3">
+              <div className="w-10 h-10 border-4 border-[#F6C85F] border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-mono uppercase tracking-widest text-[#F6C85F]">
+                Starting Camera...
+              </span>
+            </div>
+          )}
+
+          {/* CAMERA ERROR OVERLAY */}
           {cameraError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FFFDF9] z-10 space-y-4">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FAF6EE] z-20 space-y-4">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 mb-2">
-                <Camera className="w-6 h-6" />
+                <AlertTriangle className="w-6 h-6" />
               </div>
-              <p className="text-sm font-bold text-red-900 leading-tight">{cameraError}</p>
-              
-              <label className="mt-4 px-6 py-3 bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-md hover:opacity-90">
-                Upload QR Image Instead
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-              </label>
+              <p className="text-xs font-bold text-red-900 leading-tight max-w-xs">{cameraError}</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="px-4 py-2 bg-white border border-[#EAD9B8] text-xs font-bold text-[#2D1F0E] rounded-xl"
+                >
+                  Retry Camera
+                </button>
+                <label className="px-4 py-2 bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-md">
+                  Upload Image
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* SCANNER OVERLAY: ENTRY GRANTED / DENIED DIRECTLY ON TOP OF SCANNER */}
+          {scanResult.status && (
+            <div
+              onClick={dismissResult}
+              className={`absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 animate-scale-up backdrop-blur-md ${
+                scanResult.status === 'VALID'
+                  ? 'bg-emerald-950/95 text-white border-4 border-emerald-400'
+                  : scanResult.reason === 'WRONG_GATE'
+                  ? 'bg-amber-950/95 text-white border-4 border-amber-400'
+                  : 'bg-rose-950/95 text-white border-4 border-rose-500'
+              }`}
+            >
+              <div className="flex justify-center mb-2">
+                {scanResult.status === 'VALID' ? (
+                  <CheckCircle2 className="w-16 h-16 text-emerald-400 animate-pulse drop-shadow-lg" />
+                ) : scanResult.reason === 'WRONG_GATE' ? (
+                  <AlertTriangle className="w-16 h-16 text-amber-400 animate-bounce drop-shadow-lg" />
+                ) : (
+                  <XCircle className="w-16 h-16 text-rose-400 animate-pulse drop-shadow-lg" />
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-2xl font-serif font-black tracking-wide uppercase drop-shadow">
+                  {scanResult.status === 'VALID'
+                    ? 'ENTRY GRANTED'
+                    : scanResult.reason === 'WRONG_GATE'
+                    ? 'WRONG GATE PASS'
+                    : 'ENTRY DENIED'}
+                </div>
+                <div className="text-xs font-mono font-bold tracking-wide opacity-90 max-w-xs">
+                  {scanResult.status === 'VALID'
+                    ? `Welcome to Safed Sheri 2026 (${selectedGate.replace('_', ' ')})`
+                    : scanResult.message || `Reason: ${scanResult.reason || 'INVALID_TOKEN'}`}
+                </div>
+              </div>
+
+              {scanResult.attendeeName && (
+                <div className="mt-3 pt-3 border-t border-white/20 text-xs space-y-0.5 w-full max-w-xs">
+                  <div className="font-bold text-sm text-white drop-shadow">
+                    {scanResult.attendeeName}
+                  </div>
+                  <div className="font-mono text-[11px] text-amber-300 font-bold">
+                    {scanResult.passType} PASS • {scanResult.passCode}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center space-x-2 text-[10px] font-mono uppercase tracking-widest bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full border border-white/20 transition">
+                <span>Tap to Scan Next</span>
+                <span className="text-[9px] opacity-70">(Auto-clears)</span>
+              </div>
             </div>
           )}
         </div>
 
+        {/* MANUAL ENTRY FORM */}
         <form onSubmit={handleManualSubmit} className="space-y-3">
           <label className="block text-xs font-bold text-[#6E5336]">
             Manual QR Token or Pass Code Entry ({selectedGate.replace('_', ' ')})
@@ -570,7 +748,7 @@ export default function SecurityScannerPage() {
             <button
               type="submit"
               disabled={scanning}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition disabled:opacity-50 shadow-md"
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#F6C85F] to-[#E5A93C] text-[#2D1F0E] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition disabled:opacity-50 shadow-md whitespace-nowrap"
             >
               {scanning ? 'Verifying...' : 'Verify Entry'}
             </button>
