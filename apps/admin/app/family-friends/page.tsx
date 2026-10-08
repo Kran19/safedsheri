@@ -157,11 +157,14 @@ export default function FamilyAndFriendsPage() {
           copy[index] = { ...copy[index], frontUploaded: true };
           if (res.data?.storageKey) copy[index].frontStorageKey = res.data.storageKey;
           if (res.extractedData) {
-            if (res.extractedData.name && !copy[index].fullName) {
+            if (res.extractedData.name) {
               copy[index].fullName = res.extractedData.name;
             }
-            if (res.extractedData.aadhaarNumber && !copy[index].aadhaarNumber) {
+            if (res.extractedData.aadhaarNumber) {
               copy[index].aadhaarNumber = res.extractedData.aadhaarNumber;
+            }
+            if (res.extractedData.gender && (res.extractedData.gender === 'MALE' || res.extractedData.gender === 'FEMALE')) {
+              copy[index].gender = res.extractedData.gender;
             }
           }
           return copy;
@@ -457,7 +460,76 @@ export default function FamilyAndFriendsPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Aadhaar Card Photos Upload (At the Top for Instant Auto-Fill) */}
+                <div className="pt-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[11px] font-bold uppercase text-[#6E5336] tracking-wider">
+                      Upload Aadhaar Card Photo (Front &amp; Back) *
+                    </label>
+                    <span className="text-[10px] font-bold text-[#8C6019] bg-[#FAF6EE] border border-[#EAD9B8] px-2 py-0.5 rounded-full">
+                      Auto-Fills Details Below
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Front Upload */}
+                    <label className={`p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition text-center ${
+                      att.frontUploaded 
+                        ? 'bg-emerald-50/60 border-emerald-300 text-emerald-900' 
+                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-[#D99427] text-[#6E5336]'
+                    }`}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleAadhaarUpload(e, idx, 'FRONT')}
+                      />
+                      {att.frontUploading ? (
+                        <div className="text-xs font-bold text-[#D99427] animate-pulse">Uploading Front...</div>
+                      ) : att.frontUploaded ? (
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-700">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Front Side Uploaded</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Upload className="w-5 h-5 mx-auto text-[#8C6019]" />
+                          <div className="text-xs font-bold text-[#2D1F0E]">Upload Aadhaar Front</div>
+                          <div className="text-[10px] text-gray-500">JPG, PNG (Max 5MB)</div>
+                        </div>
+                      )}
+                    </label>
+
+                    {/* Back Upload */}
+                    <label className={`p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition text-center ${
+                      att.backUploaded 
+                        ? 'bg-emerald-50/60 border-emerald-300 text-emerald-900' 
+                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-[#D99427] text-[#6E5336]'
+                    }`}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleAadhaarUpload(e, idx, 'BACK')}
+                      />
+                      {att.backUploading ? (
+                        <div className="text-xs font-bold text-[#D99427] animate-pulse">Uploading Back...</div>
+                      ) : att.backUploaded ? (
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-700">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Back Side Uploaded</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Upload className="w-5 h-5 mx-auto text-[#8C6019]" />
+                          <div className="text-xs font-bold text-[#2D1F0E]">Upload Aadhaar Back</div>
+                          <div className="text-[10px] text-gray-500">JPG, PNG (Max 5MB)</div>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   {/* Full Name */}
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-[#6E5336] mb-1 tracking-wider">
@@ -537,70 +609,6 @@ export default function FamilyAndFriendsPage() {
                       onChange={(e) => updateAttendee(idx, 'aadhaarNumber', e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#EAD9B8] text-xs text-[#2D1F0E] focus:border-[#D99427] outline-none font-mono tracking-wider"
                     />
-                  </div>
-                </div>
-
-                {/* Aadhaar Card Photos Upload */}
-                <div className="pt-2">
-                  <label className="block text-[11px] font-bold uppercase text-[#6E5336] mb-2 tracking-wider">
-                    Upload Aadhaar Card Photo (Front &amp; Back)
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Front Upload */}
-                    <label className={`p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition text-center ${
-                      att.frontUploaded 
-                        ? 'bg-emerald-50/60 border-emerald-300 text-emerald-900' 
-                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-[#D99427] text-[#6E5336]'
-                    }`}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleAadhaarUpload(e, idx, 'FRONT')}
-                      />
-                      {att.frontUploading ? (
-                        <div className="text-xs font-bold text-[#D99427] animate-pulse">Uploading Front...</div>
-                      ) : att.frontUploaded ? (
-                        <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-700">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Front Side Uploaded</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <Upload className="w-5 h-5 mx-auto text-[#8C6019]" />
-                          <div className="text-xs font-bold text-[#2D1F0E]">Upload Aadhaar Front</div>
-                          <div className="text-[10px] text-gray-500">JPG, PNG (Max 5MB)</div>
-                        </div>
-                      )}
-                    </label>
-
-                    {/* Back Upload */}
-                    <label className={`p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition text-center ${
-                      att.backUploaded 
-                        ? 'bg-emerald-50/60 border-emerald-300 text-emerald-900' 
-                        : 'bg-[#FAF6EE] border-[#EAD9B8] hover:border-[#D99427] text-[#6E5336]'
-                    }`}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleAadhaarUpload(e, idx, 'BACK')}
-                      />
-                      {att.backUploading ? (
-                        <div className="text-xs font-bold text-[#D99427] animate-pulse">Uploading Back...</div>
-                      ) : att.backUploaded ? (
-                        <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-700">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Back Side Uploaded</span>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <Upload className="w-5 h-5 mx-auto text-[#8C6019]" />
-                          <div className="text-xs font-bold text-[#2D1F0E]">Upload Aadhaar Back</div>
-                          <div className="text-[10px] text-gray-500">JPG, PNG (Max 5MB)</div>
-                        </div>
-                      )}
-                    </label>
                   </div>
                 </div>
               </div>

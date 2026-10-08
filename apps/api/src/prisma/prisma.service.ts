@@ -9,6 +9,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     try {
       await this.$connect();
       this.logger.log('✅ Database connected successfully');
+
+      // Ensure PostgreSQL enum includes FAMILY_AND_FRIENDS
+      try {
+        await this.$executeRawUnsafe(`ALTER TYPE "PaymentMethod" ADD VALUE IF NOT EXISTS 'FAMILY_AND_FRIENDS'`);
+        this.logger.log('✓ Ensured PaymentMethod enum includes FAMILY_AND_FRIENDS');
+      } catch (e: any) {
+        this.logger.warn(`PaymentMethod enum alter check: ${e.message}`);
+      }
       
       // Auto-update Couple Pass prices (e.g. SS-2026-000810) to Phase 2 price ₹8,500
       this.registration.updateMany({

@@ -324,7 +324,7 @@ export class CredentialsService {
 
     for (let i = 0; i < eligibleAttendees.length; i++) {
       const att = eligibleAttendees[i].attendee;
-      const passRandom = crypto.randomBytes(2).toString('hex').toUpperCase();
+      const passRandom = crypto.randomBytes(3).toString('hex').toUpperCase();
       const passCode = `${prefix}-${passRandom}`;
       const credSeq = (Math.floor(100000 + Math.random() * 900000)).toString();
       const credentialNumber = `PASS-2026-${credSeq}`;

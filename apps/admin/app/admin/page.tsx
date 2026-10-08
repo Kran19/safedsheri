@@ -223,10 +223,12 @@ export default function SuperAdminDashboard() {
     const initialDecisions: Record<string, { status: 'APPROVED' | 'REJECTED'; notes: string }> = {};
     (app.attendees || []).forEach((ra: any) => {
       const attId = ra.attendee?.id || ra.attendeeId;
-      initialDecisions[attId] = {
-        status: ra.status === 'REJECTED' ? 'REJECTED' : 'APPROVED',
-        notes: ra.reviewNotes || '',
-      };
+      if (attId) {
+        initialDecisions[attId] = {
+          status: ra.status === 'REJECTED' ? 'REJECTED' : 'APPROVED',
+          notes: ra.reviewNotes || '',
+        };
+      }
     });
     setAttendeeDecisions(initialDecisions);
   }
@@ -557,11 +559,19 @@ export default function SuperAdminDashboard() {
     setMessage('');
     setError('');
 
-    const decisionsList = Object.entries(attendeeDecisions).map(([attId, val]) => ({
+    let decisionsList = Object.entries(attendeeDecisions).map(([attId, val]) => ({
       attendeeId: attId,
       status: val.status,
       reviewNotes: val.notes || (val.status === 'REJECTED' ? (reviewNotes || 'Aadhaar verification rejected') : ''),
     }));
+
+    if (decisionsList.length === 0 && selectedApp.attendees) {
+      decisionsList = selectedApp.attendees.map((ra: any) => ({
+        attendeeId: ra.attendee?.id || ra.attendeeId,
+        status: 'APPROVED',
+        reviewNotes: reviewNotes || '',
+      }));
+    }
 
     if (selectedApp.isMappedInquiry) {
       const decision = decisionsList[0] || { status: 'APPROVED' };
