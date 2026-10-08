@@ -153,6 +153,7 @@ export default function SecurityScannerPage() {
 
   const startCamera = async () => {
     if (isCameraStarting) return;
+    setScanResult({ status: null });
     setIsCameraStarting(true);
     setCameraError(null);
     setIsCameraActive(true);
@@ -318,6 +319,7 @@ export default function SecurityScannerPage() {
 
     if (res.success && res.data) {
       setScanResult(res.data);
+      setScanning(false);
       playFeedbackSound(res.data.status === 'VALID' ? 'VALID' : 'NOT_VALID');
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         if (res.data.status === 'VALID') {
@@ -345,6 +347,7 @@ export default function SecurityScannerPage() {
       fetchLiveStats();
       // NO auto-dismiss timer! User must click 'Next' to open scanner again
     } else {
+      setScanning(false);
       if (res.error?.code === 'UNAUTHORIZED' || res.error?.statusCode === 401) {
         setIsAuthenticated(false);
         return;
@@ -662,8 +665,12 @@ export default function SecurityScannerPage() {
           </button>
         </div>
 
-        {/* SCANNER VIEWPORT WITH STABLE CONTAINER TO PREVENT ANY JUMP */}
-        <div className="relative w-full min-h-[300px] sm:min-h-[360px] overflow-hidden rounded-2xl border-2 border-[#EAD9B8] bg-[#FFFDF9] flex flex-col justify-center items-center shadow-inner">
+        {/* SCANNER VIEWPORT WITH RESPONSIVE CONTAINER HEIGHT */}
+        <div
+          className={`relative w-full ${
+            scanResult.status ? 'min-h-[410px] sm:min-h-[440px]' : 'min-h-[300px] sm:min-h-[360px]'
+          } overflow-hidden rounded-3xl border-2 border-[#EAD9B8] bg-[#FFFDF9] flex flex-col justify-center items-center shadow-inner transition-all duration-300`}
+        >
           {/* HTML5 QR READER TARGET - Kept in DOM with proper dimensions */}
           <div
             id="qr-reader"
@@ -733,62 +740,74 @@ export default function SecurityScannerPage() {
           {scanResult.status && (
             <div
               onClick={handleNextScan}
-              className={`absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-300 animate-scale-up backdrop-blur-md ${
+              className={`absolute inset-0 z-30 flex flex-col items-center justify-between p-5 sm:p-6 text-center cursor-pointer transition-all duration-300 animate-scale-up backdrop-blur-md ${
                 scanResult.status === 'VALID'
-                  ? 'bg-emerald-950/95 text-white border-4 border-emerald-400'
+                  ? 'bg-gradient-to-b from-[#06331E] via-[#042817] to-[#021B0F] text-white border-4 border-emerald-400'
                   : scanResult.reason === 'WRONG_GATE'
-                  ? 'bg-amber-950/95 text-white border-4 border-amber-400'
-                  : 'bg-rose-950/95 text-white border-4 border-rose-500'
+                  ? 'bg-gradient-to-b from-[#3D2502] via-[#2F1C01] to-[#1F1200] text-white border-4 border-amber-400'
+                  : 'bg-gradient-to-b from-[#3D0A0A] via-[#2B0606] to-[#1A0303] text-white border-4 border-rose-500'
               }`}
             >
-              <div className="flex justify-center mb-2">
-                {scanResult.status === 'VALID' ? (
-                  <CheckCircle2 className="w-16 h-16 text-emerald-400 animate-pulse drop-shadow-lg" />
-                ) : scanResult.reason === 'WRONG_GATE' ? (
-                  <AlertTriangle className="w-16 h-16 text-amber-400 animate-bounce drop-shadow-lg" />
-                ) : (
-                  <XCircle className="w-16 h-16 text-rose-400 animate-pulse drop-shadow-lg" />
-                )}
-              </div>
+              {/* TOP SECTION: ICON & STATUS TEXT */}
+              <div className="flex flex-col items-center space-y-1 pt-1">
+                <div className="flex justify-center mb-1">
+                  {scanResult.status === 'VALID' ? (
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                      <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                    </div>
+                  ) : scanResult.reason === 'WRONG_GATE' ? (
+                    <div className="w-12 h-12 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                      <AlertTriangle className="w-7 h-7 text-amber-400 animate-bounce" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-rose-500/20 border-2 border-rose-400 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                      <XCircle className="w-7 h-7 text-rose-400" />
+                    </div>
+                  )}
+                </div>
 
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl font-serif font-black tracking-wide uppercase drop-shadow">
+                <div className="text-xl sm:text-2xl font-serif font-black tracking-wider uppercase drop-shadow-md">
                   {scanResult.status === 'VALID'
                     ? 'ENTRY GRANTED'
                     : scanResult.reason === 'WRONG_GATE'
                     ? 'WRONG GATE PASS'
                     : 'ENTRY DENIED'}
                 </div>
-                <div className="text-xs sm:text-sm font-mono font-bold tracking-wide opacity-90 max-w-xs">
+                <div className="text-[11px] sm:text-xs font-mono font-medium tracking-wide opacity-90 max-w-xs leading-tight">
                   {scanResult.status === 'VALID'
                     ? `Welcome to Safed Sheri 2026 (${selectedGate.replace('_', ' ')})`
                     : scanResult.message || `Reason: ${scanResult.reason || 'INVALID_TOKEN'}`}
                 </div>
               </div>
 
-              {scanResult.attendeeName && (
-                <div className="mt-3 pt-3 border-t border-white/20 text-xs space-y-1 w-full max-w-xs bg-black/20 p-3 rounded-2xl">
-                  <div className="font-bold text-base sm:text-lg text-white drop-shadow">
+              {/* MIDDLE SECTION: ATTENDEE BADGE CARD */}
+              {scanResult.attendeeName ? (
+                <div className="my-2 py-2.5 px-4 rounded-2xl bg-black/40 backdrop-blur-sm border border-white/15 text-center space-y-1 w-full max-w-xs shadow-inner">
+                  <div className="font-bold text-base sm:text-lg text-white drop-shadow truncate">
                     {scanResult.attendeeName}
                   </div>
-                  <div className="font-mono text-xs text-amber-300 font-bold">
+                  <div className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-amber-400/20 text-amber-300 border border-amber-300/30">
                     {scanResult.passType} PASS • {scanResult.passCode}
                   </div>
                 </div>
+              ) : (
+                <div className="h-2" />
               )}
 
-              {/* DEDICATED NEXT BUTTON */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNextScan();
-                }}
-                className="mt-5 w-full max-w-xs py-3.5 px-6 rounded-2xl bg-white text-[#2D1F0E] font-black text-sm uppercase tracking-wider shadow-2xl flex items-center justify-center space-x-2 hover:bg-amber-50 active:scale-95 transition-all border-2 border-white/80 cursor-pointer"
-              >
-                <span>Click Next To Scan Another Pass</span>
-                <span className="text-base font-bold">➔</span>
-              </button>
+              {/* BOTTOM SECTION: PROMINENT NEXT BUTTON (NO CLIPPING) */}
+              <div className="w-full max-w-xs pb-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNextScan();
+                  }}
+                  className="w-full py-3.5 px-5 rounded-2xl bg-white hover:bg-amber-50 active:scale-95 text-[#1A1208] font-black text-xs sm:text-sm uppercase tracking-wider shadow-2xl flex items-center justify-center space-x-2 transition-all border-2 border-white/90 cursor-pointer"
+                >
+                  <span>Click Next To Scan Another Pass</span>
+                  <span className="text-base font-bold">➔</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
