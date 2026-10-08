@@ -347,6 +347,9 @@ export class RegistrationsService {
         'VIP',
         'OPEN',
         'TRUE',
+        'OFFLINE',
+        'OFFLINE_BOOKING',
+        'OFFLINE_2026',
         (process.env.VIP_BOOKING_SECRET || '').trim().toUpperCase(),
       ].filter(Boolean),
     );
@@ -355,6 +358,7 @@ export class RegistrationsService {
       normalizedVipKey &&
         (validVipKeys.has(normalizedVipKey) ||
           normalizedVipKey.includes('VIP') ||
+          normalizedVipKey.includes('OFFLINE') ||
           normalizedVipKey.includes('SHERI')),
     );
 

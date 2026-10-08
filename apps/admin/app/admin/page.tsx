@@ -2960,13 +2960,13 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
-              {/* VIP Private Booking Direct Link Card */}
+              {/* Offline Booking Direct Link Card */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-[#D99427]/40 space-y-3 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
-                    <span className="text-base">👑</span>
+                    <span className="text-base">🎟️</span>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-[#2D1F0E]">
-                      Organizer VIP Private Booking Link (Bypasses Booking Closure)
+                      Offline Booking Direct Link (Bypasses Booking Closure)
                     </h4>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
@@ -2974,27 +2974,27 @@ export default function SuperAdminDashboard() {
                   </span>
                 </div>
                 <p className="text-[11px] text-[#6E5336] leading-relaxed">
-                  Share this private link directly with trusted friends, VIPs, or relatives on WhatsApp. Opening this link completely unlocks pass bookings (Single, Couple, Kids) on the website even when general public booking is closed.
+                  Share this private link directly with users for offline pass booking. Opening this link unlocks pass bookings (Single, Couple, Kids) on the website even when general public booking is closed.
                 </p>
                 <div className="flex items-center space-x-2 pt-1">
                   <input
                     type="text"
                     readOnly
-                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://safedsheri.com'}/?invite=SHERI_VIP_2026`}
+                    value={`${typeof window !== 'undefined' ? window.location.origin : 'https://safedsheri.com'}/?booking=offline`}
                     className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-[#EAD9B8] text-[#2D1F0E] text-xs font-mono font-bold select-all outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => {
-                      const link = `${window.location.origin}/?invite=SHERI_VIP_2026`;
+                      const link = `${window.location.origin}/?booking=offline`;
                       navigator.clipboard.writeText(link);
-                      setMessage('VIP Private Booking Link copied to clipboard!');
+                      setMessage('Offline Booking Link copied to clipboard!');
                       setTimeout(() => setMessage(''), 3500);
                     }}
                     className="px-4 py-2 rounded-xl bg-[#2D1F0E] hover:bg-[#432F17] text-[#FAF6EE] text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 transition shadow-sm"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-[#D99427]" />
-                    <span>Copy VIP Link</span>
+                    <span>Copy Offline Link</span>
                   </button>
                 </div>
               </div>

@@ -433,17 +433,23 @@ export default function SafedSheriLandingPage() {
 
   const [vipAccessKey, setVipAccessKey] = useState<string | null>(null);
 
-  // Check URL query parameters and sessionStorage for VIP link
+  // Check URL query parameters and sessionStorage for Offline / Direct booking link
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const urlParams = new URLSearchParams(window.location.search);
+      const bookingParam = urlParams.get('booking');
+      const offlineParam = urlParams.get('offline');
+      const inviteParam = urlParams.get('invite');
       const paramKey =
-        urlParams.get('invite') ||
+        (bookingParam?.toLowerCase() === 'offline' ? 'OFFLINE_BOOKING' : null) ||
+        (offlineParam?.toLowerCase() === 'true' ? 'OFFLINE_BOOKING' : null) ||
+        (inviteParam?.toLowerCase() === 'offline' ? 'OFFLINE_BOOKING' : null) ||
+        inviteParam ||
         urlParams.get('vip') ||
         urlParams.get('access') ||
         urlParams.get('code') ||
-        (urlParams.get('open') === 'true' ? 'SHERI_VIP_2026' : null);
+        (urlParams.get('open') === 'true' ? 'OFFLINE_BOOKING' : null);
 
       if (paramKey) {
         const cleanKey = paramKey.trim().toUpperCase();
@@ -1535,11 +1541,11 @@ export default function SafedSheriLandingPage() {
       {/* Visual Sunlit Canvas */}
       <IllusionEngine />
 
-      {/* Floating VIP Direct Access Badge */}
+      {/* Floating Offline Direct Access Badge */}
       {vipAccessKey && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1A1208]/90 backdrop-blur-md text-amber-300 font-bold text-xs py-2 px-5 rounded-full shadow-2xl border border-amber-400/50 flex items-center space-x-2">
           <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-          <span>👑 Organizer VIP Access Active • Pass Booking Unlocked</span>
+          <span>🎟️ Offline Booking Mode Active • Pass Booking Unlocked</span>
         </div>
       )}
 
