@@ -61,6 +61,10 @@ export class ReportsService {
       where: { passType: PassType.GAZEBO, deletedAt: null },
     });
 
+    const kidsPasses = await this.prisma.registration.count({
+      where: { passType: PassType.KIDS, deletedAt: null },
+    });
+
     const totalAttendees = await this.prisma.attendee.count({
       where: {
         registrations: {
@@ -84,6 +88,37 @@ export class ReportsService {
     const directEntries = await this.prisma.entry.count({
       where: { entryType: 'DIRECT', registration: { deletedAt: null } },
     });
+
+    const allEntries = await this.prisma.entry.findMany({
+      where: { registration: { deletedAt: null } },
+      select: {
+        registration: { select: { passType: true } },
+        credential: { select: { registration: { select: { passType: true } } } },
+        notes: true,
+      },
+    });
+
+    let coupleScanned = 0;
+    let singleScanned = 0;
+    let kidsScanned = 0;
+    let gazeboScanned = 0;
+
+    for (const e of allEntries) {
+      let pt = e.registration?.passType || e.credential?.registration?.passType;
+      if (!pt && e.notes) {
+        const n = e.notes.toUpperCase();
+        if (n.includes('COUPLE')) pt = PassType.COUPLE;
+        else if (n.includes('SINGLE') || n.includes('FEMALE')) pt = PassType.SINGLE;
+        else if (n.includes('KIDS')) pt = PassType.KIDS;
+        else if (n.includes('GAZEBO')) pt = PassType.GAZEBO;
+      }
+      if (!pt) pt = PassType.COUPLE;
+
+      if (pt === PassType.COUPLE) coupleScanned++;
+      else if (pt === PassType.SINGLE) singleScanned++;
+      else if (pt === PassType.KIDS) kidsScanned++;
+      else if (pt === PassType.GAZEBO) gazeboScanned++;
+    }
 
     const totalScans = await this.prisma.scanAttempt.count({
       where: { credential: { registration: { deletedAt: null } } }
@@ -115,6 +150,7 @@ export class ReportsService {
         passTypes: {
           single: femaleSinglePasses,
           couple: couplePasses,
+          kids: kidsPasses,
           gazebo: gazeboBookings,
           totalAttendees,
         },
@@ -125,6 +161,34 @@ export class ReportsService {
           total: totalEntries,
           qr: qrEntries,
           direct: directEntries,
+          breakdown: {
+            couple: coupleScanned,
+            single: singleScanned,
+            kids: kidsScanned,
+            gazebo: gazeboScanned,
+          },
+          metrics: {
+            COUPLE: {
+              issued: couplePasses,
+              scanned: coupleScanned,
+              remaining: Math.max(0, couplePasses - coupleScanned),
+            },
+            SINGLE: {
+              issued: femaleSinglePasses,
+              scanned: singleScanned,
+              remaining: Math.max(0, femaleSinglePasses - singleScanned),
+            },
+            KIDS: {
+              issued: kidsPasses,
+              scanned: kidsScanned,
+              remaining: Math.max(0, kidsPasses - kidsScanned),
+            },
+            GAZEBO: {
+              issued: gazeboBookings,
+              scanned: gazeboScanned,
+              remaining: Math.max(0, gazeboBookings - gazeboScanned),
+            },
+          },
         },
         scans: {
           total: totalScans,

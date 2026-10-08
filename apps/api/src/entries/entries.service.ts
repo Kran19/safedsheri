@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ScanResult, CredentialStatus, EntryType, VerificationMethod, Role, PassType } from '@prisma/client';
+import { ScanResult, CredentialStatus, EntryType, VerificationMethod, Role, PassType, RegistrationStatus } from '@prisma/client';
 
 @Injectable()
 export class EntriesService {
@@ -86,20 +86,21 @@ export class EntriesService {
       else if (pt === PassType.GAZEBO) issuedGazebo++;
     }
 
-    // Fallback if credentials table is empty: Count from confirmed registrations
-    if (issuedCouple === 0 && issuedSingle === 0 && issuedKids === 0 && issuedGazebo === 0) {
-      const confirmedRegs = await this.prisma.registration.findMany({
-        where: {
-          status: { in: ['APPROVED', 'PAYMENT_CONFIRMED', 'PASS_ISSUED'] },
-        },
-        select: { passType: true },
-      });
-      for (const reg of confirmedRegs) {
-        if (reg.passType === PassType.COUPLE) issuedCouple++;
-        else if (reg.passType === PassType.SINGLE) issuedSingle++;
-        else if (reg.passType === PassType.KIDS) issuedKids++;
-        else if (reg.passType === PassType.GAZEBO) issuedGazebo++;
-      }
+    // Query registrations to ensure total passes accurately reflect registered attendees
+    const regCounts = await this.prisma.registration.groupBy({
+      by: ['passType'],
+      where: {
+        deletedAt: null,
+        status: { notIn: [RegistrationStatus.REJECTED, RegistrationStatus.CANCELLED] },
+      },
+      _count: { id: true },
+    });
+
+    for (const r of regCounts) {
+      if (r.passType === PassType.COUPLE) issuedCouple = Math.max(issuedCouple, r._count.id);
+      else if (r.passType === PassType.SINGLE) issuedSingle = Math.max(issuedSingle, r._count.id);
+      else if (r.passType === PassType.KIDS) issuedKids = Math.max(issuedKids, r._count.id);
+      else if (r.passType === PassType.GAZEBO) issuedGazebo = Math.max(issuedGazebo, r._count.id);
     }
 
     // 2. Attendance breakdown by pass type from created entries TODAY

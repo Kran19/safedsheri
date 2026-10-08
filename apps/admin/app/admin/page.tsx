@@ -88,6 +88,7 @@ export default function SuperAdminDashboard() {
   const [paymentActionLoading, setPaymentActionLoading] = useState(false);
   
   const [overview, setOverview] = useState<any>(null);
+  const [gateStats, setGateStats] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
   const [attendees, setAttendees] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -286,6 +287,11 @@ export default function SuperAdminDashboard() {
       setLoading(false);
       router.replace('/login');
       return;
+    }
+
+    const resGateStats = await apiRequest('/entries/gate-stats?gateId=MASTER_ADMIN');
+    if (resGateStats.success && resGateStats.data) {
+      setGateStats(resGateStats.data);
     }
 
     const resApps = await apiRequest('/registrations');
@@ -1935,20 +1941,149 @@ export default function SuperAdminDashboard() {
         </div>
       </div>
 
-      <h3 className="text-sm font-bold text-[#6E5336] uppercase tracking-wider mb-2">Financial & Access Control</h3>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-[#FFF5DC] to-[#FAF6EE] border border-[#D99427] shadow-sm">
-          <div className="text-[#8C6019] text-[11px] uppercase tracking-wider font-bold mb-1">Total Collection</div>
-          <div className="text-2xl font-serif font-bold text-[#2D1F0E]">
-            ₹{overview?.financials?.totalCollection?.toLocaleString() || '0'}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-bold text-[#6E5336] uppercase tracking-wider flex items-center gap-2">
+          <span>Financial & Gate Access Control</span>
+        </h3>
+        <span className="text-[11px] font-mono text-[#8C6019] bg-[#FFF5DC] px-2.5 py-0.5 rounded-full border border-[#E5A93C]">
+          Total Venue Entries: {gateStats?.totalAttendeesScanned ?? overview?.entries?.total ?? 0}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-[#FFF5DC] to-[#FAF6EE] border border-[#D99427] shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="text-[#8C6019] text-[11px] uppercase tracking-wider font-bold mb-1">Total Collection</div>
+            <div className="text-3xl font-serif font-bold text-[#2D1F0E]">
+              ₹{overview?.financials?.totalCollection?.toLocaleString() || '0'}
+            </div>
+          </div>
+          <div className="text-[11px] text-[#6E5336] mt-4 pt-3 border-t border-[#EAD9B8]">
+            Total revenue from confirmed passes & bookings
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-purple-50 border border-purple-200 shadow-sm">
-          <div className="text-purple-700 text-[11px] uppercase tracking-wider font-semibold mb-1">Gate Entries</div>
-          <div className="text-2xl font-serif font-bold text-purple-950">
-            {overview?.entries?.total || '0'}
+        <div className="lg:col-span-2 p-5 rounded-2xl bg-purple-50/70 border border-purple-200 shadow-sm space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-purple-900 text-xs uppercase tracking-wider font-bold flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-purple-700" />
+                <span>Gate Pass Scanning Matrix</span>
+              </div>
+              <p className="text-[11px] text-purple-800">
+                Live breakdown of total passes issued vs. attendees scanned inside
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold bg-purple-100 text-purple-900 px-3 py-1 rounded-xl border border-purple-300">
+                Total Scanned In: <strong>{gateStats?.totalAttendeesScanned ?? overview?.entries?.total ?? 0}</strong>
+              </span>
+            </div>
           </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+            {/* Couple Pass */}
+            {(() => {
+              const cIssued = gateStats?.metrics?.COUPLE?.issued ?? overview?.entries?.metrics?.COUPLE?.issued ?? overview?.passTypes?.couple ?? applications.filter((a: any) => a.passType === 'COUPLE').length ?? 0;
+              const cScanned = gateStats?.metrics?.COUPLE?.scanned ?? overview?.entries?.metrics?.COUPLE?.scanned ?? overview?.entries?.breakdown?.couple ?? 0;
+              const cRemaining = Math.max(0, cIssued - cScanned);
+              return (
+                <div className="p-3 bg-white/95 border border-emerald-200 rounded-xl shadow-xs space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase text-emerald-800">
+                    Couple Passes
+                  </div>
+                  <div className="text-xl font-serif font-extrabold text-emerald-950">
+                    {cIssued} <span className="text-[10px] font-sans font-normal text-emerald-700">Total</span>
+                  </div>
+                  <div className="text-[11px] font-mono font-semibold text-emerald-900 flex justify-between pt-1 border-t border-emerald-100">
+                    <span>Scanned: <strong className="text-emerald-700">{cScanned}</strong></span>
+                    <span className="text-emerald-600">Left: {cRemaining}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Female / Single Pass */}
+            {(() => {
+              const sIssued = gateStats?.metrics?.SINGLE?.issued ?? overview?.entries?.metrics?.SINGLE?.issued ?? overview?.passTypes?.single ?? applications.filter((a: any) => a.passType === 'SINGLE').length ?? 0;
+              const sScanned = gateStats?.metrics?.SINGLE?.scanned ?? overview?.entries?.metrics?.SINGLE?.scanned ?? overview?.entries?.breakdown?.single ?? 0;
+              const sRemaining = Math.max(0, sIssued - sScanned);
+              return (
+                <div className="p-3 bg-white/95 border border-blue-200 rounded-xl shadow-xs space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase text-blue-800">
+                    Female / Single
+                  </div>
+                  <div className="text-xl font-serif font-extrabold text-blue-950">
+                    {sIssued} <span className="text-[10px] font-sans font-normal text-blue-700">Total</span>
+                  </div>
+                  <div className="text-[11px] font-mono font-semibold text-blue-900 flex justify-between pt-1 border-t border-blue-100">
+                    <span>Scanned: <strong className="text-blue-700">{sScanned}</strong></span>
+                    <span className="text-blue-600">Left: {sRemaining}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Kids Pass */}
+            {(() => {
+              const kIssued = gateStats?.metrics?.KIDS?.issued ?? overview?.entries?.metrics?.KIDS?.issued ?? overview?.passTypes?.kids ?? applications.filter((a: any) => a.passType === 'KIDS').length ?? 0;
+              const kScanned = gateStats?.metrics?.KIDS?.scanned ?? overview?.entries?.metrics?.KIDS?.scanned ?? overview?.entries?.breakdown?.kids ?? 0;
+              const kRemaining = Math.max(0, kIssued - kScanned);
+              return (
+                <div className="p-3 bg-white/95 border border-purple-200 rounded-xl shadow-xs space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase text-purple-800">
+                    Kids Passes
+                  </div>
+                  <div className="text-xl font-serif font-extrabold text-purple-950">
+                    {kIssued} <span className="text-[10px] font-sans font-normal text-purple-700">Total</span>
+                  </div>
+                  <div className="text-[11px] font-mono font-semibold text-purple-900 flex justify-between pt-1 border-t border-purple-100">
+                    <span>Scanned: <strong className="text-purple-700">{kScanned}</strong></span>
+                    <span className="text-purple-600">Left: {kRemaining}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Gazebo VIP */}
+            {(() => {
+              const gIssued = gateStats?.metrics?.GAZEBO?.issued ?? overview?.entries?.metrics?.GAZEBO?.issued ?? overview?.passTypes?.gazebo ?? gazebos.filter((g: any) => g.status === 'BOOKED' || g.status === 'CONFIRMED').length ?? 0;
+              const gScanned = gateStats?.metrics?.GAZEBO?.scanned ?? overview?.entries?.metrics?.GAZEBO?.scanned ?? overview?.entries?.breakdown?.gazebo ?? 0;
+              const gRemaining = Math.max(0, gIssued - gScanned);
+              return (
+                <div className="p-3 bg-white/95 border border-amber-300 rounded-xl shadow-xs space-y-1">
+                  <div className="text-[10px] font-mono font-bold uppercase text-amber-800">
+                    Gazebo VIP
+                  </div>
+                  <div className="text-xl font-serif font-extrabold text-amber-950">
+                    {gIssued} <span className="text-[10px] font-sans font-normal text-amber-700">Total</span>
+                  </div>
+                  <div className="text-[11px] font-mono font-semibold text-amber-900 flex justify-between pt-1 border-t border-amber-200">
+                    <span>Scanned: <strong className="text-amber-700">{gScanned}</strong></span>
+                    <span className="text-amber-600">Left: {gRemaining}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {gateStats?.gateBreakdown && (
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-200 text-[10px] font-mono text-purple-900">
+              <span className="font-bold uppercase tracking-wider text-purple-700">By Gate:</span>
+              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                Gate 1 (Couple): <strong>{gateStats.gateBreakdown.GATE_1 || 0}</strong>
+              </span>
+              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                Gate 2 (Single): <strong>{gateStats.gateBreakdown.GATE_2 || 0}</strong>
+              </span>
+              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                Gate 3 (Kids): <strong>{gateStats.gateBreakdown.GATE_3 || 0}</strong>
+              </span>
+              <span className="bg-white/80 px-2 py-0.5 rounded border border-purple-200">
+                Gate 4 (Gazebo): <strong>{gateStats.gateBreakdown.GATE_4 || 0}</strong>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
