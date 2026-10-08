@@ -1270,10 +1270,22 @@ export default function SuperAdminDashboard() {
       isNumeric: true,
       align: 'right',
       getValue: (row) => {
+        const isFnf = row.reviewNotes?.toLowerCase().includes('family') || 
+                      row.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS' || p.provider === 'FAMILY_AND_FRIENDS');
+        if (isFnf) return 0;
         const paidAmount = row.payments?.find((p: any) => p.status === 'CONFIRMED')?.amount;
         return Number(row.amountDue || paidAmount || 0);
       },
       render: (row) => {
+        const isFnf = row.reviewNotes?.toLowerCase().includes('family') || 
+                      row.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS' || p.provider === 'FAMILY_AND_FRIENDS');
+        if (isFnf) {
+          return (
+            <span className="font-serif font-bold text-purple-700">
+              ₹0
+            </span>
+          );
+        }
         const paidAmount = row.payments?.find((p: any) => p.status === 'CONFIRMED')?.amount;
         const displayAmount = Number(row.amountDue || paidAmount || 0);
         return (
@@ -3536,7 +3548,7 @@ export default function SuperAdminDashboard() {
                 Application #{selectedApp.registrationNumber}
               </h3>
               <p className="text-xs text-[#6E5336] mt-1">
-                Pass Category: <strong>{selectedApp.passType}</strong> • Original Amount: <strong>₹{Number(selectedApp.amountDue)?.toLocaleString()}</strong> • Status: <strong>{selectedApp.status}</strong>
+                Pass Category: <strong>{selectedApp.passType}</strong> • Original Amount: <strong>₹{(selectedApp.reviewNotes?.toLowerCase().includes('family') || selectedApp.payments?.some((p: any) => p.method === 'FAMILY_AND_FRIENDS' || p.provider === 'FAMILY_AND_FRIENDS') || Number(selectedApp.amountDue) === 0) ? '0' : Number(selectedApp.amountDue)?.toLocaleString()}</strong> • Status: <strong>{selectedApp.status}</strong>
               </p>
             </div>
 
