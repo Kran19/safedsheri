@@ -66,8 +66,12 @@ export class EntriesService {
         })
       : 0;
 
-    // 1. Calculate Total Issued Passes per category (All Active / Used Credentials)
+    // 1. Calculate Total Issued Passes per category (All Active / Used Credentials for Non-Deleted Registrations)
     const credentials = await this.prisma.credential.findMany({
+      where: {
+        registration: { deletedAt: null },
+        status: { in: [CredentialStatus.ACTIVE, CredentialStatus.USED] },
+      },
       select: {
         registration: { select: { passType: true } },
       },
@@ -84,23 +88,6 @@ export class EntriesService {
       else if (pt === PassType.SINGLE) issuedSingle++;
       else if (pt === PassType.KIDS) issuedKids++;
       else if (pt === PassType.GAZEBO) issuedGazebo++;
-    }
-
-    // Query registrations to ensure total passes accurately reflect registered attendees
-    const regCounts = await this.prisma.registration.groupBy({
-      by: ['passType'],
-      where: {
-        deletedAt: null,
-        status: { notIn: [RegistrationStatus.REJECTED, RegistrationStatus.CANCELLED] },
-      },
-      _count: { id: true },
-    });
-
-    for (const r of regCounts) {
-      if (r.passType === PassType.COUPLE) issuedCouple = Math.max(issuedCouple, r._count.id);
-      else if (r.passType === PassType.SINGLE) issuedSingle = Math.max(issuedSingle, r._count.id);
-      else if (r.passType === PassType.KIDS) issuedKids = Math.max(issuedKids, r._count.id);
-      else if (r.passType === PassType.GAZEBO) issuedGazebo = Math.max(issuedGazebo, r._count.id);
     }
 
     // 2. Attendance breakdown by pass type from created entries TODAY
