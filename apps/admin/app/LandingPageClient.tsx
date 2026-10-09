@@ -3780,11 +3780,11 @@ export default function SafedSheriLandingPage() {
                               </div>
 
                               <div className="pt-3 flex items-center justify-between">
-                                <div className="p-1.5 rounded-xl bg-white flex-shrink-0">
+                                <div className="p-2 rounded-2xl bg-white flex-shrink-0 shadow-md">
                                   <QRCodeSVG
                                     value={p.credential.secureToken}
-                                    size={64}
-                                    level="M"
+                                    size={110}
+                                    level="H"
                                     includeMargin={false}
                                   />
                                 </div>
