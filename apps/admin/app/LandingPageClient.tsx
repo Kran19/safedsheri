@@ -3779,18 +3779,24 @@ export default function SafedSheriLandingPage() {
                                 </div>
                               </div>
 
-                              <div className="pt-3 flex items-center justify-between">
-                                <div className="p-2 rounded-2xl bg-white flex-shrink-0 shadow-md">
+                              <div className="flex justify-center py-2">
+                                <div className="p-2.5 rounded-2xl bg-white shadow-2xl flex items-center justify-center">
                                   <QRCodeSVG
                                     value={p.credential.secureToken}
-                                    size={110}
+                                    size={180}
                                     level="H"
-                                    includeMargin={false}
+                                    includeMargin={true}
                                   />
                                 </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-[#D99427]/20">
+                                <div className="text-[9px] font-mono tracking-widest text-[#F6C85F] uppercase font-bold">
+                                  GATE 4 • VIP ACCESS
+                                </div>
                                 <div className="text-right">
-                                  <div className="font-serif text-2xl italic opacity-90 text-[#D99427]">Safed Sheri</div>
-                                  <div className="text-[7px] uppercase tracking-[0.2em] opacity-50 mt-1 border-t border-[#D99427]/20 pt-1">Authorized Signature</div>
+                                  <div className="font-serif text-xl italic opacity-90 text-[#D99427]">Safed Sheri</div>
+                                  <div className="text-[7px] uppercase tracking-[0.2em] opacity-50 border-t border-[#D99427]/20 pt-0.5">Authorized Signature</div>
                                 </div>
                               </div>
                             </div>
