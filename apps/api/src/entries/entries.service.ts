@@ -259,11 +259,12 @@ export class EntriesService {
 
     if (userRole === Role.SUPER_ADMIN || gateId === 'MASTER_ADMIN') {
       isAllowedForGate = true;
+    } else if (passType === PassType.KIDS) {
+      // Kids pass can be scanned at ANY gate (accompanied by parents at Gate 1, 2, 3, 4)
+      isAllowedForGate = true;
     } else if (gateId === 'GATE_1' && passType === PassType.COUPLE) {
       isAllowedForGate = true;
     } else if (gateId === 'GATE_2' && passType === PassType.SINGLE) {
-      isAllowedForGate = true;
-    } else if (gateId === 'GATE_3' && passType === PassType.KIDS) {
       isAllowedForGate = true;
     } else if (gateId === 'GATE_4' && passType === PassType.GAZEBO) {
       isAllowedForGate = true;
@@ -271,10 +272,10 @@ export class EntriesService {
 
     if (!isAllowedForGate) {
       const gateNames: Record<string, string> = {
-        GATE_1: 'COUPLE PASS ONLY',
-        GATE_2: 'FEMALE / SINGLE PASS ONLY',
-        GATE_3: 'KIDS PASS ONLY',
-        GATE_4: 'GAZEBO PASS ONLY',
+        GATE_1: 'COUPLE PASS (OR ACCOMPANYING KIDS PASS)',
+        GATE_2: 'FEMALE / SINGLE PASS (OR ACCOMPANYING KIDS PASS)',
+        GATE_3: 'KIDS PASS',
+        GATE_4: 'GAZEBO PASS (OR ACCOMPANYING KIDS PASS)',
       };
       const requiredName = gateNames[gateId] || 'MATCHING PASS';
 

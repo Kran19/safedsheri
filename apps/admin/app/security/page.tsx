@@ -390,10 +390,10 @@ export default function SecurityScannerPage() {
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.username === 'masteradmin@safedsheri.com';
 
   const gateDescriptions: Record<string, { title: string; subtitle: string; categoryKey: string; label: string }> = {
-    GATE_1: { title: 'GATE 1 TERMINAL', subtitle: 'COUPLE PASS SCANNER ONLY', categoryKey: 'COUPLE', label: 'COUPLE PASSES' },
-    GATE_2: { title: 'GATE 2 TERMINAL', subtitle: 'FEMALE / SINGLE PASS SCANNER ONLY', categoryKey: 'SINGLE', label: 'FEMALE / SINGLE PASSES' },
+    GATE_1: { title: 'GATE 1 TERMINAL', subtitle: 'COUPLE & ACCOMPANYING KIDS PASSES', categoryKey: 'COUPLE', label: 'COUPLE PASSES' },
+    GATE_2: { title: 'GATE 2 TERMINAL', subtitle: 'FEMALE / SINGLE & ACCOMPANYING KIDS PASSES', categoryKey: 'SINGLE', label: 'FEMALE / SINGLE PASSES' },
     GATE_3: { title: 'GATE 3 TERMINAL', subtitle: 'KIDS PASS SCANNER ONLY', categoryKey: 'KIDS', label: 'KIDS PASSES' },
-    GATE_4: { title: 'GATE 4 TERMINAL', subtitle: 'GAZEBO VIP PASS SCANNER ONLY', categoryKey: 'GAZEBO', label: 'GAZEBO VIP PASSES' },
+    GATE_4: { title: 'GATE 4 TERMINAL', subtitle: 'GAZEBO VIP & ACCOMPANYING KIDS PASSES', categoryKey: 'GAZEBO', label: 'GAZEBO VIP PASSES' },
     MASTER_ADMIN: { title: 'MASTER ADMIN TERMINAL', subtitle: 'ALL PASS CATEGORIES PERMITTED', categoryKey: 'ALL', label: 'ALL PASSES' },
   };
 
@@ -478,7 +478,7 @@ export default function SecurityScannerPage() {
             >
               <div className="text-[10px] font-bold uppercase opacity-80">GATE 1</div>
               <div className="text-xs font-bold font-serif mt-1">COUPLE PASS</div>
-              <div className="text-[9px] opacity-70 mt-1 font-mono">Couple Only</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Couple &amp; Kids</div>
             </button>
 
             <button
@@ -492,7 +492,7 @@ export default function SecurityScannerPage() {
             >
               <div className="text-[10px] font-bold uppercase opacity-80">GATE 2</div>
               <div className="text-xs font-bold font-serif mt-1">FEMALE / SINGLE</div>
-              <div className="text-[9px] opacity-70 mt-1 font-mono">Single Only</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Single &amp; Kids</div>
             </button>
 
             <button
@@ -506,7 +506,7 @@ export default function SecurityScannerPage() {
             >
               <div className="text-[10px] font-bold uppercase opacity-80">GATE 3</div>
               <div className="text-xs font-bold font-serif mt-1">KIDS PASS</div>
-              <div className="text-[9px] opacity-70 mt-1 font-mono">Kids Only</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Kids Priority</div>
             </button>
 
             <button
@@ -520,7 +520,7 @@ export default function SecurityScannerPage() {
             >
               <div className="text-[10px] font-bold uppercase opacity-80">GATE 4</div>
               <div className="text-xs font-bold font-serif mt-1">GAZEBO PASS</div>
-              <div className="text-[9px] opacity-70 mt-1 font-mono">Gazebo VIP</div>
+              <div className="text-[9px] opacity-70 mt-1 font-mono">Gazebo &amp; Kids</div>
             </button>
           </div>
 
