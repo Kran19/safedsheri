@@ -208,7 +208,7 @@ export class EntriesService {
     const userRole = data.userRole;
 
     // Step 1: Look up Credential by secureToken (or passCode in test mode)
-    const credential = await this.prisma.credential.findFirst({
+    let credential = await this.prisma.credential.findFirst({
       where: {
         OR: [{ secureToken: cleanToken }, { passCode: cleanToken }, { credentialNumber: cleanToken }],
       },
@@ -217,6 +217,24 @@ export class EntriesService {
         registration: true,
       },
     });
+
+    // Fallback: If scanned token is a synthetic Gazebo QR token (ss_gzb_...), lookup by phone/inquiry
+    if (!credential && (cleanToken.startsWith('ss_gzb_') || cleanToken.startsWith('SS26-GZB-'))) {
+      const parts = cleanToken.split('_');
+      const phoneOrIdx = parts[parts.length - 1];
+      if (phoneOrIdx && phoneOrIdx.length === 10) {
+        credential = await this.prisma.credential.findFirst({
+          where: {
+            attendee: { phone: { contains: phoneOrIdx } },
+            registration: { passType: PassType.GAZEBO, deletedAt: null },
+          },
+          include: {
+            attendee: true,
+            registration: true,
+          },
+        });
+      }
+    }
 
     // Step 2: Handle Invalid Token
     if (!credential) {
