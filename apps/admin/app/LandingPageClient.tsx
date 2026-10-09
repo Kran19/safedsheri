@@ -3579,11 +3579,11 @@ export default function SafedSheriLandingPage() {
       {/* MODAL 2: MY PASS WALLET DRAWER */}
       {/* ========================================================================= */}
       {isWalletOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div data-lenis-prevent="true" className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div data-lenis-prevent="true" className="bg-white border-2 border-[#EAD9B8] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-3.5 sm:p-6 md:p-8 shadow-2xl relative text-[#2D1F0E]">
             <button
               onClick={() => setIsWalletOpen(false)}
-              className="absolute top-6 right-6 w-9 h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#F8F5EE] text-[#6E5336] hover:text-[#2D1F0E] flex items-center justify-center border border-[#EAD9B8]"
             >
               ✕
             </button>
@@ -3666,7 +3666,7 @@ export default function SafedSheriLandingPage() {
                     walletPasses.map((p, idx) => (
                       <div
                         key={idx}
-                        className="p-6 rounded-3xl bg-[#FFFDF9] border border-[#EAD9B8] shadow-md space-y-4"
+                        className="p-3.5 sm:p-6 rounded-3xl bg-[#FFFDF9] border border-[#EAD9B8] shadow-md space-y-4"
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -3711,7 +3711,7 @@ export default function SafedSheriLandingPage() {
 
                         {/* 1. ACTIVE QR PASS DISPLAY */}
                         {p.hasActivePass && p.credential && p.passType !== 'GAZEBO' && (
-                          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#FFFDF9] to-white border-2 border-[#D99427] text-[#2D1F0E] text-center space-y-3 shadow-xl">
+                          <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-b from-[#FFFDF9] to-white border-2 border-[#D99427] text-[#2D1F0E] text-center space-y-3 shadow-xl">
                             <div className="flex justify-center mb-1">
                               <LogoSlot size="sm" />
                             </div>
@@ -3740,14 +3740,14 @@ export default function SafedSheriLandingPage() {
 
                         {/* 1B. GAZEBO PREMIUM PASS DISPLAY */}
                         {p.hasActivePass && p.credential && p.passType === 'GAZEBO' && (
-                          <div className="p-6 rounded-2xl bg-gradient-to-br from-[#0F0F0F] via-[#1A1A1A] to-[#0A0A0A] border-2 border-[#D99427] text-[#F6C85F] relative overflow-hidden shadow-2xl">
+                          <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-[#0F0F0F] via-[#1A1A1A] to-[#0A0A0A] border-2 border-[#D99427] text-[#F6C85F] relative overflow-hidden shadow-2xl">
                             {/* Decorative background lines */}
                             <div className="absolute inset-0 opacity-10 pointer-events-none">
                               <div className="absolute -top-[50%] -left-[20%] w-[150%] h-[150%] rounded-full border-[1px] border-[#D99427] opacity-20 transform -rotate-45" />
                               <div className="absolute top-[20%] -right-[30%] w-[100%] h-[100%] rounded-full border-[1px] border-[#D99427] opacity-10 transform rotate-12" />
                             </div>
 
-                            <div className="relative z-10 space-y-5 pr-6">
+                            <div className="relative z-10 space-y-4 pr-7 sm:pr-8">
                               {/* Header */}
                               <div className="flex items-center space-x-3">
                                 <div className="p-1.5 rounded-lg bg-[#D99427]/20 border border-[#D99427]/50">
@@ -3780,10 +3780,11 @@ export default function SafedSheriLandingPage() {
                               </div>
 
                               <div className="flex justify-center py-2">
-                                <div className="p-2.5 rounded-2xl bg-white shadow-2xl flex items-center justify-center">
+                                <div className="p-2 sm:p-2.5 rounded-2xl bg-white shadow-2xl flex items-center justify-center max-w-[165px] w-full">
                                   <QRCodeSVG
                                     value={p.credential.secureToken}
-                                    size={180}
+                                    size={150}
+                                    className="w-full h-auto max-w-[145px]"
                                     level="H"
                                     includeMargin={true}
                                   />
