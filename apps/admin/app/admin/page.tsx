@@ -18,11 +18,12 @@ import { getMaintenanceMode, toggleMaintenanceMode } from '../actions/maintenanc
 import BookingDesk from '../components/BookingDesk';
 import GazeboManageGuestsModal from '../components/GazeboManageGuestsModal';
 import MasterPassesQRView from '../components/MasterPassesQRView';
+import MasterInstantPassPanel from '../components/MasterInstantPassPanel';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass' | 'blocked_users' | 'master_qr'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'attendees' | 'payments' | 'gazebos' | 'sponsors' | 'scans' | 'audit' | 'pricing' | 'settings' | 'trash' | 'book_pass' | 'otp_bypass' | 'blocked_users' | 'master_qr' | 'master_instant_pass'>('applications');
   const [trashApplications, setTrashApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
 
@@ -2155,8 +2156,9 @@ export default function SuperAdminDashboard() {
           { id: 'trash', label: 'Trash', icon: Trash2 },
           { id: 'book_pass', label: 'Book Pass', icon: Ticket },
           { id: 'master_qr', label: '👑 Master QR Directory', icon: QrCode },
+          { id: 'master_instant_pass', label: '⚡ Instant Pass (No Aadhaar)', icon: Sparkles },
         ].filter((tab) => {
-          if (tab.id === 'otp_bypass' || tab.id === 'master_qr') {
+          if (tab.id === 'otp_bypass' || tab.id === 'master_qr' || tab.id === 'master_instant_pass') {
             return currentUser?.username === 'masteradmin@safedsheri.com';
           }
           return true;
@@ -3301,6 +3303,15 @@ export default function SuperAdminDashboard() {
       {activeTab === 'master_qr' && currentUser?.username === 'masteradmin@safedsheri.com' && (
         <div className="animate-fade-in">
           <MasterPassesQRView currentUser={currentUser} />
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: MASTER ADMIN EXCLUSIVE INSTANT PASS MINT (NO AADHAAR REQUIRED) */}
+      {/* ========================================================================= */}
+      {activeTab === 'master_instant_pass' && currentUser?.username === 'masteradmin@safedsheri.com' && (
+        <div className="animate-fade-in">
+          <MasterInstantPassPanel currentUser={currentUser} />
         </div>
       )}
 

@@ -490,9 +490,12 @@ export class PaymentsService {
       // 4. Create Attendees and Link
       for (let i = 0; i < dto.attendees.length; i++) {
         const attDto = dto.attendees[i] as any;
-        const cleanAadhaar = attDto.aadhaarNumber ? attDto.aadhaarNumber.replace(/\D/g, '') : `9999${Date.now().toString().slice(-8)}`;
+        const rawAadhaar = (attDto.aadhaarNumber || '').replace(/\D/g, '');
+        const cleanAadhaar = rawAadhaar.length >= 4 
+          ? rawAadhaar 
+          : `99${Date.now().toString().slice(-6)}${i}${crypto.randomInt(100, 999)}`.slice(0, 12);
         const aadhaarHmac = this.encryptionService.computeAadhaarHmac(cleanAadhaar);
-        const aadhaarMasked = `XXXX-XXXX-${cleanAadhaar.slice(-4)}`;
+        const aadhaarMasked = rawAadhaar.length >= 4 ? `XXXX-XXXX-${rawAadhaar.slice(-4)}` : 'BYPASS-ADMIN';
         const aadhaarEncrypted = this.encryptionService.encrypt(cleanAadhaar);
 
         let attendee = await tx.attendee.findUnique({

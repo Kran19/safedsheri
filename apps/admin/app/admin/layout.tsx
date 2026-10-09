@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStoredUser, clearAuthToken } from '../../lib/api';
-import { Shield, LogOut, QrCode } from 'lucide-react';
+import { Shield, LogOut, QrCode, Sparkles } from 'lucide-react';
 import LogoSlot from '../components/LogoSlot';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +44,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p className="text-amber-800 uppercase font-mono tracking-wider font-bold">{user.role}</p>
           </div>
           
+          {user.username === 'masteradmin@safedsheri.com' && (
+            <button
+              onClick={() => router.push('/admin/instant-pass')}
+              className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 border border-amber-500 text-stone-950 rounded-xl transition shadow-xs flex items-center gap-1.5 text-xs font-bold whitespace-nowrap cursor-pointer"
+              title="Instant Pass Mint without Aadhaar"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-stone-950" />
+              <span>⚡ Instant Pass (No Aadhaar)</span>
+            </button>
+          )}
+
           {user.username === 'masteradmin@safedsheri.com' && (
             <button
               onClick={() => router.push('/admin/master-qr')}
