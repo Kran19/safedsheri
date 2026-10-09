@@ -701,6 +701,22 @@ export default function SafedSheriLandingPage() {
       if (payId) {
         openPaymentModal(payId);
       }
+
+      // Auto-open My Pass wallet modal via URL: ?mypass=true, ?my-pass=true, ?pass=true, ?wallet=true, or #mypass
+      const myPassParam = params.get('mypass') || params.get('my-pass') || params.get('pass') || params.get('wallet') || params.get('mypassword') || params.get('login');
+      const hash = window.location.hash?.toLowerCase();
+      if (
+        myPassParam !== null ||
+        hash === '#mypass' ||
+        hash === '#my-pass' ||
+        hash === '#pass' ||
+        hash === '#wallet'
+      ) {
+        setIsWalletOpen(true);
+        if (myPassParam && myPassParam !== 'true' && myPassParam !== '1' && myPassParam !== 'pass') {
+          setWalletPhone(myPassParam);
+        }
+      }
     }
   }, []);
 
