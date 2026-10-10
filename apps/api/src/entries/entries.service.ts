@@ -40,31 +40,30 @@ export class EntriesService {
 
     const eventId = activeEvent?.id;
 
-    // Start of today (00:00:00 local time)
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-
-    // Total valid scans performed by this scanner operator TODAY
+    // Total valid scans performed by this scanner operator for the event
     const myScansCount = await this.prisma.scanAttempt.count({
       where: {
         scannedById: scannedById,
         result: ScanResult.VALID,
-        scannedAt: { gte: todayStart },
         ...(eventId ? { eventId } : {}),
       },
     });
 
-    // Total valid scans for the specified gate TODAY
-    const gateScansCount = gateId
+    // Total valid scans for the specified gate for the event
+    const gateScansCount = gateId && gateId !== 'MASTER_ADMIN'
       ? await this.prisma.scanAttempt.count({
           where: {
             gateId: gateId,
             result: ScanResult.VALID,
-            scannedAt: { gte: todayStart },
             ...(eventId ? { eventId } : {}),
           },
         })
-      : 0;
+      : await this.prisma.scanAttempt.count({
+          where: {
+            result: ScanResult.VALID,
+            ...(eventId ? { eventId } : {}),
+          },
+        });
 
     // 1. Calculate Total Issued Passes per category (All Active / Used Credentials for Non-Deleted Registrations)
     const credentials = await this.prisma.credential.findMany({
@@ -90,17 +89,16 @@ export class EntriesService {
       else if (pt === PassType.GAZEBO) issuedGazebo++;
     }
 
-    // 2. Attendance breakdown by pass type from created entries TODAY
+    // 2. Attendance breakdown by pass type from created entries for the active event
     const allEntries = await this.prisma.entry.findMany({
       where: {
-        createdAt: { gte: todayStart },
         ...(eventId ? { eventId } : {}),
       },
       include: {
-        registration: { select: { passType: true } },
+        registration: { select: { passType: true, deletedAt: true } },
         credential: {
           select: {
-            registration: { select: { passType: true } },
+            registration: { select: { passType: true, deletedAt: true } },
           },
         },
       },
@@ -112,6 +110,11 @@ export class EntriesService {
     let gazeboCount = 0;
 
     for (const entry of allEntries) {
+      // Exclude entries linked to soft-deleted registrations
+      if (entry.registration?.deletedAt || entry.credential?.registration?.deletedAt) {
+        continue;
+      }
+
       let pt = entry.registration?.passType || entry.credential?.registration?.passType;
 
       if (!pt && entry.gateId) {
@@ -139,7 +142,9 @@ export class EntriesService {
       else if (pt === PassType.GAZEBO) gazeboCount++;
     }
 
-    // Gate-by-gate breakdown matching actual attendees admitted today
+    const totalAttendeesScanned = coupleCount + singleCount + kidsCount + gazeboCount;
+
+    // Gate-by-gate breakdown matching actual attendees admitted
     const gateCounts: Record<string, number> = {
       GATE_1: coupleCount,
       GATE_2: singleCount,
@@ -153,7 +158,7 @@ export class EntriesService {
       data: {
         myScansCount,
         gateScansCount,
-        totalAttendeesScanned: allEntries.length,
+        totalAttendeesScanned,
         breakdown: {
           couple: coupleCount,
           single: singleCount,

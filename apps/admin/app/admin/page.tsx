@@ -1991,7 +1991,7 @@ export default function SuperAdminDashboard() {
           <span>Financial & Gate Access Control</span>
         </h3>
         <span className="text-[11px] font-mono text-[#8C6019] bg-[#FFF5DC] px-2.5 py-0.5 rounded-full border border-[#E5A93C]">
-          Total Venue Entries: {gateStats?.totalAttendeesScanned ?? overview?.entries?.total ?? 0}
+          Total Venue Entries: {gateStats?.totalAttendeesScanned || overview?.entries?.total || 0}
         </span>
       </div>
 
@@ -2021,7 +2021,7 @@ export default function SuperAdminDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold bg-purple-100 text-purple-900 px-3 py-1 rounded-xl border border-purple-300">
-                Total Scanned In: <strong>{gateStats?.totalAttendeesScanned ?? overview?.entries?.total ?? 0}</strong>
+                Total Scanned In: <strong>{gateStats?.totalAttendeesScanned || overview?.entries?.total || 0}</strong>
               </span>
             </div>
           </div>
@@ -2029,8 +2029,8 @@ export default function SuperAdminDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
             {/* Couple Pass */}
             {(() => {
-              const cIssued = gateStats?.metrics?.COUPLE?.issued ?? overview?.entries?.metrics?.COUPLE?.issued ?? overview?.passTypes?.couple ?? applications.filter((a: any) => a.passType === 'COUPLE').length ?? 0;
-              const cScanned = gateStats?.metrics?.COUPLE?.scanned ?? overview?.entries?.metrics?.COUPLE?.scanned ?? overview?.entries?.breakdown?.couple ?? 0;
+              const cIssued = gateStats?.metrics?.COUPLE?.issued || overview?.entries?.metrics?.COUPLE?.issued || overview?.passTypes?.couple || applications.filter((a: any) => a.passType === 'COUPLE').length || 0;
+              const cScanned = gateStats?.metrics?.COUPLE?.scanned || overview?.entries?.metrics?.COUPLE?.scanned || overview?.entries?.breakdown?.couple || 0;
               const cRemaining = Math.max(0, cIssued - cScanned);
               return (
                 <div className="p-3 bg-white/95 border border-emerald-200 rounded-xl shadow-xs space-y-1">
@@ -2050,8 +2050,8 @@ export default function SuperAdminDashboard() {
 
             {/* Female / Single Pass */}
             {(() => {
-              const sIssued = gateStats?.metrics?.SINGLE?.issued ?? overview?.entries?.metrics?.SINGLE?.issued ?? overview?.passTypes?.single ?? applications.filter((a: any) => a.passType === 'SINGLE').length ?? 0;
-              const sScanned = gateStats?.metrics?.SINGLE?.scanned ?? overview?.entries?.metrics?.SINGLE?.scanned ?? overview?.entries?.breakdown?.single ?? 0;
+              const sIssued = gateStats?.metrics?.SINGLE?.issued || overview?.entries?.metrics?.SINGLE?.issued || overview?.passTypes?.single || applications.filter((a: any) => a.passType === 'SINGLE').length || 0;
+              const sScanned = gateStats?.metrics?.SINGLE?.scanned || overview?.entries?.metrics?.SINGLE?.scanned || overview?.entries?.breakdown?.single || 0;
               const sRemaining = Math.max(0, sIssued - sScanned);
               return (
                 <div className="p-3 bg-white/95 border border-blue-200 rounded-xl shadow-xs space-y-1">
@@ -2071,8 +2071,8 @@ export default function SuperAdminDashboard() {
 
             {/* Kids Pass */}
             {(() => {
-              const kIssued = gateStats?.metrics?.KIDS?.issued ?? overview?.entries?.metrics?.KIDS?.issued ?? overview?.passTypes?.kids ?? applications.filter((a: any) => a.passType === 'KIDS').length ?? 0;
-              const kScanned = gateStats?.metrics?.KIDS?.scanned ?? overview?.entries?.metrics?.KIDS?.scanned ?? overview?.entries?.breakdown?.kids ?? 0;
+              const kIssued = gateStats?.metrics?.KIDS?.issued || overview?.entries?.metrics?.KIDS?.issued || overview?.passTypes?.kids || applications.filter((a: any) => a.passType === 'KIDS').length || 0;
+              const kScanned = gateStats?.metrics?.KIDS?.scanned || overview?.entries?.metrics?.KIDS?.scanned || overview?.entries?.breakdown?.kids || 0;
               const kRemaining = Math.max(0, kIssued - kScanned);
               return (
                 <div className="p-3 bg-white/95 border border-purple-200 rounded-xl shadow-xs space-y-1">
@@ -2092,8 +2092,8 @@ export default function SuperAdminDashboard() {
 
             {/* Gazebo VIP */}
             {(() => {
-              const gIssued = gateStats?.metrics?.GAZEBO?.issued ?? overview?.entries?.metrics?.GAZEBO?.issued ?? overview?.passTypes?.gazebo ?? gazebos.filter((g: any) => g.status === 'BOOKED' || g.status === 'CONFIRMED').length ?? 0;
-              const gScanned = gateStats?.metrics?.GAZEBO?.scanned ?? overview?.entries?.metrics?.GAZEBO?.scanned ?? overview?.entries?.breakdown?.gazebo ?? 0;
+              const gIssued = gateStats?.metrics?.GAZEBO?.issued || overview?.entries?.metrics?.GAZEBO?.issued || overview?.passTypes?.gazebo || gazebos.filter((g: any) => g.status === 'BOOKED' || g.status === 'CONFIRMED').length || 0;
+              const gScanned = gateStats?.metrics?.GAZEBO?.scanned || overview?.entries?.metrics?.GAZEBO?.scanned || overview?.entries?.breakdown?.gazebo || 0;
               const gRemaining = Math.max(0, gIssued - gScanned);
               return (
                 <div className="p-3 bg-white/95 border border-amber-300 rounded-xl shadow-xs space-y-1">
@@ -2113,10 +2113,10 @@ export default function SuperAdminDashboard() {
           </div>
 
           {(() => {
-            const cScanned = gateStats?.metrics?.COUPLE?.scanned ?? overview?.entries?.metrics?.COUPLE?.scanned ?? overview?.entries?.breakdown?.couple ?? 0;
-            const sScanned = gateStats?.metrics?.SINGLE?.scanned ?? overview?.entries?.metrics?.SINGLE?.scanned ?? overview?.entries?.breakdown?.single ?? 0;
-            const kScanned = gateStats?.metrics?.KIDS?.scanned ?? overview?.entries?.metrics?.KIDS?.scanned ?? overview?.entries?.breakdown?.kids ?? 0;
-            const gScanned = gateStats?.metrics?.GAZEBO?.scanned ?? overview?.entries?.metrics?.GAZEBO?.scanned ?? overview?.entries?.breakdown?.gazebo ?? 0;
+            const cScanned = gateStats?.metrics?.COUPLE?.scanned || overview?.entries?.metrics?.COUPLE?.scanned || overview?.entries?.breakdown?.couple || 0;
+            const sScanned = gateStats?.metrics?.SINGLE?.scanned || overview?.entries?.metrics?.SINGLE?.scanned || overview?.entries?.breakdown?.single || 0;
+            const kScanned = gateStats?.metrics?.KIDS?.scanned || overview?.entries?.metrics?.KIDS?.scanned || overview?.entries?.breakdown?.kids || 0;
+            const gScanned = gateStats?.metrics?.GAZEBO?.scanned || overview?.entries?.metrics?.GAZEBO?.scanned || overview?.entries?.breakdown?.gazebo || 0;
 
             return (
               <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-200 text-[10px] font-mono text-purple-900">
